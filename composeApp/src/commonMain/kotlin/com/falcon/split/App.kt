@@ -48,9 +48,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.annotation.ExperimentalCoilApi
@@ -61,6 +63,8 @@ import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models.UserState
 import com.falcon.split.screens.WelcomePage
 import com.falcon.split.screens.mainNavigation.CreateExpense
+import com.falcon.split.screens.mainNavigation.CreateGroupScreen
+import com.falcon.split.screens.mainNavigation.GroupDetailsScreen
 import com.falcon.split.screens.mainNavigation.NavHostMain
 import com.falcon.split.screens.mainNavigation.ProfileScreen
 import com.falcon.split.screens.mainNavigation.navigateTo
@@ -243,6 +247,17 @@ fun App(
                     )
                 }
             }
+            composable("create_group") {
+                CreateGroupScreen(
+                    onGroupCreated = { group ->
+                        // Handle the new group
+                        // Navigate back
+                    },
+                    onNavigateBack = {
+                        // Navigate back
+                    }
+                )
+            }
             composable("create_expense") {
                 CreateExpense(navControllerMain, {}) {
 
@@ -258,6 +273,19 @@ fun App(
                         navControllerMain.navigate("welcome_page")
                     }
                 }
+            }
+            composable(
+                route = "group_details/{groupId}",
+                arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
+                GroupDetailsScreen(
+                    groupId = groupId,
+                    onNavigateBack = { navControllerMain.popBackStack() },
+                    onAddExpense = { groupId ->
+                        navControllerMain.navigate("add_expense/$groupId")
+                    }
+                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.falcon.split.screens.mainNavigation
 
+import GroupsScreenWithDummyData
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -189,7 +190,14 @@ fun NavHostMain(
                 HistoryScreen(onNavigate, prefs, newsViewModel, snackBarHostState, navControllerMain)
             }
             composable(route = BottomBarScreen.Profile.route) {
-                GroupScreen(onNavigate, prefs, newsViewModel, snackBarHostState, navControllerMain)
+                GroupsScreenWithDummyData(
+                    onCreateGroupClick = {
+                        navControllerMain.navigate("create_group")
+                    },
+                    onGroupClick = { group ->
+                        navControllerMain.navigate("group_details/${group.groupId}")
+                    }
+                )
             }
         }
     }
