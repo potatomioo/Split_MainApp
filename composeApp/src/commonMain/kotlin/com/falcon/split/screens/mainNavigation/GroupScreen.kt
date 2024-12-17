@@ -16,7 +16,6 @@ import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.description_icon
 import split.composeapp.generated.resources.group_icon_filled
 
 @OptIn(ExperimentalMaterial3Api::class)
