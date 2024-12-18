@@ -208,6 +208,6 @@ room {
 }
 
 dependencies {
-//    implementation(libs.androidx.material3.jvmstubs)
+implementation(libs.androidx.material3.jvmstubs)
     ksp(libs.room.compiler)
 }
