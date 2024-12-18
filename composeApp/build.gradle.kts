@@ -129,6 +129,10 @@ kotlin {
             implementation(libs.firebase.bom)
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
+
+            //For firebase firestore setup
+            implementation("dev.gitlive:firebase-firestore:1.8.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -208,6 +212,6 @@ room {
 }
 
 dependencies {
-//    implementation(libs.androidx.material3.jvmstubs)
+implementation(libs.androidx.material3.jvmstubs)
     ksp(libs.room.compiler)
 }
