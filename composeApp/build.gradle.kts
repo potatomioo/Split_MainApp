@@ -77,6 +77,9 @@ kotlin {
             implementation(libs.androidx.material3)
 
             implementation(libs.androidx.paging.compose.v330)
+            implementation("com.google.android.gms:play-services-auth:20.8.0")
+            implementation("com.google.firebase:firebase-auth:22.1.1")
+            implementation(libs.firebase.auth.ktx)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -129,6 +132,8 @@ kotlin {
             implementation(libs.firebase.bom)
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
+            implementation("com.google.firebase:firebase-auth:22.1.1")
+            implementation(libs.firebase.auth.ktx)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -207,7 +212,9 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
-dependencies {
-    //implementation(libs.androidx.material3.jvmstubs)
+dependencies { //implementation(libs.androidx.material3.jvmstubs)
+    implementation(libs.firebase.auth.ktx)
     ksp(libs.room.compiler)
+    implementation("com.google.firebase:firebase-auth:22.1.1")
+    implementation("com.google.android.gms:play-services-auth:20.8.0")
 }
