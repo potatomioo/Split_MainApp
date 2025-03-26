@@ -1,293 +1,351 @@
 package com.falcon.split.presentation.theme
 
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.falcon.split.presentation.AppFontFamily
 
-// Light theme colors
-val ThemeGrey = Color(0xFFfff6f6)
-val ThemePurple = Color(0xFF520c61)
-val SuccessGreen = Color(0xFF22C55E)
-val ErrorRed = Color(0xFFEF4444)
-val LightBackground = Color(0xFFF5F3F7)
-val LightSurface = Color.White
-val LightTextPrimary = Color(0xFF1E293B)
-val LightTextSecondary = Color(0xFF64748B)
 
-// Dark theme colors
-val DarkBackground = Color(0xFF121212)
-val DarkSurface = Color(0xFF1E1E1E)
-val DarkTextPrimary = Color(0xFFE0E0E0)
-val DarkTextSecondary = Color(0xFFAEAEAE)
-val DarkSuccessGreen = Color(0xFF4ADE80)
-val DarkErrorRed = Color(0xFFFF6B6B)
-val DarkPrimary = Color(0xFF9D4EDD)
-val DarkSecondary = Color(0xFF03DAC6)
+/**
+ * Split App Color Palette
+ * A modern, accessible color system with both light and dark theme variants
+ */
 
-// App color scheme
+// Brand Colors
+val SplitGreen = Color(0xFF8FCB39)       // Primary brand green
+val SplitIndigo = Color(0xFF4E5BF2)      // Secondary color for contrast and accents
+val SplitPurple = Color(0xFF6B4EE6)      // Alternative accent color
+
+// Light Theme Colors
+val LightBackground = Color(0xFFF8F9FA)  // Main background - light gray with slight warmth
+val LightSurface = Color(0xFFFFFFFF)     // Card & surface background - pure white
+val LightPrimary = SplitGreen            // Primary actions and highlights - brand green
+val LightSecondary = SplitIndigo         // Secondary actions - indigo
+val LightTextPrimary = Color(0xFF212529) // Primary text - near black
+val LightTextSecondary = Color(0xFF6C757D) // Secondary text - medium gray
+val LightBorder = Color(0xFFDEE2E6)      // Border color - light gray
+val LightDivider = Color(0xFFE9ECEF)     // Divider color - lighter gray
+
+// Dark Theme Colors
+val DarkBackground = Color(0xFF121212)   // Main background - near black
+val DarkSurface = Color(0xFF1E1E1E)      // Card & surface background - dark gray
+val DarkPrimary = SplitGreen.copy(alpha = 0.9f) // Brand green with slight transparency
+val DarkSecondary = SplitIndigo.copy(alpha = 0.9f) // Indigo with slight transparency
+val DarkTextPrimary = Color(0xFFF8F9FA)  // Primary text - off-white
+val DarkTextSecondary = Color(0xFFADB5BD) // Secondary text - light gray
+val DarkBorder = Color(0xFF2D3238)       // Border color - dark gray
+val DarkDivider = Color(0xFF343A40)      // Divider color - medium dark gray
+
+// Semantic Colors - Light Theme
+val LightSuccess = Color(0xFF28A745)     // Success states - green
+val LightError = Color(0xFFDC3545)       // Error states - red
+val LightWarning = Color(0xFFFFC107)     // Warning states - amber
+val LightInfo = Color(0xFF17A2B8)        // Info states - teal
+
+// Semantic Colors - Dark Theme
+val DarkSuccess = Color(0xFF5DD879)      // Success states - lighter green
+val DarkError = Color(0xFFE35D6A)        // Error states - lighter red
+val DarkWarning = Color(0xFFFFD43B)      // Warning states - brighter amber
+val DarkInfo = Color(0xFF4ECBE0)         // Info states - lighter teal
+
+/**
+ * SplitColors class to maintain consistent colors throughout the app
+ */
 class SplitColors(
-    val backgroundPrimary: Color,
-    val backgroundSecondary: Color,
-    val textPrimary: Color,
-    val textSecondary: Color,
-    val success: Color,
-    val error: Color,
-    val cardBackground: Color,
-    val primary: Color,
-    val secondary: Color
+    // Background colors
+    val backgroundPrimary: Color,        // Main app background
+    val backgroundSecondary: Color,      // Secondary background (headers, bottom bars)
+    val cardBackground: Color,           // Card and surface elements
+
+    // Brand colors
+    val primary: Color,                  // Primary brand color for main actions
+    val secondary: Color,                // Secondary color for alternate actions
+    val accent: Color,                   // Accent color for highlights
+
+    // Text colors
+    val textPrimary: Color,              // Primary text color
+    val textSecondary: Color,            // Secondary text color
+    val textTertiary: Color,             // Tertiary/hint text color
+
+    // UI element colors
+    val border: Color,                   // Border color
+    val divider: Color,                  // Divider color
+
+    // Semantic colors
+    val success: Color,                  // Success states
+    val error: Color,                    // Error states
+    val warning: Color,                  // Warning states
+    val info: Color                      // Info states
 )
 
 // Provide app colors based on theme
 val LocalSplitColors = staticCompositionLocalOf {
-    SplitColors(
-        backgroundPrimary = LightBackground,
-        backgroundSecondary = LightSurface,
-        textPrimary = LightTextPrimary,
-        textSecondary = LightTextSecondary,
-        success = SuccessGreen,
-        error = ErrorRed,
-        cardBackground = Color.White,
-        primary = ThemePurple,
-        secondary = Color(0xFF03DAC5)
-    )
+    lightSplitColors() // Default to light theme colors
 }
 
-// Get the app typography with the right colors based on theme
+/**
+ * Light theme colors configuration
+ */
+fun lightSplitColors() = SplitColors(
+    backgroundPrimary = LightBackground,
+    backgroundSecondary = LightSurface,
+    cardBackground = LightSurface,
+    primary = LightPrimary,
+    secondary = LightSecondary,
+    accent = SplitPurple,
+    textPrimary = LightTextPrimary,
+    textSecondary = LightTextSecondary,
+    textTertiary = LightTextSecondary.copy(alpha = 0.7f),
+    border = LightBorder,
+    divider = LightDivider,
+    success = LightSuccess,
+    error = LightError,
+    warning = LightWarning,
+    info = LightInfo
+)
+
+/**
+ * Dark theme colors configuration
+ */
+fun darkSplitColors() = SplitColors(
+    backgroundPrimary = DarkBackground,
+    backgroundSecondary = DarkSurface,
+    cardBackground = DarkSurface,
+    primary = DarkPrimary,
+    secondary = DarkSecondary,
+    accent = SplitPurple.copy(alpha = 0.9f),
+    textPrimary = DarkTextPrimary,
+    textSecondary = DarkTextSecondary,
+    textTertiary = DarkTextSecondary.copy(alpha = 0.7f),
+    border = DarkBorder,
+    divider = DarkDivider,
+    success = DarkSuccess,
+    error = DarkError,
+    warning = DarkWarning,
+    info = DarkInfo
+)
+
+/**
+ * Typography system based on Nunito font family with responsive scaling
+ */
 @Composable
-fun getAppTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography {
-    val splitColors = LocalSplitColors.current
+fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography {
+    val colors = LocalSplitColors.current
 
     return Typography(
-        bodyLarge = TextStyle(
-            fontFamily = AppFontFamily.nunitoFamily(),
-            fontWeight = FontWeight.Normal,
-            fontSize = 18.sp,
-            lineHeight = 20.sp,
-            letterSpacing = 0.1.sp,
-            color = splitColors.textPrimary
-        ),
-        bodyMedium = TextStyle(
-            fontFamily = AppFontFamily.nunitoFamily(),
-            fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
-            lineHeight = 20.sp,
-            letterSpacing = 0.1.sp,
-            color = splitColors.textPrimary
-        ),
-        titleLarge = TextStyle(
+        // Display styles for hero sections and large headings
+        displayLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            lineHeight = 28.sp,
-            letterSpacing = 0.1.sp,
-            color = splitColors.textPrimary
+            fontSize = 32.sp,
+            lineHeight = 40.sp,
+            letterSpacing = (-0.5).sp,
+            color = colors.textPrimary
         ),
-        titleSmall = TextStyle(
+        displayMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
-            fontWeight = FontWeight.Normal,
-            fontSize = 10.sp,
-            lineHeight = 25.sp,
-            letterSpacing = 0.1.sp,
-            color = splitColors.textSecondary
+            fontWeight = FontWeight.Bold,
+            fontSize = 28.sp,
+            lineHeight = 36.sp,
+            letterSpacing = (-0.5).sp,
+            color = colors.textPrimary
+        ),
+        displaySmall = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            lineHeight = 32.sp,
+            color = colors.textPrimary
+        ),
+
+        // Headline styles for section headers
+        headlineLarge = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            lineHeight = 28.sp,
+            color = colors.textPrimary
+        ),
+        headlineMedium = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp,
+            lineHeight = 26.sp,
+            color = colors.textPrimary
+        ),
+        headlineSmall = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
+            color = colors.textPrimary
+        ),
+
+        // Title styles for card headers and smaller sections
+        titleLarge = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
+            color = colors.textPrimary
         ),
         titleMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 12.sp,
-            lineHeight = 28.sp,
+            fontSize = 16.sp,
+            lineHeight = 22.sp,
             letterSpacing = 0.1.sp,
-            color = splitColors.textSecondary
+            color = colors.textPrimary
+        ),
+        titleSmall = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            letterSpacing = 0.1.sp,
+            color = colors.textPrimary
+        ),
+
+        // Body styles for main content
+        bodyLarge = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Normal,
+            fontSize = 16.sp,
+            lineHeight = 24.sp,
+            letterSpacing = 0.15.sp,
+            color = colors.textPrimary
+        ),
+        bodyMedium = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            letterSpacing = 0.25.sp,
+            color = colors.textPrimary
+        ),
+        bodySmall = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Normal,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.4.sp,
+            color = colors.textSecondary
+        ),
+
+        // Label styles for buttons, chips, etc.
+        labelLarge = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+            letterSpacing = 0.1.sp,
+            color = colors.textPrimary
+        ),
+        labelMedium = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.5.sp,
+            color = colors.textPrimary
+        ),
+        labelSmall = TextStyle(
+            fontFamily = AppFontFamily.nunitoFamily(),
+            fontWeight = FontWeight.Medium,
+            fontSize = 10.sp,
+            lineHeight = 14.sp,
+            letterSpacing = 0.5.sp,
+            color = colors.textSecondary
         )
     )
 }
 
-// Provide app colors based on current theme
-@Composable
-fun getSplitColors(darkTheme: Boolean = isSystemInDarkTheme()): SplitColors {
-    return if (darkTheme) {
-        SplitColors(
-            backgroundPrimary = DarkBackground,
-            backgroundSecondary = DarkSurface,
-            textPrimary = DarkTextPrimary,
-            textSecondary = DarkTextSecondary,
-            success = DarkSuccessGreen,
-            error = DarkErrorRed,
-            cardBackground = Color(0xFF2C2C2C),
-            primary = DarkPrimary,
-            secondary = DarkSecondary
-        )
-    } else {
-        SplitColors(
-            backgroundPrimary = LightBackground,
-            backgroundSecondary = LightSurface,
-            textPrimary = LightTextPrimary,
-            textSecondary = LightTextSecondary,
-            success = SuccessGreen,
-            error = ErrorRed,
-            cardBackground = Color.White,
-            primary = ThemePurple,
-            secondary = Color(0xFF03DAC5)
-        )
-    }
-}
+/**
+ * Shape system for consistent UI elements
+ */
+val SplitShapes = Shapes(
+    small = RoundedCornerShape(4.dp),
+    medium = RoundedCornerShape(8.dp),
+    large = RoundedCornerShape(12.dp)
+)
 
+/**
+ * Main theme composition
+ */
 @Composable
 fun SplitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    modifier: Modifier = Modifier,
-    onThemeUpdated: () -> Unit,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
-    val colors = if (darkTheme) {
+    // Select colors based on theme
+    val splitColors = if (darkTheme) darkSplitColors() else lightSplitColors()
+
+    // Material color scheme for integration with Material components
+    val colorScheme = if (darkTheme) {
         darkColorScheme(
             primary = DarkPrimary,
+            onPrimary = DarkTextPrimary,
+            primaryContainer = DarkPrimary.copy(alpha = 0.12f),
+            onPrimaryContainer = DarkPrimary,
             secondary = DarkSecondary,
-            tertiary = Color(0xFF673AB7),
+            onSecondary = DarkTextPrimary,
+            secondaryContainer = DarkSecondary.copy(alpha = 0.12f),
+            onSecondaryContainer = DarkSecondary,
+            tertiary = SplitPurple.copy(alpha = 0.9f),
             background = DarkBackground,
-            surface = DarkSurface,
-            onPrimary = Color.White,
-            onSecondary = Color.Black,
             onBackground = DarkTextPrimary,
-            onSurface = DarkTextPrimary
+            surface = DarkSurface,
+            onSurface = DarkTextPrimary,
+            surfaceVariant = DarkSurface.copy(alpha = 0.7f),
+            error = DarkError,
+            onError = DarkTextPrimary
         )
     } else {
         lightColorScheme(
-            primary = ThemePurple,
-            secondary = Color(0xFF03DAC5),
-            tertiary = Color(0xFF3700B3),
-            background = LightBackground,
-            surface = LightSurface,
+            primary = LightPrimary,
             onPrimary = Color.White,
-            onSecondary = Color.Black,
+            primaryContainer = LightPrimary.copy(alpha = 0.12f),
+            onPrimaryContainer = LightPrimary,
+            secondary = LightSecondary,
+            onSecondary = Color.White,
+            secondaryContainer = LightSecondary.copy(alpha = 0.12f),
+            onSecondaryContainer = LightSecondary,
+            tertiary = SplitPurple,
+            background = LightBackground,
             onBackground = LightTextPrimary,
-            onSurface = LightTextPrimary
+            surface = LightSurface,
+            onSurface = LightTextPrimary,
+            surfaceVariant = LightSurface.copy(alpha = 0.7f),
+            error = LightError,
+            onError = Color.White
         )
     }
 
-    val splitColors = getSplitColors(darkTheme)
+    // Typography system
+    val typography = getSplitTypography(darkTheme)
 
-    val typography = Typography(
-        bodyMedium = TextStyle(
-            fontFamily = FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 16.sp
-        )
-    )
-
-    val shapes = Shapes(
-        small = RoundedCornerShape(lDimens.dp4),
-        medium = RoundedCornerShape(lDimens.dp4),
-        large = RoundedCornerShape(lDimens.dp0)
-    )
-
-    androidx.compose.runtime.CompositionLocalProvider(
+    // Provide theme via CompositionLocal
+    CompositionLocalProvider(
         LocalSplitColors provides splitColors
     ) {
         MaterialTheme(
-            colorScheme = colors,
+            colorScheme = colorScheme,
             typography = typography,
-            shapes = shapes,
+            shapes = SplitShapes,
             content = content
         )
-    }
-}
-
-@Composable
-fun ThemeSwitcher(
-    darkTheme: Boolean = false,
-    size: Dp = lDimens.dp150,
-    iconSize: Dp = size / 3,
-    padding: Dp = lDimens.dp10,
-    borderWidth: Dp = 1.dp,
-    parentShape: Shape = CircleShape,
-    toggleShape: Shape = CircleShape,
-    animationSpec: AnimationSpec<Dp> = tween(durationMillis = 300),
-    onClick: () -> Unit
-) {
-    val offset by animateDpAsState(
-        targetValue = if (darkTheme) lDimens.dp0 else size,
-        animationSpec = animationSpec
-    )
-    val colors = LocalSplitColors.current
-
-    Box(modifier = Modifier
-        .width(size * 2)
-        .height(size)
-        .clip(shape = parentShape)
-        .clickable { onClick() }
-        .background(if (darkTheme) Color(0xFF2C2C2C) else MaterialTheme.colorScheme.secondaryContainer)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(size)
-                .offset(x = offset)
-                .padding(all = padding)
-                .clip(shape = toggleShape)
-                .background(colors.primary)
-        ) {}
-        Row(
-            modifier = Modifier
-                .border(
-                    border = BorderStroke(
-                        width = borderWidth,
-                        color = colors.primary
-                    ),
-                    shape = parentShape
-                )
-        ) {
-            Box(
-                modifier = Modifier.size(size),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🌙",
-                    fontSize = 20.sp
-                )
-            }
-            Box(
-                modifier = Modifier.size(size),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "☀️",
-                    fontSize = 20.sp
-                )
-            }
-        }
     }
 }
