@@ -1,23 +1,38 @@
+package com.falcon.split.presentation.screens.mainNavigation
+
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -31,19 +46,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
-import com.falcon.split.presentation.theme.DarkErrorRed
-import com.falcon.split.presentation.theme.DarkPrimary
-import com.falcon.split.presentation.theme.ErrorRed
 import com.falcon.split.presentation.theme.LocalSplitColors
-import com.falcon.split.presentation.theme.ThemePurple
+import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.ThemeSwitcher
-import com.falcon.split.presentation.theme.getAppTypography
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.toggleDarkTheme
 import com.falcon.split.utils.EmailUtils
@@ -57,12 +71,13 @@ fun SettingScreen(
     onNavigateBack: () -> Unit,
     emailUtils: EmailUtils,
     prefs: DataStore<Preferences>,
-    darkTheme: MutableState<Boolean>,
+    darkTheme: MutableState<Boolean>
 ) {
     val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
-    //For delete Account
+    // Dialog states
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -71,15 +86,15 @@ fun SettingScreen(
                 title = {
                     Text(
                         "Settings",
-                        style = getAppTypography(isDarkTheme).titleLarge,
+                        style = MaterialTheme.typography.titleLarge,
                         color = colors.textPrimary
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            "Back",
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
                             tint = colors.textPrimary
                         )
                     }
@@ -89,186 +104,305 @@ fun SettingScreen(
                     titleContentColor = colors.textPrimary
                 )
             )
-        },
-        containerColor = colors.backgroundPrimary
+        }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(scrollState)
                 .background(colors.backgroundPrimary)
         ) {
-            items(1){
-                SettingType("General")
-                ThemeOption(
-                    prefs = prefs,
-                    darkTheme = darkTheme
-                )
-                SettingOption(
-                    "Contact Us",
-                    "Contact our team",
-                    {
-                        emailUtils.sendEmail(
-                            to = "deeptanshushuklaji@gmail.com",
-                            subject = "Regarding App Split",
-                        )
-                    }
-                )
-                SettingOption("Payment Account","Change your current payment account",{})
-                SettingOption(
-                    "Delete Account",
-                    "Delete your account",
-                    {showDeleteDialog = true},
-                    isDeleteOption = true
-                )
-                SettingType("Developer")
-                SettingOption("Resource Used","Resources used for app",{
-                    OpenLink.openLink("https://sites.google.com/view/ggsipu-notices/resources-used")
-                })
-                SettingOption("Bug Report","Report bugs here",{
+            // General Settings Section
+            SettingsSectionHeader("General")
+
+            // Theme Setting
+            ThemeSettingItem(
+                prefs = prefs,
+                darkTheme = darkTheme
+            )
+
+            // Notification Setting
+            SettingItem(
+                title = "Notifications",
+                description = "Manage notification preferences",
+                icon = Icons.Default.Notifications,
+                onClick = { /* Open notification settings */ }
+            )
+
+            // Payment Setting
+            SettingItem(
+                title = "Payment Account",
+                description = "Update your payment methods",
+                icon = Icons.Default.ThumbUp,
+                onClick = { /* Open payment settings */ }
+            )
+
+            // Delete Account Setting
+            SettingItem(
+                title = "Delete Account",
+                description = "Permanently delete your account and data",
+                icon = Icons.Default.Delete,
+                onClick = { showDeleteDialog = true },
+                isDestructive = true
+            )
+
+            // Support & About Section
+            SettingsSectionHeader("Support & About")
+
+            // Contact Us Setting
+            SettingItem(
+                title = "Contact Us",
+                description = "Get help or send feedback",
+                icon = Icons.Default.ThumbUp,
+                onClick = {
+                    emailUtils.sendEmail(
+                        to = "deeptanshushuklaji@gmail.com",
+                        subject = "Regarding Split App",
+                    )
+                }
+            )
+
+            // Bug Report Setting
+            SettingItem(
+                title = "Bug Report",
+                description = "Report issues with the app",
+                icon = Icons.Default.ThumbUp,
+                onClick = {
                     emailUtils.sendEmail(
                         to = "deeptanshushuklaji@gmail.com",
                         subject = "Bug Report For Split App",
                     )
-                })
-                SettingOption("Terms & Condition","Terms and Condition for using",{
-                    OpenLink.openLink("https://sites.google.com/view/split-app/terms-conditions")
-                })
-                SettingOption("Privacy Policy","All the privacy policies",{
-                    OpenLink.openLink("https://sites.google.com/view/split-app/home")
-                })
-            }
-        }
-        DeleteAccountDialog(
-            showDeleteDialog,
-            onDismiss = {showDeleteDialog = false},
-            onConfirmDelete = {}
-        )
-    }
-}
+                }
+            )
 
-@Composable
-fun SettingType(
-    title: String
-) {
-    val colors = LocalSplitColors.current
-    val accentColor = if (isSystemInDarkTheme()) DarkPrimary else ThemePurple
+            // Legal Section
+            SettingsSectionHeader("Legal")
 
-    Text(
-        title,
-        fontSize = 12.sp,
-        style = getAppTypography().titleSmall,
-        color = accentColor,
-        modifier = Modifier
-            .padding(lDimens.dp15)
-    )
-}
-
-@Composable
-fun ThemeOption(
-    modifier: Modifier = Modifier,
-    prefs: DataStore<Preferences>,
-    darkTheme: MutableState<Boolean>,
-) {
-    val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
-    val scope = rememberCoroutineScope()
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        modifier = Modifier.background(colors.backgroundPrimary)
-    ){
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .padding(bottom = lDimens.dp8)
-                .fillMaxWidth()
-                .padding(lDimens.dp15)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    "Theme",
-                    style = getAppTypography(isDarkTheme).titleMedium,
-                    color = colors.textPrimary
-                )
-                Text(
-                    "Toggle Theme",
-                    style = getAppTypography(isDarkTheme).titleSmall,
-                    color = colors.textSecondary
-                )
-            }
-            ThemeSwitcher(
-                size = 50.dp,
-                padding = 5.dp,
+            // Terms & Conditions
+            SettingItem(
+                title = "Terms & Conditions",
+                description = "Terms and Conditions for using",
+                icon = Icons.Default.ThumbUp,
                 onClick = {
-                    scope.launch {
-                        darkTheme.value = !darkTheme.value
-                        toggleDarkTheme(prefs)
-                    }
-                },
-                darkTheme = darkTheme.value
+                    OpenLink.openLink("https://sites.google.com/view/split-app/terms-conditions")
+                }
+            )
+
+            // Privacy Policy
+            SettingItem(
+                title = "Privacy Policy",
+                description = "All the privacy policies",
+                icon = Icons.Default.ThumbUp,
+                onClick = {
+                    OpenLink.openLink("https://sites.google.com/view/split-app/home")
+                }
+            )
+
+            // App info
+            SplitCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(lDimens.dp16),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Split",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = colors.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        "Version 1.0.0",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                    Text(
+                        "Split expenses, not friendships",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary
+                    )
+                }
+            }
+
+            // Bottom spacer
+            Spacer(modifier = Modifier.height(lDimens.dp24))
+        }
+
+        // Delete Account Confirmation Dialog
+        if (showDeleteDialog) {
+            DeleteAccountDialog(
+                onDismiss = { showDeleteDialog = false },
+                onConfirm = { /* Delete account logic */ }
             )
         }
     }
 }
 
 @Composable
-fun SettingOption(
-    settingText: String,
-    description: String,
-    onClick: () -> Unit,
-    isDeleteOption: Boolean = false
+fun SettingsSectionHeader(title: String) {
+    val colors = LocalSplitColors.current
+
+    Text(
+        title,
+        style = MaterialTheme.typography.titleSmall,
+        color = colors.primary,
+        modifier = Modifier.padding(start = lDimens.dp16, top = lDimens.dp16, end = lDimens.dp16, bottom = lDimens.dp8)
+    )
+}
+
+@Composable
+fun ThemeSettingItem(
+    prefs: DataStore<Preferences>,
+    darkTheme: MutableState<Boolean>
 ) {
     val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
+    val scope = rememberCoroutineScope()
 
-    // Determine text color for the main setting text
-    val textColor = when {
-        isDeleteOption -> if (isDarkTheme) DarkErrorRed else ErrorRed
-        else -> colors.textPrimary
-    }
-
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        modifier = Modifier.background(colors.backgroundPrimary)
-    ){
+    SplitCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4)
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .padding(bottom = lDimens.dp8)
                 .fillMaxWidth()
-                .padding(lDimens.dp15)
+                .padding(lDimens.dp16)
         ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start
+            // Icon and text
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    settingText,
-                    style = getAppTypography(isDarkTheme).titleMedium,
-                    color = textColor
-                )
-                Text(
-                    description,
-                    style = getAppTypography(isDarkTheme).titleSmall,
-                    color = colors.textSecondary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(colors.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.ThumbUp,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(lDimens.dp16))
+
+                Column {
+                    Text(
+                        "Theme",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
+                    )
+
+                    Text(
+                        "Dark theme: ${if (darkTheme.value) "On" else "Off"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+                }
             }
+
+            // Theme switcher
+            ThemeSwitcher(
+                size = 32.dp,
+                padding = 4.dp,
+                darkTheme = darkTheme.value,
+                onClick = {
+                    scope.launch {
+                        darkTheme.value = !darkTheme.value
+                        toggleDarkTheme(prefs)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingItem(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    val colors = LocalSplitColors.current
+    val textColor = if (isDestructive) colors.error else colors.textPrimary
+    val descriptionColor = if (isDestructive) colors.error.copy(alpha = 0.7f) else colors.textSecondary
+
+    SplitCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4)
+            .clickable { onClick() }
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(lDimens.dp16)
+        ) {
+            // Icon and text
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isDestructive) colors.error.copy(alpha = 0.1f)
+                            else colors.primary.copy(alpha = 0.1f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (isDestructive) colors.error else colors.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(lDimens.dp16))
+
+                Column {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textColor
+                    )
+
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = descriptionColor
+                    )
+                }
+            }
+
+            // Arrow icon
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                Icons.Default.KeyboardArrowRight,
                 contentDescription = "Open",
-                modifier = Modifier.size(24.dp),
-                tint = colors.textSecondary
+                tint = if (isDestructive) colors.error else colors.textSecondary,
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -276,55 +410,34 @@ fun SettingOption(
 
 @Composable
 fun DeleteAccountDialog(
-    showDialog: Boolean,
     onDismiss: () -> Unit,
-    onConfirmDelete: () -> Unit
+    onConfirm: () -> Unit
 ) {
     val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
-    val deleteColor = if (isDarkTheme) DarkErrorRed else ErrorRed
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = colors.cardBackground,
-            title = {
-                Text(
-                    "Delete Account",
-                    color = colors.textPrimary,
-                    style = getAppTypography(isDarkTheme).titleMedium
-                )
-            },
-            text = {
-                Text(
-                    "Are you sure you want to delete your account? This action cannot be undone.",
-                    style = getAppTypography(isDarkTheme).titleSmall,
-                    color = colors.textSecondary
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onConfirmDelete()
-                        onDismiss()
-                    }
-                ) {
-                    Text(
-                        "Delete",
-                        color = deleteColor,
-                        style = getAppTypography(isDarkTheme).titleSmall
-                    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Account") },
+        text = {
+            Text(
+                "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
+                color = colors.textPrimary
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text(
-                        "Cancel",
-                        color = colors.textPrimary,
-                        style = getAppTypography(isDarkTheme).titleSmall
-                    )
-                }
+            ) {
+                Text("Delete", color = colors.error)
             }
-        )
-    }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
