@@ -14,6 +14,7 @@ data class UserModelGoogleFirebaseBased(
     val username: String? = null,
     val profilePictureUrl: String? = null,
 
-    val email: String? = null, // TODO: See how to get email from Google Firebase Sign-In
+    val email: String? = null,
     val upiId: String? = null,
+    val phoneNumber: String? = null
 )
