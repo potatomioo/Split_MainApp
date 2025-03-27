@@ -1,51 +1,49 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,25 +52,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.arkivanov.essenty.backhandler.BackCallback
-import com.arkivanov.essenty.backhandler.BackHandler
-import com.falcon.split.data.network.models_app.Expense
-import com.falcon.split.data.network.models_app.ExpenseSplit
-import com.falcon.split.presentation.theme.LocalSplitColors
+import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.presentation.expense.CreateExpenseState
 import com.falcon.split.presentation.expense.CreateExpenseViewModel
-import com.falcon.split.presentation.theme.getAppTypography
+import com.falcon.split.presentation.theme.LocalSplitColors
+import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
+import com.falcon.split.utils.MemberNameResolver
 import kotlinx.datetime.Clock
-import org.jetbrains.compose.resources.painterResource
-import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.description_icon
-import split.composeapp.generated.resources.group_icon_outlined
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,49 +78,38 @@ fun CreateExpense(
     navControllerMain: NavHostController,
     viewModel: CreateExpenseViewModel,
     onNavigateBack: () -> Unit,
-    backHandler: BackHandler, // Add backHandler as a parameter
+    backHandler: Any? = null, // Not using directly, keeping for compatibility
     groupId: String? = null
 ) {
+    val colors = LocalSplitColors.current
+    val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+
+    // Form state
     var description by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-    var selectedGroup by remember { mutableStateOf<String?>(null) }
-    val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
+    var selectedGroupId by remember { mutableStateOf<String?>(groupId) }
+    var date by remember {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        mutableStateOf(today)
+    }
 
-    // Collect state from ViewModel
+    // UI state
+    var isGroupDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Validation state
+    var descriptionError by remember { mutableStateOf<String?>(null) }
+    var amountError by remember { mutableStateOf<String?>(null) }
+    var groupError by remember { mutableStateOf<String?>(null) }
+
+    // ViewModel state
     val state by viewModel.state.collectAsState()
-    val selectedGroupDetails by viewModel.selectedGroup.collectAsState()
+    val selectedGroup by viewModel.selectedGroup.collectAsState()
 
-    // For dropdown search
-    var isExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-
-    // Create a back callback for the dropdown
-    val dropdownBackCallback = remember {
-        BackCallback {
-            if (isExpanded) {
-                isExpanded = false
-                searchQuery = ""
-            }
-        }
-    }
-
-    // Register/unregister back callback based on dropdown state
-    DisposableEffect(isExpanded) {
-        if (isExpanded) {
-            backHandler.register(dropdownBackCallback)
-        } else {
-            backHandler.unregister(dropdownBackCallback)
-        }
-
-        onDispose {
-            backHandler.unregister(dropdownBackCallback)
-        }
-    }
-
-    // Effect to update selected group details when a group is selected
-    LaunchedEffect(selectedGroup) {
-        selectedGroup?.let { groupId ->
+    // Set selected group if groupId is provided
+    LaunchedEffect(groupId) {
+        if (groupId != null) {
+            selectedGroupId = groupId
             viewModel.selectGroup(groupId)
         }
     }
@@ -135,248 +122,406 @@ fun CreateExpense(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colors.backgroundSecondary,
+                    titleContentColor = colors.textPrimary,
+                    navigationIconContentColor = colors.textPrimary
+                )
             )
         }
     ) { padding ->
-        when (state) {
-            is CreateExpenseState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-            is CreateExpenseState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text((state as CreateExpenseState.Error).message)
-                }
-            }
-            is CreateExpenseState.Success -> {
-                val groups = (state as CreateExpenseState.Success).groups
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(lDimens.dp16),
-                    verticalArrangement = Arrangement.spacedBy(lDimens.dp16)
-                ) {
-                    // Amount Input with Currency Symbol
-                    OutlinedCard(
-                        modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            when (state) {
+                is CreateExpenseState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.padding(lDimens.dp16),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "Enter Amount",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(lDimens.dp8))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    "₹",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    modifier = Modifier.padding(end = lDimens.dp8)
-                                )
-                                OutlinedTextField(
-                                    value = amount,
-                                    onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) amount = it },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    placeholder = { Text("0.00") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-                            }
-                        }
+                        CircularProgressIndicator(color = colors.primary)
                     }
+                }
 
-                    // Description Input
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Description") },
-                        placeholder = { Text("What's this expense for?") },
-                        leadingIcon = {
-                            Image(
-                                painter = painterResource(Res.drawable.description_icon),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(lDimens.dp48)
-                                    .padding(horizontal = lDimens.dp12),
-                                contentScale = ContentScale.Fit
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Group Selection with Searchable Dropdown
-                    if (groupId != null) {
-                        // If groupId is provided, select the group automatically
-                        selectedGroup = groupId
-                    }
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                is CreateExpenseState.Error -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(lDimens.dp16),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            "Select Group",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(start = lDimens.dp4, bottom = lDimens.dp4)
+                            (state as CreateExpenseState.Error).message,
+                            color = colors.error,
+                            textAlign = TextAlign.Center
                         )
 
-                        // Filter the groups based on search query
-                        val filteredGroups = remember(searchQuery, groups) {
-                            if (searchQuery.isEmpty()) {
-                                groups
-                            } else {
-                                groups.filter { group ->
-                                    group.name.contains(searchQuery, ignoreCase = true)
-                                }
-                            }
-                        }
+                        Spacer(modifier = Modifier.height(lDimens.dp16))
 
-                        // Selected group display with search functionality
-                        OutlinedTextField(
-                            value = if (isExpanded) searchQuery else groups.find { it.id == selectedGroup }?.name ?: "",
-                            onValueChange = {
-                                if (isExpanded) {
-                                    searchQuery = it
-                                }
-                            },
-                            placeholder = {
+                        Button(
+                            onClick = onNavigateBack,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.primary
+                            )
+                        ) {
+                            Text("Go Back")
+                        }
+                    }
+                }
+
+                is CreateExpenseState.Success -> {
+                    val groups = (state as CreateExpenseState.Success).groups
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(lDimens.dp16),
+                        verticalArrangement = Arrangement.spacedBy(lDimens.dp16)
+                    ) {
+                        // Amount Input Card
+                        SplitCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(lDimens.dp16),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(
-                                    text = "Search or select a group",
-                                    style = getAppTypography(isDarkTheme).bodyMedium,
-                                    color = colors.textSecondary
+                                    "Enter Amount",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.textPrimary
                                 )
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onFocusChanged { if (it.isFocused) isExpanded = true },
-                            leadingIcon = {
-                                Image(
-                                    painter = painterResource(Res.drawable.group_icon_outlined),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(lDimens.dp48)
-                                        .padding(horizontal = lDimens.dp12),
-                                    contentScale = ContentScale.Fit
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { isExpanded = !isExpanded }) {
-                                    Icon(
-                                        if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                        contentDescription = "Toggle dropdown"
+
+                                Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        "₹",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = colors.textPrimary,
+                                        modifier = Modifier.padding(end = lDimens.dp8)
+                                    )
+
+                                    OutlinedTextField(
+                                        value = amount,
+                                        onValueChange = {
+                                            if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) {
+                                                amount = it
+                                                amountError = if (it.isEmpty()) "Amount is required" else null
+                                            }
+                                        },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Decimal,
+                                            imeAction = ImeAction.Next
+                                        ),
+                                        keyboardActions = KeyboardActions(
+                                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                                        ),
+                                        placeholder = { Text("0.00") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        isError = amountError != null,
+                                        supportingText = amountError?.let { { Text(it) } },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = colors.cardBackground,
+                                            unfocusedContainerColor = colors.cardBackground,
+                                            focusedBorderColor = colors.primary,
+                                            unfocusedBorderColor = colors.border,
+                                            errorBorderColor = colors.error
+                                        )
                                     )
                                 }
+                            }
+                        }
+
+                        // Description Input
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = {
+                                description = it
+                                descriptionError = if (it.isEmpty()) "Description is required" else null
                             },
+                            label = { Text("Description") },
+                            placeholder = { Text("What's this expense for?") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.ThumbUp,
+                                    contentDescription = null,
+                                    tint = colors.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            ),
+                            singleLine = true,
+                            isError = descriptionError != null,
+                            supportingText = descriptionError?.let { { Text(it) } },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = colors.cardBackground,
-                                unfocusedContainerColor = colors.cardBackground
-                            ),
-                            singleLine = true
+                                unfocusedContainerColor = colors.cardBackground,
+                                focusedBorderColor = colors.primary,
+                                unfocusedBorderColor = colors.border,
+                                errorBorderColor = colors.error
+                            )
                         )
 
-                        // Dropdown list shown below the field
-                        AnimatedVisibility(visible = isExpanded) {
-                            Card(
+                        // Date Picker
+                        OutlinedTextField(
+                            value = formatDate(date),
+                            onValueChange = { /* Date is selected via dialog */ },
+                            label = { Text("Date") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.ThumbUp,
+                                    contentDescription = null,
+                                    tint = colors.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colors.cardBackground,
+                                unfocusedContainerColor = colors.cardBackground,
+                                focusedBorderColor = colors.primary,
+                                unfocusedBorderColor = colors.border
+                            )
+                        )
+
+                        // Group Selection
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = selectedGroup?.name ?: "",
+                                onValueChange = { /* Group is selected via dropdown */ },
+                                label = { Text("Group") },
+                                placeholder = { Text("Select a group") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.ThumbUp,
+                                        contentDescription = null,
+                                        tint = colors.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { isGroupDropdownExpanded = !isGroupDropdownExpanded }) {
+                                        Icon(
+                                            if (isGroupDropdownExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = "Toggle dropdown"
+                                        )
+                                    }
+                                },
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = groupError != null,
+                                supportingText = groupError?.let { { Text(it) } },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = colors.cardBackground,
+                                    unfocusedContainerColor = colors.cardBackground,
+                                    focusedBorderColor = colors.primary,
+                                    unfocusedBorderColor = colors.border,
+                                    errorBorderColor = colors.error
+                                )
+                            )
+
+                            // Group Dropdown Menu
+                            DropdownMenu(
+                                expanded = isGroupDropdownExpanded,
+                                onDismissRequest = { isGroupDropdownExpanded = false },
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = lDimens.dp4),
-                                elevation = CardDefaults.cardElevation(defaultElevation = lDimens.dp4)
+                                    .width(300.dp)
+                                    .align(Alignment.TopEnd)
+                            ) {
+                                groups.forEach { group ->
+                                    DropdownMenuItem(
+                                        text = { Text(group.name) },
+                                        onClick = {
+                                            selectedGroupId = group.id
+                                            viewModel.selectGroup(group.id)
+                                            isGroupDropdownExpanded = false
+                                            groupError = null
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.ThumbUp,
+                                                contentDescription = null,
+                                                tint = colors.primary
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Paid By Section
+                        SplitCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(lDimens.dp16)
+                            ) {
+                                Text(
+                                    "Paid By",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.textPrimary
+                                )
+
+                                Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                                // Default to current user
+                                Surface(
+                                    color = colors.primary.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(lDimens.dp12),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = colors.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(lDimens.dp12))
+
+                                        Text(
+                                            "You",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = colors.textPrimary
+                                        )
+
+                                        Spacer(modifier = Modifier.weight(1f))
+
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = colors.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Split Section
+                        if (selectedGroup != null) {
+                            SplitCard(
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(max = 200.dp)
+                                    modifier = Modifier.padding(lDimens.dp16)
                                 ) {
-                                    if (filteredGroups.isEmpty() && searchQuery.isNotEmpty()) {
-                                        // No matching groups
-                                        Box(
+                                    Text(
+                                        "Split Equally Between",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = colors.textPrimary
+                                    )
+
+                                    Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                                    val memberCount = selectedGroup!!.members.size
+                                    val amountValue = amount.toDoubleOrNull() ?: 0.0
+                                    val splitAmount = if (memberCount > 0) amountValue / memberCount else 0.0
+
+                                    selectedGroup!!.members.forEach { member ->
+                                        val memberName = if (member.name.isNullOrBlank())
+                                            "User ${member.phoneNumber.takeLast(4)}"
+                                        else
+                                            member.name
+
+                                        Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(lDimens.dp16),
-                                            contentAlignment = Alignment.Center
+                                                .padding(vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
-                                                text = "No groups found",
-                                                style = getAppTypography(isDarkTheme).bodyMedium,
+                                                memberName,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = colors.textPrimary
+                                            )
+
+                                            Text(
+                                                "₹${formatAmount(splitAmount)}",
+                                                style = MaterialTheme.typography.bodyMedium,
                                                 color = colors.textSecondary
                                             )
                                         }
-                                    } else {
-                                        // Using LazyColumn for better performance with many items
-                                        LazyColumn(
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            items(filteredGroups) { group ->
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .clickable {
-                                                            selectedGroup = group.id
-                                                            searchQuery = ""
-                                                            isExpanded = false
-                                                        }
-                                                        .padding(lDimens.dp16),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = group.name,
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                }
-                                                if (filteredGroups.indexOf(group) < filteredGroups.size - 1) {
-                                                    HorizontalDivider(
-                                                        color = colors.textSecondary.copy(alpha = 0.1f),
-                                                        modifier = Modifier.padding(horizontal = lDimens.dp8)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Close button at bottom
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(colors.backgroundSecondary.copy(alpha = 0.1f))
-                                    ) {
-                                        TextButton(
-                                            onClick = {
-                                                isExpanded = false
-                                                searchQuery = ""
-                                            },
-                                            modifier = Modifier.align(Alignment.Center)
-                                        ) {
-                                            Text("Close")
-                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    // Add Expense Button
-                    Button(
-                        onClick = {
-                            if (amount.isNotEmpty() && description.isNotEmpty() && selectedGroup != null) {
-                                viewModel.createExpense(
-                                    description = description,
-                                    amount = amount.toDoubleOrNull() ?: 0.0,
-                                    selectedGroupId = selectedGroup!!
-                                )
-                                onNavigateBack()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = amount.isNotEmpty() && description.isNotEmpty() && selectedGroup != null
-                    ) {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.padding(end = lDimens.dp8))
-                        Text("Add Expense")
+                        // Add Expense Button
+                        Button(
+                            onClick = {
+                                // Validate inputs
+                                var hasError = false
+
+                                if (description.isEmpty()) {
+                                    descriptionError = "Description is required"
+                                    hasError = true
+                                }
+
+                                if (amount.isEmpty()) {
+                                    amountError = "Amount is required"
+                                    hasError = true
+                                }
+
+                                if (selectedGroupId == null) {
+                                    groupError = "Group is required"
+                                    hasError = true
+                                }
+
+                                if (!hasError) {
+                                    viewModel.createExpense(
+                                        description = description,
+                                        amount = amount.toDoubleOrNull() ?: 0.0,
+                                        selectedGroupId = selectedGroupId!!
+                                    )
+                                    onNavigateBack()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.primary,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                "Add Expense",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+
+                        // Bottom spacer
+                        Spacer(modifier = Modifier.height(lDimens.dp24))
                     }
                 }
             }
@@ -384,190 +529,10 @@ fun CreateExpense(
     }
 }
 
+private fun formatDate(date: LocalDate): String {
+    return "${date.dayOfMonth} ${date.month.name.take(3)} ${date.year}"
+}
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CreateExpenseFromAGroup(
-    navControllerMain: NavHostController,
-    onExpenseAdded: (Expense) -> Unit,
-    onNavigateBack: () -> Unit,
-    backHandler: BackHandler // Add backHandler as a parameter
-) {
-    var description by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var selectedGroup by remember { mutableStateOf<String?>(null) }
-    var selectedPayer by remember { mutableStateOf<String?>(null) }
-    var showGroupDropdown by remember { mutableStateOf(false) }
-    var showPayerDropdown by remember { mutableStateOf(false) }
-
-    // Dummy data - Replace with actual data from your ViewModel
-    val dummyGroups = listOf(
-        "Weekend Trip" to "group1",
-        "House Expenses" to "group2",
-        "Movie Night" to "group3"
-    )
-
-    val dummyUsers = listOf(
-        "John Doe" to "user1",
-        "Jane Smith" to "user2",
-        "Mike Johnson" to "user3"
-    )
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Add New Expense") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(lDimens.dp16),
-            verticalArrangement = Arrangement.spacedBy(lDimens.dp16)
-        ) {
-            // Amount Input with Currency Symbol
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(lDimens.dp16),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "Enter Amount",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(lDimens.dp8))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            "₹",
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier = Modifier.padding(end = lDimens.dp8)
-                        )
-                        OutlinedTextField(
-                            value = amount,
-                            onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) amount = it },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            placeholder = { Text("0.00") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                    }
-                }
-            }
-
-            // Description Input
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
-                placeholder = { Text("What's this expense for?") },
-                leadingIcon = {
-                    Image(
-                        painter = painterResource(Res.drawable.description_icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(lDimens.dp48)
-                            .padding(horizontal = lDimens.dp12),
-                        contentScale = ContentScale.Fit
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            // Paid By Selection
-            ExposedDropdownMenuBox(
-                expanded = showPayerDropdown,
-                onExpandedChange = { showPayerDropdown = it }
-            ) {
-                ExposedDropdownMenu(
-                    expanded = showPayerDropdown,
-                    onDismissRequest = { showPayerDropdown = false }
-                ) {
-                    dummyUsers.forEach { (name, id) ->
-                        DropdownMenuItem(
-                            text = { Text(name) },
-                            onClick = {
-                                selectedPayer = id
-                                showPayerDropdown = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Split Options Card
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(lDimens.dp16)
-                ) {
-                    Text(
-                        "Split Equally Between",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(lDimens.dp8))
-                    dummyUsers.forEach { (name, _) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = lDimens.dp4),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(name)
-                            if (!amount.isNullOrEmpty()) {
-                                Text("₹${(amount.toDoubleOrNull()?.div(dummyUsers.size) ?: 0.0).toString().take(5)}")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Add Expense Button
-            Button(
-                onClick = {
-                    if (amount.isNotEmpty() && description.isNotEmpty() && selectedGroup != null && selectedPayer != null) {
-                        val expenseAmount = amount.toDoubleOrNull() ?: 0.0
-                        val splitAmount = expenseAmount / dummyUsers.size
-
-                        val expense = Expense(
-                            expenseId = Clock.System.now().toEpochMilliseconds().toString(),
-                            groupId = selectedGroup!!,
-                            description = description,
-                            amount = expenseAmount,
-                            paidByUserId = selectedPayer!!,
-//                            createdAt = Clock.System.now(),
-                            splits = dummyUsers.map { (_, userId) ->
-                                ExpenseSplit(
-                                    userId = userId,
-                                    amount = splitAmount,
-                                    settled = false,
-                                    phoneNumber = ""
-                                )
-                            }
-                        )
-                        onExpenseAdded(expense)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = amount.isNotEmpty() && description.isNotEmpty() &&
-                        selectedGroup != null && selectedPayer != null
-            ) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.padding(end = lDimens.dp8))
-                Text("Add Expense")
-            }
-        }
-    }
+private fun formatAmount(amount: Double): String {
+    return ((amount * 100).toInt() / 100.0).toString()
 }
