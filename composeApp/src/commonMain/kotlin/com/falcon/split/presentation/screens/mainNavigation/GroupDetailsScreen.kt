@@ -1,208 +1,262 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.falcon.split.contact.ContactManager
-import com.falcon.split.presentation.group.GroupState
-import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.data.network.models_app.Expense
+import com.falcon.split.data.network.models_app.ExpenseSplit
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
 import com.falcon.split.data.network.models_app.SettlementStatus
 import com.falcon.split.presentation.expense.ExpenseState
+import com.falcon.split.presentation.group.GroupState
+import com.falcon.split.presentation.group.GroupViewModel
+import com.falcon.split.presentation.theme.CurrencyDisplay
+import com.falcon.split.presentation.theme.LocalSplitColors
+import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.userManager.UserManager
 import com.falcon.split.utils.MemberNameResolver
-import io.ktor.http.HttpHeaders.Date
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
+import split.composeapp.generated.resources.Res
+import split.composeapp.generated.resources.group_icon_filled
 
-
-sealed class TimelineItem {
-    data class ExpenseItem(val expense: Expense) : TimelineItem()
-    data class SettlementItem(val settlement: Settlement) : TimelineItem()
+enum class GroupDetailsTab(val icon: ImageVector, val title: String) {
+    EXPENSES(Icons.Default.ThumbUp, "Expenses"),
+    BALANCES(Icons.Default.ThumbUp, "Balances"),
+    SETTLEMENTS(Icons.Default.ThumbUp, "Settlements")
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
 fun GroupDetailsScreen(
     groupId: String,
-    viewModel: GroupViewModel,
-    contactManager: ContactManager?,
     onNavigateBack: () -> Unit,
     navControllerMain: NavHostController,
+    contactManager: ContactManager?,
+    viewModel: GroupViewModel,
     userManager: UserManager
 ) {
-    var showOptionsMenu by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    val pagerState = rememberPagerState { 3 } // 3 pages: expenses, balances, and requests
+    val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
 
-    // Load data immediately when screen is mounted
-    LaunchedEffect(groupId) {
-        // Start loading operations
-        viewModel.loadGroupDetails(groupId)
-        viewModel.loadGroupExpenses(groupId)
-        viewModel.loadSettlementHistory(groupId)
-        viewModel.loadPendingSettlements()
-    }
-
+    // State
     val groupState by viewModel.groupState.collectAsState()
     val expenseState by viewModel.expenseState.collectAsState()
     val settlementState by viewModel.settlementState.collectAsState()
     val settlements by viewModel.settlements.collectAsState()
     val pendingSettlements by viewModel.pendingSettlements.collectAsState()
 
+    // Options menu state
+    var showOptionsMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Tab state
+    val pagerState = rememberPagerState(pageCount = { GroupDetailsTab.values().size })
+    val currentTab = GroupDetailsTab.values()[pagerState.currentPage]
+
+    // Count pending settlements for badge
+    val pendingSettlementsCount = pendingSettlements.count { it.toUserId == viewModel.currentUserId }
+
+    // Load data when screen is mounted
+    LaunchedEffect(groupId) {
+        viewModel.loadGroupDetails(groupId)
+        viewModel.loadGroupExpenses(groupId)
+        viewModel.loadSettlementHistory(groupId)
+        viewModel.loadPendingSettlements()
+    }
+
+    // Create MemberNameResolver
+    val nameResolver = remember { MemberNameResolver(contactManager) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    when (groupState) {
-                        is GroupState.GroupDetailSuccess -> Text((groupState as GroupState.GroupDetailSuccess).group.name)
-                        else -> Text("Group Details")
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showOptionsMenu = true }) {
-                        Icon(Icons.Default.MoreVert, "More options")
-                    }
-                }
+            GroupDetailsTopBar(
+                groupState = groupState,
+                onNavigateBack = onNavigateBack,
+                onShowOptions = { showOptionsMenu = true }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navControllerMain.navigate("create_expense?groupId=$groupId")
-                }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Expense")
-            }
+            GroupDetailsFAB(
+                currentTab = currentTab,
+                onAddExpense = { navControllerMain.navigate("create_expense?groupId=$groupId") }
+            )
         }
     ) { padding ->
-        // Show a fullscreen loading indicator if we don't have any group data yet
-        if (groupState is GroupState.Loading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            // Once we have group data, show the group details with pager
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             when (groupState) {
+                is GroupState.Loading -> {
+                    LoadingView()
+                }
+
+                is GroupState.Error -> {
+                    ErrorView(
+                        message = (groupState as GroupState.Error).message,
+                        onRetry = { viewModel.loadGroupDetails(groupId) }
+                    )
+                }
+
                 is GroupState.GroupDetailSuccess -> {
                     val group = (groupState as GroupState.GroupDetailSuccess).group
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    ) {
-                        // Fixed top section (always visible)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Group summary card
                         GroupSummaryCard(
-                            totalAmount = group.totalAmount ?: 0.0,
-                            expenseCount = group.expenses.size,
-                            memberCount = group.members.size,
-                            modifier = Modifier.padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                            group = group,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
 
-                        // Tabs
+                        // Tab row
                         TabRow(
-                            selectedTabIndex = pagerState.currentPage
+                            selectedTabIndex = pagerState.currentPage,
+                            indicator = { tabPositions ->
+                                TabRowDefaults.Indicator(
+                                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                    color = colors.primary
+                                )
+                            }
                         ) {
-                            Tab(
-                                selected = pagerState.currentPage == 0,
-                                onClick = {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(0)
-                                    }
-                                },
-                                text = { Text("EXPENSES") }
-                            )
-                            Tab(
-                                selected = pagerState.currentPage == 1,
-                                onClick = {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(1)
-                                    }
-                                },
-                                text = { Text("BALANCES") }
-                            )
-                            Tab(
-                                selected = pagerState.currentPage == 2,
-                                onClick = {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(2)
-                                    }
-                                },
-                                text = { Text("REQUESTS") }
-                            )
+                            GroupDetailsTab.values().forEachIndexed { index, tab ->
+                                Tab(
+                                    selected = pagerState.currentPage == index,
+                                    onClick = {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                    },
+                                    text = {
+                                        if (tab == GroupDetailsTab.SETTLEMENTS && pendingSettlementsCount > 0) {
+                                            BadgedBox(
+                                                badge = {
+                                                    Badge {
+                                                        Text(pendingSettlementsCount.toString())
+                                                    }
+                                                }
+                                            ) {
+                                                Text(tab.title)
+                                            }
+                                        } else {
+                                            Text(tab.title)
+                                        }
+                                    },
+                                    icon = { Icon(tab.icon, contentDescription = null) }
+                                )
+                            }
                         }
 
                         // Pager content
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = lDimens.dp8)
+                            modifier = Modifier.weight(1f)
                         ) { page ->
                             when (page) {
-                                0 -> GroupExpensesPage(
+                                0 -> ExpensesTab(
                                     expenseState = expenseState,
                                     group = group,
-                                    contactManager = contactManager,
-                                    settlements = settlements
+                                    nameResolver = nameResolver
                                 )
-                                1 -> GroupBalancesPage(
+
+                                1 -> BalancesTab(
                                     group = group,
-                                    contactManager = contactManager,
-                                    pendingSettlements = pendingSettlements,
-                                    settlements = settlements,
+                                    currentUserId = viewModel.currentUserId ?: "",
+                                    nameResolver = nameResolver,
                                     onSettleUp = { toUserId, amount ->
-                                        viewModel.settleBalance(groupId, toUserId, amount)
-                                    },
-                                    settlementState = settlementState,
-                                    onResetSettlementState = {
-                                        viewModel.resetSettlementState()
-                                    },
-                                    userManager = userManager
+                                        viewModel.settleBalance(group.id, toUserId, amount)
+                                    }
                                 )
-                                2 -> SettlementRequestsPage(
+
+                                2 -> SettlementsTab(
                                     pendingSettlements = pendingSettlements,
-                                    contactManager = contactManager,
+                                    settlementHistory = settlements,
+                                    currentUserId = viewModel.currentUserId ?: "",
+                                    nameResolver = nameResolver,
                                     onApprove = { settlementId ->
                                         viewModel.approveSettlement(settlementId)
                                     },
@@ -215,321 +269,428 @@ fun GroupDetailsScreen(
                     }
                 }
 
-                is GroupState.Error -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .padding(lDimens.dp16),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text((groupState as GroupState.Error).message)
-                        Spacer(modifier = Modifier.height(lDimens.dp16))
-                        Button(onClick = { viewModel.loadGroupDetails(groupId) }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-
                 else -> {
-                    // This branch should rarely be hit since we check for Loading earlier
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    // Unexpected state, show loading
+                    LoadingView()
                 }
             }
-        }
 
-        // Options Menu
-        DropdownMenu(
-            expanded = showOptionsMenu,
-            onDismissRequest = { showOptionsMenu = false }
+            // Options Menu
+            if (showOptionsMenu) {
+                GroupOptionsMenu(
+                    onDismiss = { showOptionsMenu = false },
+                    onDelete = {
+                        showOptionsMenu = false
+                        showDeleteDialog = true
+                    }
+                )
+            }
+
+            // Delete Confirmation Dialog
+            if (showDeleteDialog) {
+                DeleteConfirmationDialog(
+                    onConfirm = {
+                        showDeleteDialog = false
+                        viewModel.deleteGroup(groupId)
+                        onNavigateBack()
+                    },
+                    onDismiss = { showDeleteDialog = false }
+                )
+            }
+
+            // Settlement Success/Error Dialog
+            when (settlementState) {
+                is SettlementState.Success -> {
+                    SettlementResultDialog(
+                        success = true,
+                        message = "Operation completed successfully.",
+                        onDismiss = { viewModel.resetSettlementState() }
+                    )
+                }
+
+                is SettlementState.Error -> {
+                    SettlementResultDialog(
+                        success = false,
+                        message = (settlementState as SettlementState.Error).message,
+                        onDismiss = { viewModel.resetSettlementState() }
+                    )
+                }
+
+                else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(color = LocalSplitColors.current.primary)
+    }
+}
+
+@Composable
+fun ErrorView(
+    message: String,
+    onRetry: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Something went wrong",
+            style = MaterialTheme.typography.titleLarge,
+            color = colors.textPrimary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.textSecondary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.primary,
+                contentColor = Color.White
+            )
         ) {
-            DropdownMenuItem(
-                text = { Text("Share Group") },
-                onClick = {
-                    showOptionsMenu = false
-                },
-                leadingIcon = {
-                    Icon(Icons.Default.Share, "Share Group")
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text("Delete Group", color = MaterialTheme.colorScheme.error) },
-                onClick = {
-                    showOptionsMenu = false
-                    showDeleteDialog = true
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Delete,
-                        "Delete Group",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            )
-        }
-
-        // Delete Confirmation Dialog
-        if (showDeleteDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
-                title = { Text("Delete Group") },
-                text = { Text("Are you sure you want to delete this group? This action cannot be undone.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteDialog = false
-                            viewModel.deleteGroup(groupId)
-                            onNavigateBack()
-                        }
-                    ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-
-        // Settlement Success/Error Dialog
-        when (settlementState) {
-            is SettlementState.Success -> {
-                AlertDialog(
-                    onDismissRequest = { viewModel.resetSettlementState() },
-                    title = { Text("Success") },
-                    text = { Text("Operation completed successfully.") },
-                    confirmButton = {
-                        TextButton(onClick = { viewModel.resetSettlementState() }) {
-                            Text("OK")
-                        }
-                    }
-                )
-            }
-            is SettlementState.Error -> {
-                AlertDialog(
-                    onDismissRequest = { viewModel.resetSettlementState() },
-                    title = { Text("Error") },
-                    text = { Text((settlementState as SettlementState.Error).message) },
-                    confirmButton = {
-                        TextButton(onClick = { viewModel.resetSettlementState() }) {
-                            Text("OK")
-                        }
-                    }
-                )
-            }
-            else -> {}
+            Text("Retry")
         }
     }
 }
 
+@ExperimentalMaterial3Api
+@Composable
+fun GroupDetailsTopBar(
+    groupState: GroupState,
+    onNavigateBack: () -> Unit,
+    onShowOptions: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    androidx.compose.material3.TopAppBar(
+        title = {
+            Text(
+                when (groupState) {
+                    is GroupState.GroupDetailSuccess -> (groupState as GroupState.GroupDetailSuccess).group.name
+                    else -> "Group Details"
+                },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(Icons.Default.ArrowBack, "Back")
+            }
+        },
+        actions = {
+            IconButton(onClick = onShowOptions) {
+                Icon(Icons.Default.MoreVert, "More options")
+            }
+        },
+        colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+            containerColor = colors.backgroundSecondary,
+            titleContentColor = colors.textPrimary,
+            navigationIconContentColor = colors.textPrimary,
+            actionIconContentColor = colors.textPrimary
+        )
+    )
+}
 
 @Composable
-fun GroupExpensesPage(
-    expenseState: ExpenseState,
-    group: Group,
-    contactManager: ContactManager?,
-    settlements: List<Settlement>
+fun GroupDetailsFAB(
+    currentTab: GroupDetailsTab,
+    onAddExpense: () -> Unit
 ) {
-    val nameResolver = remember { MemberNameResolver(contactManager) }
+    val colors = LocalSplitColors.current
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = lDimens.dp16),
-        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
-    ) {
-        item {
-            Text(
-                "Expenses & Settlements",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = lDimens.dp8)
+    when (currentTab) {
+        GroupDetailsTab.EXPENSES -> {
+            // Add Expense FAB
+            FloatingActionButton(
+                onClick = onAddExpense,
+                containerColor = colors.primary,
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 8.dp
+                )
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Expense")
+            }
+        }
+
+        GroupDetailsTab.BALANCES -> {
+            // Settle Up FAB
+            ExtendedFloatingActionButton(
+                onClick = onAddExpense, // For now, still navigate to add expense
+                containerColor = colors.primary,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.ThumbUp, contentDescription = null) },
+                text = { Text("Settle Up") },
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 8.dp
+                )
             )
         }
 
-        when (expenseState) {
-            is ExpenseState.Loading -> {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            }
-            is ExpenseState.Error -> {
-                item {
-                    Text(
-                        "Error loading expenses: ${expenseState.message}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            is ExpenseState.Success -> {
-                val expenses = expenseState.expenses
-                if (expenses.isEmpty() && settlements.isEmpty()) {
-                    item {
-                        Text(
-                            "No expenses or settlements yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    // Combine expenses and settlements into a timeline, sorted by most recent first
-                    val timelineItems = mutableListOf<TimelineItem>()
+        GroupDetailsTab.SETTLEMENTS -> {
+            // No FAB for settlements tab
+        }
+    }
+}
 
-                    expenses.forEach { expense ->
-                        timelineItems.add(TimelineItem.ExpenseItem(expense))
-                    }
+@Composable
+fun GroupOptionsMenu(
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val colors = LocalSplitColors.current
 
-                    settlements.forEach { settlement ->
-                        timelineItems.add(TimelineItem.SettlementItem(settlement))
-                    }
-
-                    // Sort by most recent first (assuming there's a timestamp field in both)
-                    val sortedItems = timelineItems.sortedByDescending {
-                        when (it) {
-                            is TimelineItem.ExpenseItem -> Clock.System.now().toEpochMilliseconds()
-                            is TimelineItem.SettlementItem -> it.settlement.timestamp
-                        }
-                    }
-
-                    items(sortedItems) { item ->
-                        when (item) {
-                            is TimelineItem.ExpenseItem -> {
-                                ExpenseCard(
-                                    expense = item.expense,
-                                    group = group,
-                                    nameResolver = nameResolver
-                                )
-                            }
-                            is TimelineItem.SettlementItem -> {
-                                SettlementCard(
-                                    settlement = item.settlement,
-                                    nameResolver = nameResolver
-                                )
-                            }
-                        }
-                    }
-                }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .padding(top = 56.dp, end = 8.dp),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        Surface(
+            color = colors.cardBackground,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .width(200.dp)
+                .padding(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                MenuItem(
+                    text = "Delete Group",
+                    icon = Icons.Default.Delete,
+                    iconTint = colors.error,
+                    textColor = colors.error,
+                    onClick = onDelete
+                )
             }
         }
     }
 }
 
-
 @Composable
-fun GroupBalancesPage(
-    group: Group,
-    contactManager: ContactManager?,
-    pendingSettlements: List<Settlement>,
-    settlements: List<Settlement>,
-    onSettleUp: (toUserId: String, amount: Double) -> Unit,
-    settlementState: SettlementState,
-    onResetSettlementState: () -> Unit,
-    userManager: UserManager
+fun MenuItem(
+    text: String,
+    icon: ImageVector,
+    iconTint: Color,
+    textColor: Color,
+    onClick: () -> Unit
 ) {
-    val nameResolver = remember { MemberNameResolver(contactManager) }
-    val currentUserId = userManager.getCurrentUserId()
-
-    var showSettleDialog by remember { mutableStateOf(false) }
-    var selectedMember by remember { mutableStateOf<GroupMember?>(null) }
-    var selectedAmount by remember { mutableStateOf(0.0) }
-
-    // Find the current user's member entry
-    val currentUserMember = group.members.find { it.userId == currentUserId }
-
-    LazyColumn(
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = lDimens.dp16),
-        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .padding(8.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text(
-                "Individual Balances",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = lDimens.dp8)
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(24.dp)
+        )
 
-        if (currentUserMember == null) {
-            item {
-                Text(
-                    "You're not a member of this group",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-        } else {
-            // Show individual balances for each member
-            items(group.members) { member ->
-                if (member.userId != currentUserId) {
-                    // Get the balance between current user and this member
-                    val balance = currentUserMember.individualBalances[member.userId] ?: 0.0
-                    val displayName = nameResolver.resolveDisplayName(member)
-
-                    // Check for pending settlements - properly check both collections
-                    val hasPendingSettlement = pendingSettlements.any {
-                        it.fromUserId == currentUserId &&
-                                it.toUserId == member.userId &&
-                                it.status == SettlementStatus.PENDING
-                    }
-
-                    // For approved settlements or zero balance
-                    val isSettled = balance >= 0 || settlements.any {
-                        it.fromUserId == currentUserId &&
-                                it.toUserId == member.userId &&
-                                it.status == SettlementStatus.APPROVED
-                    }
-
-                    IndividualBalanceCard(
-                        memberName = displayName,
-                        balance = balance,
-                        hasPendingSettlement = hasPendingSettlement,
-                        isSettled = isSettled,
-                        onSettleUp = {
-                            if (balance < 0 && !hasPendingSettlement && !isSettled) {
-                                selectedMember = member
-                                selectedAmount = -balance
-                                showSettleDialog = true
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    // Settle Up Dialog
-    if (showSettleDialog && selectedMember != null) {
-        SettleUpDialog(
-            memberName = nameResolver.resolveDisplayName(selectedMember!!),
-            initialAmount = selectedAmount,
-            onDismiss = { showSettleDialog = false },
-            onConfirm = { amount ->
-                onSettleUp(selectedMember!!.userId!!, amount)
-                showSettleDialog = false
-            }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = textColor
         )
     }
 }
 
+@Composable
+fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Group") },
+        text = { Text("Are you sure you want to delete this group? This action cannot be undone.") },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm
+            ) {
+                Text("Delete", color = colors.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun SettlementResultDialog(
+    success: Boolean,
+    message: String,
+    onDismiss: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (success) "Success" else "Error",
+                color = if (success) colors.success else colors.error
+            )
+        },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK")
+            }
+        }
+    )
+}
+
+@Composable
+fun GroupSummaryCard(
+    group: Group,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalSplitColors.current
+
+    SplitCard(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                "Total Expenses",
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.textSecondary
+            )
+
+            Text(
+                "₹${group.totalAmount ?: 0.0}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = colors.primary,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("${group.expenses.size} expenses")
+                Text("${group.members.size} members")
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpensesTab(
+    expenseState: ExpenseState,
+    group: Group,
+    nameResolver: MemberNameResolver
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        when (expenseState) {
+            is ExpenseState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = LocalSplitColors.current.primary
+                )
+            }
+
+            is ExpenseState.Error -> {
+                Text(
+                    text = "Error loading expenses: ${expenseState.message}",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = LocalSplitColors.current.error,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            is ExpenseState.Success -> {
+                val expenses = expenseState.expenses
+
+                if (expenses.isEmpty()) {
+                    EmptyState(
+                        title = "No expenses yet",
+                        message = "Add an expense to get started",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                } else {
+                    // Group expenses by date
+                    val groupedExpenses = expenses.groupBy {
+                        formatDateHeader(it.expenseId.toLongOrNull() ?: 0L)
+                    }
+
+                    LazyColumn(
+                        contentPadding = PaddingValues(bottom = 80.dp), // Space for FAB
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        groupedExpenses.forEach { (date, expensesForDate) ->
+                            item {
+                                Text(
+                                    text = date,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = LocalSplitColors.current.textSecondary,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+
+                            items(expensesForDate) { expense ->
+                                ExpenseCard(
+                                    expense = expense,
+                                    group = group,
+                                    nameResolver = nameResolver
+                                )
+                            }
+                        }
+
+                        // Bottom spacer for FAB
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun ExpenseCard(
@@ -537,13 +698,13 @@ fun ExpenseCard(
     group: Group,
     nameResolver: MemberNameResolver
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = lDimens.dp4)
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(lDimens.dp16)
+            modifier = Modifier.padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -551,16 +712,17 @@ fun ExpenseCard(
             ) {
                 Text(
                     expense.description,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    "₹${expense.amount}",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = colors.textPrimary
+                )
+
+                CurrencyDisplay(
+                    amount = expense.amount,
+                    isIncome = true
                 )
             }
 
-            Spacer(modifier = Modifier.height(lDimens.dp4))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Find the member who paid
             val paidByMember = group.members.find { it.userId == expense.paidByUserId }
@@ -573,155 +735,442 @@ fun ExpenseCard(
             Text(
                 "Paid by $payerName",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = colors.textSecondary
             )
 
-            // Date if available
-//            expense.timestamp?.let {
-//                Text(
-//                    formatDate(it),
-//                    style = MaterialTheme.typography.bodySmall,
-//                    color = MaterialTheme.colorScheme.onSurfaceVariant
-//                )
-//            }
+            // Show date if available
+            Text(
+                formatDateTime(expense.expenseId.toLongOrNull() ?: 0L),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.textSecondary
+            )
         }
     }
 }
 
-
 @Composable
-fun SettlementCard(
-    settlement: Settlement,
-    nameResolver: MemberNameResolver
+fun BalancesTab(
+    group: Group,
+    currentUserId: String,
+    nameResolver: MemberNameResolver,
+    onSettleUp: (toUserId: String, amount: Double) -> Unit
 ) {
-    Card(
+    var showSettleDialog by remember { mutableStateOf(false) }
+    var selectedMember by remember { mutableStateOf<GroupMember?>(null) }
+
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = lDimens.dp4),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(lDimens.dp16)
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 80.dp), // Space for FAB
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            // Current user's balance overview
+            item {
                 Text(
-                    "Settlement",
-                    style = MaterialTheme.typography.titleMedium
+                    "Your Balance",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                 )
+
+                val currentUserMember = group.members.find { it.userId == currentUserId }
+                if (currentUserMember != null) {
+                    UserBalanceCard(
+                        member = currentUserMember,
+                        isCurrentUser = true,
+                        nameResolver = nameResolver
+                    )
+                }
+            }
+
+            // Other members' balances
+            item {
                 Text(
-                    "₹${settlement.amount}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.secondary
+                    "Group Members",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(lDimens.dp4))
+            // List all members except current user
+            val otherMembers = group.members.filter { it.userId != currentUserId }
+            items(otherMembers) { member ->
+                val currentUserBalance = group.members
+                    .find { it.userId == currentUserId }
+                    ?.individualBalances
+                    ?.get(member.userId) ?: 0.0
 
-            Text(
-                "${settlement.fromUserName ?: "Unknown"} paid ${settlement.toUserName ?: "Unknown"}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                MemberBalanceCard(
+                    member = member,
+                    currentUserBalance = currentUserBalance,
+                    nameResolver = nameResolver,
+                    onSettleUp = {
+                        selectedMember = member
+                        showSettleDialog = true
+                    }
+                )
+            }
 
-            Text(
-                formatDate(settlement.timestamp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Bottom spacer for FAB
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
         }
+    }
+
+    // Settle up dialog
+    if (showSettleDialog && selectedMember != null) {
+        val balance = group.members
+            .find { it.userId == currentUserId }
+            ?.individualBalances
+            ?.get(selectedMember!!.userId) ?: 0.0
+
+        SettleUpDialog(
+            memberName = nameResolver.resolveDisplayName(selectedMember!!),
+            amount = kotlin.math.abs(balance),
+            onDismiss = { showSettleDialog = false },
+            onConfirm = { amount ->
+                onSettleUp(selectedMember!!.userId!!, amount)
+                showSettleDialog = false
+            }
+        )
     }
 }
 
-
 @Composable
-fun IndividualBalanceCard(
-    memberName: String,
-    balance: Double,
-    hasPendingSettlement: Boolean = false,
-    isSettled: Boolean = false,
+fun UserBalanceCard(
+    member: GroupMember,
+    isCurrentUser: Boolean,
+    nameResolver: MemberNameResolver
+) {
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                nameResolver.resolveDisplayName(member),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.textPrimary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Balance
+                Column {
+                    Text(
+                        "Total Balance",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+
+                    CurrencyDisplay(
+                        amount = member.balance,
+                        isIncome = member.balance >= 0,
+                        large = true
+                    )
+                }
+
+                // Status indicator
+                Surface(
+                    color = when {
+                        member.balance > 0 -> colors.success.copy(alpha = 0.1f)
+                        member.balance < 0 -> colors.error.copy(alpha = 0.1f)
+                        else -> colors.textSecondary.copy(alpha = 0.1f)
+                    },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        when {
+                            member.balance > 0 -> "You are owed"
+                            member.balance < 0 -> "You owe"
+                            else -> "All settled up"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = when {
+                            member.balance > 0 -> colors.success
+                            member.balance < 0 -> colors.error
+                            else -> colors.textSecondary
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+fun MemberBalanceCard(
+    member: GroupMember,
+    currentUserBalance: Double,
+    nameResolver: MemberNameResolver,
     onSettleUp: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = lDimens.dp4)
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(lDimens.dp16),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left side: Member info and balance
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    nameResolver.resolveDisplayName(member),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary
+                )
+
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                    if (currentUserBalance < 0) {
+                        Text(
+                            "You owe",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.error
+                        )
+                    } else if (currentUserBalance > 0) {
+                        Text(
+                            "Owes you",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.success
+                        )
+                    } else {
+                        Text(
+                            "Settled up",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.textSecondary
+                        )
+                    }
+
+                    CurrencyDisplay(
+                        amount = kotlin.math.abs(currentUserBalance),
+                        isIncome = currentUserBalance > 0
                     )
-                    Spacer(modifier = Modifier.width(lDimens.dp8))
+                }
+            }
+
+            // Settle button only if current user owes this member
+            if (currentUserBalance < 0) {
+                Button(
+                    onClick = onSettleUp,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.primary,
+                        contentColor = Color.White
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Text("Settle Up")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SettlementsTab(
+    pendingSettlements: List<Settlement>,
+    settlementHistory: List<Settlement>,
+    currentUserId: String,
+    nameResolver: MemberNameResolver,
+    onApprove: (String) -> Unit,
+    onDecline: (String) -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    // Filter settlements
+    val incomingRequests = pendingSettlements.filter { it.toUserId == currentUserId && it.status == SettlementStatus.PENDING }
+    val outgoingRequests = pendingSettlements.filter { it.fromUserId == currentUserId && it.status == SettlementStatus.PENDING }
+    val completedSettlements = settlementHistory.filter { it.status != SettlementStatus.PENDING }
+
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Pending Requests Section (people requesting money from you)
+        item {
+            Text(
+                "Requests For You",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+        }
+
+        if (incomingRequests.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "No pending requests",
+                    message = "You don't have any payment requests to approve",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        } else {
+            items(incomingRequests) { settlement ->
+                PendingSettlementCard(
+                    settlement = settlement,
+                    isIncoming = true,
+                    onApprove = { onApprove(settlement.id) },
+                    onDecline = { onDecline(settlement.id) }
+                )
+            }
+        }
+
+        // Your Pending Requests Section (your requests to others)
+        item {
+            Text(
+                "Your Pending Requests",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+            )
+        }
+
+        if (outgoingRequests.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "No outgoing requests",
+                    message = "You haven't requested any payments yet",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        } else {
+            items(outgoingRequests) { settlement ->
+                PendingSettlementCard(
+                    settlement = settlement,
+                    isIncoming = false,
+                    onApprove = null,
+                    onDecline = null
+                )
+            }
+        }
+
+        // Settlement History Section
+        item {
+            Text(
+                "Settlement History",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+            )
+        }
+
+        if (completedSettlements.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "No settlement history",
+                    message = "Past settlements will appear here",
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        } else {
+            items(completedSettlements) { settlement ->
+                SettlementHistoryCard(settlement = settlement)
+            }
+        }
+
+        // Bottom spacer
+        item {
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+}
+
+@Composable
+fun PendingSettlementCard(
+    settlement: Settlement,
+    isIncoming: Boolean,
+    onApprove: (() -> Unit)?,
+    onDecline: (() -> Unit)?
+) {
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        memberName,
-                        style = MaterialTheme.typography.titleMedium
+                        if (isIncoming) "Payment Request" else "Your Request",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
+                    )
+
+                    Text(
+                        if (isIncoming)
+                            "${settlement.fromUserName ?: "Someone"} requested payment"
+                        else
+                            "Requested from ${settlement.toUserName ?: "someone"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+
+                    Text(
+                        formatDateTime(settlement.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary
                     )
                 }
 
-                Spacer(modifier = Modifier.height(lDimens.dp4))
-
-                Text(
-                    when {
-                        balance > 0 -> "Owes you ₹$balance"
-                        balance < 0 -> "You owe ₹${-balance}"
-                        else -> "Settled"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = when {
-                        balance > 0 -> Color.Green
-                        balance < 0 -> Color.Red
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                CurrencyDisplay(
+                    amount = settlement.amount,
+                    isIncome = false
                 )
             }
 
-            // Right side: Action button or status indicator
-            when {
-                // Case 1: There's a pending settlement request
-                hasPendingSettlement -> {
-                    StatusIndicator(
-                        text = "Pending",
-                        icon = Icons.Default.Lock,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-                // Case 2: The balance is settled
-                isSettled -> {
-                    StatusIndicator(
-                        text = "Settled",
-                        icon = Icons.Default.Check,
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                        contentColor = MaterialTheme.colorScheme.secondary
-                    )
-                }
-                // Case 3: User needs to settle up
-                else -> {
+            // Action buttons for incoming requests
+            if (isIncoming && onApprove != null && onDecline != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Button(
-                        onClick = onSettleUp,
+                        onClick = onDecline,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = colors.cardBackground,
+                            contentColor = colors.error
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Decline")
+                    }
+
+                    Button(
+                        onClick = onApprove,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.primary,
+                            contentColor = Color.White
                         )
                     ) {
-                        Text("Settle Up")
+                        Text("Approve")
                     }
                 }
             }
@@ -730,47 +1179,86 @@ fun IndividualBalanceCard(
 }
 
 @Composable
-private fun StatusIndicator(
-    text: String,
-    icon: ImageVector,
-    containerColor: Color,
-    contentColor: Color
+fun SettlementHistoryCard(
+    settlement: Settlement
 ) {
-    Surface(
-        color = containerColor,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.height(36.dp)
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(lDimens.dp16),
-                tint = contentColor
-            )
-            Text(
-                text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary
+                )
+
+                Text(
+                    formatDateTime(settlement.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CurrencyDisplay(
+                    amount = settlement.amount,
+                    isIncome = false
+                )
+
+                // Status indicator
+                Surface(
+                    color = when (settlement.status) {
+                        SettlementStatus.APPROVED -> colors.success.copy(alpha = 0.1f)
+                        SettlementStatus.DECLINED -> colors.error.copy(alpha = 0.1f)
+                        else -> colors.textSecondary.copy(alpha = 0.1f)
+                    },
+                    shape = CircleShape,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            when (settlement.status) {
+                                SettlementStatus.APPROVED -> Icons.Default.Check
+                                SettlementStatus.DECLINED -> Icons.Default.Close
+                                else -> Icons.Default.MoreVert
+                            },
+                            contentDescription = null,
+                            tint = when (settlement.status) {
+                                SettlementStatus.APPROVED -> colors.success
+                                SettlementStatus.DECLINED -> colors.error
+                                else -> colors.textSecondary
+                            },
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettleUpDialog(
     memberName: String,
-    initialAmount: Double,
+    amount: Double,
     onDismiss: () -> Unit,
     onConfirm: (Double) -> Unit
 ) {
-    var amount by remember { mutableStateOf(initialAmount.toString()) }
+    val colors = LocalSplitColors.current
+    var settlementAmount by remember { mutableStateOf(amount.toString()) }
     var isValidAmount by remember { mutableStateOf(true) }
 
     AlertDialog(
@@ -782,32 +1270,30 @@ fun SettleUpDialog(
                     "How much are you settling?",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                Spacer(modifier = Modifier.height(lDimens.dp16))
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = amount,
+                    value = settlementAmount,
                     onValueChange = {
-                        amount = it
+                        settlementAmount = it
                         isValidAmount = try {
                             val amountValue = it.toDouble()
-                            amountValue > 0 && amountValue <= initialAmount
+                            amountValue > 0 && amountValue <= amount
                         } catch (e: Exception) {
                             false
                         }
                     },
                     label = { Text("Amount") },
                     prefix = { Text("₹") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal
-                    ),
                     isError = !isValidAmount,
                     singleLine = true
                 )
 
                 if (!isValidAmount) {
                     Text(
-                        "Please enter a valid amount (maximum ₹$initialAmount)",
-                        color = MaterialTheme.colorScheme.error,
+                        "Please enter a valid amount (maximum ₹$amount)",
+                        color = colors.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -817,15 +1303,15 @@ fun SettleUpDialog(
             TextButton(
                 onClick = {
                     try {
-                        val amountValue = amount.toDouble()
-                        if (amountValue > 0 && amountValue <= initialAmount) {
+                        val amountValue = settlementAmount.toDouble()
+                        if (amountValue > 0 && amountValue <= amount) {
                             onConfirm(amountValue)
                         }
                     } catch (e: Exception) {
                         // Invalid amount format
                     }
                 },
-                enabled = isValidAmount && amount.isNotEmpty()
+                enabled = isValidAmount && settlementAmount.isNotEmpty()
             ) {
                 Text("Settle")
             }
@@ -838,184 +1324,84 @@ fun SettleUpDialog(
     )
 }
 
-
-fun formatDate(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    val month = localDateTime.month.name.take(3)
-    val day = localDateTime.dayOfMonth.toString().padStart(2, '0')
-    val year = localDateTime.year
-    val hour = localDateTime.hour.toString().padStart(2, '0')
-    val minute = localDateTime.minute.toString().padStart(2, '0')
-
-    return "$month $day, $year - $hour:$minute"
-}
-
 @Composable
-fun GroupSummaryCard(
-    totalAmount: Double,
-    expenseCount: Int,
-    memberCount: Int,
+fun EmptyState(
+    title: String,
+    message: String,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(lDimens.dp16)
-        ) {
-            Text(
-                "Total Expenses",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                "₹$totalAmount",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = lDimens.dp8),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("$expenseCount expenses")
-                Text("$memberCount members")
-            }
-        }
-    }
-}
+    val colors = LocalSplitColors.current
 
-
-@Composable
-fun SettlementRequestsPage(
-    pendingSettlements: List<Settlement>,
-    contactManager: ContactManager?,
-    onApprove: (String) -> Unit,
-    onDecline: (String) -> Unit
-) {
-    val nameResolver = remember { MemberNameResolver(contactManager) }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = lDimens.dp16),
-        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
-    ) {
-        item {
-            Text(
-                "Pending Settlement Requests",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(vertical = lDimens.dp8)
-            )
-        }
-
-        if (pendingSettlements.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(lDimens.dp32),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No pending requests",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        } else {
-            items(pendingSettlements) { settlement ->
-                SettlementRequestCard(
-                    settlement = settlement,
-                    contactManager = contactManager,
-                    onApprove = { onApprove(settlement.id) },
-                    onDecline = { onDecline(settlement.id) }
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-fun SettlementRequestCard(
-    settlement: Settlement,
-    contactManager: ContactManager?,
-    onApprove: () -> Unit,
-    onDecline: () -> Unit
-) {
-    val nameResolver = remember { MemberNameResolver(contactManager) }
-
-    Card(
-        modifier = Modifier
+    Column(
+        modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = lDimens.dp4),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier.padding(lDimens.dp16)
+        Surface(
+            shape = CircleShape,
+            color = colors.primary.copy(alpha = 0.1f),
+            modifier = Modifier.size(56.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Payment Request",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    "₹${settlement.amount}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(lDimens.dp8))
-
-            Text(
-                "${settlement.fromUserName ?: "Someone"} wants to settle ₹${settlement.amount}",
-                style = MaterialTheme.typography.bodyMedium
+            Icon(
+                imageVector = when {
+                    title.contains("expense", ignoreCase = true) -> Icons.Default.ThumbUp
+                    title.contains("request", ignoreCase = true) -> Icons.Default.ThumbUp
+                    else -> Icons.Default.ThumbUp
+                },
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(24.dp)
             )
-
-            Text(
-                "Requested on ${formatDate(settlement.timestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(lDimens.dp16))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onDecline,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier.padding(end = lDimens.dp8)
-                ) {
-                    Text("Decline")
-                }
-
-                Button(
-                    onClick = onApprove,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Approve")
-                }
-            }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = colors.textPrimary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.textSecondary,
+            textAlign = TextAlign.Center
+        )
     }
+}
+
+// Helper functions for date formatting
+fun formatDateHeader(timestamp: Long): String {
+    if (timestamp == 0L) return "Unknown Date"
+
+    val now = Clock.System.now()
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val nowDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    val expenseDate = dateTime.date
+
+    return when {
+        expenseDate == nowDate -> "Today"
+        expenseDate == nowDate.minus(kotlinx.datetime.DatePeriod(days = 1)) -> "Yesterday"
+        nowDate.minus(kotlinx.datetime.DatePeriod(days = 7)) < expenseDate -> "This Week"
+        nowDate.minus(kotlinx.datetime.DatePeriod(days = 30)) < expenseDate -> "This Month"
+        else -> "${expenseDate.month} ${expenseDate.year}"
+    }
+}
+
+fun formatDateTime(timestamp: Long): String {
+    if (timestamp == 0L) return ""
+
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+
+    return "${dateTime.month.name.take(3)} ${dateTime.dayOfMonth}, ${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
 }
