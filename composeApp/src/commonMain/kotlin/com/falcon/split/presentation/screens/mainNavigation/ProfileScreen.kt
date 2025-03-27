@@ -1,8 +1,9 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
-
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,33 +18,43 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
@@ -51,214 +62,341 @@ import coil3.compose.AsyncImage
 import com.falcon.split.ClipboardManager
 import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.getFirebaseUserAsUserModel
+import com.falcon.split.presentation.theme.LocalSplitColors
+import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.copy_icon
-import split.composeapp.generated.resources.nunito_bold_1
 import split.composeapp.generated.resources.picture_preview
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
     prefs: DataStore<Preferences>,
     onSignOut: () -> Unit
 ) {
+    val colors = LocalSplitColors.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scrollState = rememberScrollState()
+
+    // State for user data
+    var userModel by remember { mutableStateOf<UserModelGoogleFirebaseBased?>(null) }
+
+    // State for edit UPI dialog
+    var showUpiDialog by remember { mutableStateOf(false) }
+    var upiId by remember { mutableStateOf("") }
+
+    // State for sign out confirmation
+    var showSignOutConfirmation by remember { mutableStateOf(false) }
+
+    // Load user data
+    LaunchedEffect(Unit) {
+        userModel = getFirebaseUserAsUserModel(prefs)
+        upiId = userModel?.upiId ?: ""
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Profile") },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        navController.popBackStack()
-                    }) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colors.backgroundSecondary,
+                    titleContentColor = colors.textPrimary,
+                    navigationIconContentColor = colors.textPrimary
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState)
+                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Profile Image
+            Box(
+                modifier = Modifier
+                    .padding(vertical = lDimens.dp16)
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(colors.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (userModel?.profilePictureUrl != null) {
+                    AsyncImage(
+                        model = userModel?.profilePictureUrl,
+                        contentDescription = "Profile picture",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(60.dp),
+                        tint = colors.primary
+                    )
+                }
+            }
+
+            // User Name
+            Text(
+                text = userModel?.username ?: "User",
+                style = MaterialTheme.typography.headlineLarge,
+                color = colors.textPrimary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(vertical = lDimens.dp8)
+            )
+
+            Spacer(modifier = Modifier.height(lDimens.dp24))
+
+            // Profile Information
+            SplitCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(lDimens.dp16)) {
+                    Text(
+                        "Personal Information",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = colors.textPrimary,
+                        modifier = Modifier.padding(bottom = lDimens.dp16)
+                    )
+
+                    // Email
+                    ProfileInfoItem(
+                        icon = Icons.Default.Email,
+                        label = "Email",
+                        value = userModel?.email ?: "",
+                        onCopy = {
+                            ClipboardManager.copyToClipboard(userModel?.email ?: "")
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Email copied to clipboard")
+                            }
+                        }
+                    )
+
+                    // Phone
+                    ProfileInfoItem(
+                        icon = Icons.Default.Phone,
+                        label = "Phone",
+                        value = userModel?.phoneNumber ?: "",
+                        onCopy = {
+                            ClipboardManager.copyToClipboard(userModel?.phoneNumber ?: "")
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Phone number copied to clipboard")
+                            }
+                        }
+                    )
+
+                    // UPI ID
+                    ProfileInfoItem(
+                        icon = Icons.Default.ThumbUp,
+                        label = "UPI ID",
+                        value = userModel?.upiId ?: "Not set",
+                        onCopy = {
+                            if (userModel?.upiId != null) {
+                                ClipboardManager.copyToClipboard(userModel?.upiId ?: "")
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("UPI ID copied to clipboard")
+                                }
+                            }
+                        },
+                        onEdit = { showUpiDialog = true }
+                    )
+
+                    // User ID (for reference)
+                    ProfileInfoItem(
+                        icon = Icons.Default.Person,
+                        label = "User ID",
+                        value = userModel?.userId ?: "",
+                        onCopy = {
+                            ClipboardManager.copyToClipboard(userModel?.userId ?: "")
+                            scope.launch {
+                                snackbarHostState.showSnackbar("User ID copied to clipboard")
+                            }
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(lDimens.dp24))
+
+            // Sign Out Button
+            Button(
+                onClick = { showSignOutConfirmation = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.error,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text("Sign Out", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+
+        // UPI Edit Dialog
+        if (showUpiDialog) {
+            AlertDialog(
+                onDismissRequest = { showUpiDialog = false },
+                title = { Text("Update UPI ID") },
+                text = {
+                    OutlinedTextField(
+                        value = upiId,
+                        onValueChange = { upiId = it },
+                        label = { Text("UPI ID") },
+                        placeholder = { Text("username@bank") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = colors.cardBackground,
+                            unfocusedContainerColor = colors.cardBackground,
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.border
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // TODO: Update UPI ID in the user model and save
+                            // This would typically call a method on the viewModel
+                            // to update the UPI ID in Firebase
+                            showUpiDialog = false
+                            scope.launch {
+                                snackbarHostState.showSnackbar("UPI ID updated")
+                            }
+                        }
+                    ) {
+                        Text("Save", color = colors.primary)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showUpiDialog = false }
+                    ) {
+                        Text("Cancel")
                     }
                 }
             )
         }
-    ) { padding ->
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-            // State to hold the fetched UserModel
-            var userModel by remember { mutableStateOf<UserModelGoogleFirebaseBased?>(null) }
 
-            // LaunchedEffect to fetch UserModel once when the composable is first composed
-            LaunchedEffect(Unit) {
-                userModel = getFirebaseUserAsUserModel(prefs)
-            }
-            // Check if the profile image is available, otherwise show a placeholder
-            AsyncImage(
-                model = userModel?.profilePictureUrl ?: Res.drawable.picture_preview, // Show placeholder if no image URL
-                contentDescription = "Profile picture",
-                modifier = Modifier
-                    .size(lDimens.dp150)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+        // Sign Out Confirmation Dialog
+        if (showSignOutConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showSignOutConfirmation = false },
+                title = { Text("Sign Out") },
+                text = { Text("Are you sure you want to sign out?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showSignOutConfirmation = false
+                            onSignOut()
+                        }
+                    ) {
+                        Text("Sign Out", color = colors.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showSignOutConfirmation = false }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
             )
-            Spacer(modifier = Modifier.height(lDimens.dp16))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Spacer(modifier = Modifier.width(lDimens.dp10))
-                androidx.compose.material3.Text(
-                    text = "Info",
-                    fontSize = 21.sp,
-                    fontFamily = FontFamily(org.jetbrains.compose.resources.Font(Res.font.nunito_bold_1, weight = FontWeight.Normal, style = FontStyle.Normal)),
-                )
-            }
-            TextWithBorder(headingValue = "Name", descriptionValue = userModel?.username?: "INVALID USER")
-            TextWithBorder(headingValue = "Email", descriptionValue = userModel?.email?: "INVALID USER")
-            TextWithBorderEditable(headingValue = "UPI ID", descriptionValue = userModel?.upiId?: "billi@paytm")
-            TextWithBorderAndCopyIcon("User ID", userModel?.userId ?: "INVALID USER ID")
-            Spacer(modifier = Modifier.height(lDimens.dp16))
-            androidx.compose.material3.Button(
-                onClick = onSignOut,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White
-                ),
-            ) {
-                androidx.compose.material3.Text(
-                    text = "Sign Out",
-                )
-            }
         }
     }
 }
 
-
 @Composable
-fun TextWithBorder(headingValue: String, descriptionValue: String){
-    var mSelectedText by remember(descriptionValue) { mutableStateOf(descriptionValue) }
-    var mExpanded by remember { mutableStateOf(false) }
-    var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
+fun ProfileInfoItem(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    onCopy: () -> Unit,
+    onEdit: (() -> Unit)? = null
+) {
+    val colors = LocalSplitColors.current
+
     Column(
-        Modifier
-            .padding(lDimens.dp10, 5.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = lDimens.dp8)
     ) {
-        OutlinedTextField(
-            readOnly = true,
-            value = mSelectedText.toString(),
-            onValueChange = {
-                mSelectedText = it
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    // This value is used to assign to
-                    // the DropDown the same width
-                    mTextFieldSize = coordinates.size.toSize()
-                }
-            ,
-            label = {Text(headingValue, modifier = Modifier
-                .clickable {
-                    mExpanded = !mExpanded
-                })}
+        // Label
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.textSecondary
         )
-    }
-}
 
-@Composable
-fun TextWithBorderEditable(headingValue: String, descriptionValue: String){
-    var mSelectedText by remember(descriptionValue) { mutableStateOf(descriptionValue) }
-    var mExpanded by remember { mutableStateOf(false) }
-    var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
-    Column(
-        Modifier
-            .padding(lDimens.dp10, 5.dp)
-    ) {
-        OutlinedTextField(
-            readOnly = false,
-            value = mSelectedText.toString(),
-            onValueChange = {
-                mSelectedText = it
-            },
+        // Value row with actions
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    // This value is used to assign to
-                    // the DropDown the same width
-                    mTextFieldSize = coordinates.size.toSize()
-                }
-            ,
-            trailingIcon = {
+                .padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(lDimens.dp8))
+
+            // Value
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.textPrimary,
+                modifier = Modifier.weight(1f)
+            )
+
+            // Copy button
+            IconButton(
+                onClick = onCopy,
+                modifier = Modifier.size(36.dp)
+            ) {
                 Icon(
-                    painter = painterResource(Res.drawable.copy_icon),
+                    Icons.Default.ThumbUp,
                     contentDescription = "Copy",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            ClipboardManager.copyToClipboard(descriptionValue)
-//                            clipboardManager.copyText(descriptionValue)
-                            // TODO: Add A Toast Or Something Here To Notify That Text Is Copies, maybe consider using snackbar
-                        },
+                    tint = colors.textSecondary,
+                    modifier = Modifier.size(18.dp)
                 )
-            },
-            label = {Text(headingValue, modifier = Modifier
-                .clickable {
-                    mExpanded = !mExpanded
-                })}
-        )
-    }
-}
+            }
 
-@Composable
-fun TextWithBorderAndCopyIcon(
-    headingValue: String,
-    descriptionValue: String,
-){
-    var mSelectedText by remember(descriptionValue) { mutableStateOf(descriptionValue) }
-    var mExpanded by remember { mutableStateOf(false) }
-    var mTextFieldSize by remember { mutableStateOf(Size.Zero)}
-    Column(
-        Modifier
-            .padding(lDimens.dp10, 5.dp)
-    ) {
-        OutlinedTextField(
-            readOnly = true,
-            value = mSelectedText.toString(),
-            onValueChange = {
-                mSelectedText = it
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    // This value is used to assign to
-                    // the DropDown the same width
-                    mTextFieldSize = coordinates.size.toSize()
+            // Edit button (if applicable)
+            if (onEdit != null) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = colors.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-            ,
-            trailingIcon = {
-                Icon(
-                    painter = painterResource(Res.drawable.copy_icon),
-                    contentDescription = "Copy",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            ClipboardManager.copyToClipboard(descriptionValue)
-//                            clipboardManager.copyText(descriptionValue)
-                            // TODO: Add A Toast Or Something Here To Notify That Text Is Copies, maybe consider using snackbar
-                        },
-                )
-            },
-            label = {Text(headingValue, modifier = Modifier
-                .clickable {
-                    mExpanded = !mExpanded
-                })}
-        )
+            }
+        }
     }
 }
