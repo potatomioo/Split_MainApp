@@ -56,7 +56,7 @@ import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
-import com.falcon.split.presentation.screens.AnimationComponents.UpwardFlipHeaderImage
+import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
@@ -84,7 +84,7 @@ fun HomeScreen(
     val colors = LocalSplitColors.current
 
     // Sample data until connected to repository
-    val userName = "Alex"
+    val userName = "Potato"
     val totalToReceive = 475.0
     val totalToPay = 181.67
 

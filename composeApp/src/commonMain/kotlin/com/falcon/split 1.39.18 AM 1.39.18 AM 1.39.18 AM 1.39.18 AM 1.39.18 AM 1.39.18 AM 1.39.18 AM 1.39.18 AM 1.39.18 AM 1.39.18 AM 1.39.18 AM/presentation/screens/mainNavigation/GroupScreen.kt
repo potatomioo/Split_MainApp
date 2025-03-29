@@ -69,7 +69,7 @@ import androidx.navigation.NavHostController
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
-import com.falcon.split.presentation.screens.AnimationComponents.UpwardFlipHeaderImage
+import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard

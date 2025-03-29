@@ -47,7 +47,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -72,8 +74,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.network.models_app.Expense
@@ -190,7 +190,7 @@ fun GroupDetailsScreen(
                         // Group summary card
                         GroupSummaryCard(
                             group = group,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
                         )
 
                         // Tab row
@@ -249,7 +249,7 @@ fun GroupDetailsScreen(
                                     nameResolver = nameResolver,
                                     onSettleUp = { toUserId, amount ->
                                         viewModel.settleBalance(group.id, toUserId, amount)
-                                    }
+                                    },{}
                                 )
 
                                 2 -> SettlementsTab(
@@ -342,7 +342,7 @@ fun ErrorView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(lDimens.dp16),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -353,7 +353,7 @@ fun ErrorView(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp8))
 
         Text(
             text = message,
@@ -362,7 +362,7 @@ fun ErrorView(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp24))
 
         Button(
             onClick = onRetry,
@@ -430,8 +430,8 @@ fun GroupDetailsFAB(
                 containerColor = colors.primary,
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
-                    pressedElevation = 8.dp
+                    defaultElevation = lDimens.dp6,
+                    pressedElevation = lDimens.dp8
                 )
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Expense")
@@ -447,8 +447,8 @@ fun GroupDetailsFAB(
                 icon = { Icon(Icons.Default.ThumbUp, contentDescription = null) },
                 text = { Text("Settle Up") },
                 elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
-                    pressedElevation = 8.dp
+                    defaultElevation = lDimens.dp6,
+                    pressedElevation = lDimens.dp8
                 )
             )
         }
@@ -470,17 +470,17 @@ fun GroupOptionsMenu(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.5f))
-            .padding(top = 56.dp, end = 8.dp),
+            .padding(top = lDimens.dp56, end = lDimens.dp8),
         contentAlignment = Alignment.TopEnd
     ) {
         Surface(
             color = colors.cardBackground,
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(lDimens.dp8),
             modifier = Modifier
-                .width(200.dp)
-                .padding(8.dp)
+                .width(lDimens.dp200)
+                .padding(lDimens.dp8)
         ) {
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(modifier = Modifier.padding(lDimens.dp8)) {
                 MenuItem(
                     text = "Delete Group",
                     icon = Icons.Default.Delete,
@@ -504,17 +504,17 @@ fun MenuItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(4.dp))
-            .padding(8.dp)
+            .clip(RoundedCornerShape(lDimens.dp4))
+            .padding(lDimens.dp8)
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(lDimens.dp24)
         )
 
         Text(
@@ -587,7 +587,7 @@ fun GroupSummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(lDimens.dp16)
         ) {
             Text(
                 "Total Expenses",
@@ -605,7 +605,7 @@ fun GroupSummaryCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = lDimens.dp8),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("${group.expenses.size} expenses")
@@ -624,7 +624,7 @@ fun ExpensesTab(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = lDimens.dp16)
     ) {
         when (expenseState) {
             is ExpenseState.Loading -> {
@@ -659,8 +659,8 @@ fun ExpensesTab(
                     }
 
                     LazyColumn(
-                        contentPadding = PaddingValues(bottom = 80.dp), // Space for FAB
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(bottom = lDimens.dp80), // Space for FAB
+                        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
                     ) {
                         groupedExpenses.forEach { (date, expensesForDate) ->
                             item {
@@ -668,7 +668,7 @@ fun ExpensesTab(
                                     text = date,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = LocalSplitColors.current.textSecondary,
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(vertical = lDimens.dp8)
                                 )
                             }
 
@@ -683,7 +683,7 @@ fun ExpensesTab(
 
                         // Bottom spacer for FAB
                         item {
-                            Spacer(modifier = Modifier.height(80.dp))
+                            Spacer(modifier = Modifier.height(lDimens.dp80))
                         }
                     }
                 }
@@ -704,7 +704,7 @@ fun ExpenseCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(lDimens.dp16)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -722,7 +722,7 @@ fun ExpenseCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp4))
 
             // Find the member who paid
             val paidByMember = group.members.find { it.userId == expense.paidByUserId }
@@ -753,29 +753,38 @@ fun BalancesTab(
     group: Group,
     currentUserId: String,
     nameResolver: MemberNameResolver,
-    onSettleUp: (toUserId: String, amount: Double) -> Unit
+    onSettleUp: (toUserId: String, amount: Double) -> Unit,
+    onRemind: (userId: String) -> Unit
 ) {
     var showSettleDialog by remember { mutableStateOf(false) }
     var selectedMember by remember { mutableStateOf<GroupMember?>(null) }
 
+    // Get current user's member object
+    val currentUserMember = group.members.find { it.userId == currentUserId }
+
+    // Get individual balances
+    val individualBalances = currentUserMember?.individualBalances ?: emptyMap()
+
+    // All other members (excluding current user)
+    val otherMembers = group.members.filter { it.userId != currentUserId }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = lDimens.dp16)
     ) {
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 80.dp), // Space for FAB
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(bottom = lDimens.dp80), // Space for FAB
+            verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
         ) {
             // Current user's balance overview
             item {
                 Text(
                     "Your Balance",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8)
                 )
 
-                val currentUserMember = group.members.find { it.userId == currentUserId }
                 if (currentUserMember != null) {
                     UserBalanceCard(
                         member = currentUserMember,
@@ -785,51 +794,74 @@ fun BalancesTab(
                 }
             }
 
-            // Other members' balances
+            // All Members section
             item {
                 Text(
-                    "Group Members",
+                    "All Members",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8)
                 )
             }
 
-            // List all members except current user
-            val otherMembers = group.members.filter { it.userId != currentUserId }
             items(otherMembers) { member ->
-                val currentUserBalance = group.members
-                    .find { it.userId == currentUserId }
-                    ?.individualBalances
-                    ?.get(member.userId) ?: 0.0
+                // Modified balance calculation to handle null userIds
+                val currentUserBalance = if (member.userId != null) {
+                    individualBalances[member.userId] ?: 0.0
+                } else {
+                    // For members without userIds, check their individualBalances directly
+                    -(member.individualBalances[currentUserId] ?: 0.0) // Negate because the perspective is reversed
+                }
+
+                // Debug for verification
+                println("DEBUG: Member ${member.name} - balance: $currentUserBalance")
+
+                val isIncoming = currentUserBalance > 0  // positive means they owe me
+                val isRegistered = member.userId != null
 
                 MemberBalanceCard(
                     member = member,
-                    currentUserBalance = currentUserBalance,
+                    amount = kotlin.math.abs(currentUserBalance),
+                    isIncoming = isIncoming,
                     nameResolver = nameResolver,
-                    onSettleUp = {
-                        selectedMember = member
-                        showSettleDialog = true
+                    onAction = when {
+                        !isRegistered -> {
+                            // For unregistered users (null userId), show Invite button
+                            { /* Handle invite action here - perhaps share app link via SMS */ }
+                        }
+                        currentUserBalance > 0 -> {
+                            { onRemind(member.userId ?: "") }
+                        }
+                        currentUserBalance < 0 -> { // I owe them money
+                            {
+                                selectedMember = member
+                                showSettleDialog = true
+                            }
+                        }
+                        else -> null // We're settled up
+                    },
+                    actionButtonText = when {
+                        !isRegistered -> "Invite"
+                        currentUserBalance > 0 -> "Remind"
+                        currentUserBalance < 0 -> "Settle Up"
+                        else -> null
                     }
                 )
             }
 
             // Bottom spacer for FAB
             item {
-                Spacer(modifier = Modifier.height(80.dp))
+                Spacer(modifier = Modifier.height(lDimens.dp80))
             }
         }
     }
 
     // Settle up dialog
     if (showSettleDialog && selectedMember != null) {
-        val balance = group.members
-            .find { it.userId == currentUserId }
-            ?.individualBalances
-            ?.get(selectedMember!!.userId) ?: 0.0
+        val amountIOwe = kotlin.math.abs(individualBalances[selectedMember!!.userId] ?: 0.0)
 
         SettleUpDialog(
             memberName = nameResolver.resolveDisplayName(selectedMember!!),
-            amount = kotlin.math.abs(balance),
+            amount = amountIOwe,
             onDismiss = { showSettleDialog = false },
             onConfirm = { amount ->
                 onSettleUp(selectedMember!!.userId!!, amount)
@@ -853,7 +885,7 @@ fun UserBalanceCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(lDimens.dp16)
         ) {
             Text(
                 nameResolver.resolveDisplayName(member),
@@ -861,7 +893,7 @@ fun UserBalanceCard(
                 color = colors.textPrimary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp8))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -890,7 +922,7 @@ fun UserBalanceCard(
                         member.balance < 0 -> colors.error.copy(alpha = 0.1f)
                         else -> colors.textSecondary.copy(alpha = 0.1f)
                     },
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(lDimens.dp16)
                 ) {
                     Text(
                         when {
@@ -904,19 +936,22 @@ fun UserBalanceCard(
                             member.balance < 0 -> colors.error
                             else -> colors.textSecondary
                         },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp6)
                     )
                 }
             }
         }
     }
 }
+
 @Composable
 fun MemberBalanceCard(
     member: GroupMember,
-    currentUserBalance: Double,
+    amount: Double,
+    isIncoming: Boolean,
     nameResolver: MemberNameResolver,
-    onSettleUp: () -> Unit
+    onAction: (() -> Unit)?,
+    actionButtonText: String?
 ) {
     val colors = LocalSplitColors.current
 
@@ -926,60 +961,77 @@ fun MemberBalanceCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(lDimens.dp16),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    nameResolver.resolveDisplayName(member),
+                    text = nameResolver.resolveDisplayName(member),
                     style = MaterialTheme.typography.titleMedium,
                     color = colors.textPrimary
                 )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
                 ) {
-                    if (currentUserBalance < 0) {
+                    if (amount > 0) {
                         Text(
-                            "You owe",
+                            text = if (isIncoming) "Owes you" else "You owe",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = colors.error
+                            color = if (isIncoming) colors.success else colors.error
                         )
-                    } else if (currentUserBalance > 0) {
-                        Text(
-                            "Owes you",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.success
+
+                        CurrencyDisplay(
+                            amount = amount,
+                            isIncome = isIncoming
                         )
                     } else {
                         Text(
-                            "Settled up",
+                            text = "Settled up",
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.textSecondary
                         )
                     }
-
-                    CurrencyDisplay(
-                        amount = kotlin.math.abs(currentUserBalance),
-                        isIncome = currentUserBalance > 0
-                    )
                 }
             }
 
-            // Settle button only if current user owes this member
-            if (currentUserBalance < 0) {
-                Button(
-                    onClick = onSettleUp,
-                    colors = ButtonDefaults.buttonColors(
+            // Action button (Settle Up or Remind)
+            if (actionButtonText != null && onAction != null && amount > 0) {
+                val buttonColors = if (isIncoming) {
+                    // Remind button (green)
+                    ButtonDefaults.buttonColors(
+                        containerColor = colors.success,
+                        contentColor = Color.White
+                    )
+                } else {
+                    // Settle Up button (primary color)
+                    ButtonDefaults.buttonColors(
                         containerColor = colors.primary,
                         contentColor = Color.White
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    modifier = Modifier.height(36.dp)
+                    )
+                }
+
+                val icon = if (isIncoming) {
+                    Icons.Default.ThumbUp
+                } else {
+                    Icons.Default.ThumbUp
+                }
+
+                Button(
+                    onClick = onAction,
+                    colors = buttonColors,
+                    contentPadding = PaddingValues(horizontal = lDimens.dp12),
+                    modifier = Modifier.height(lDimens.dp36)
                 ) {
-                    Text("Settle Up")
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(lDimens.dp16)
+                    )
+                    Spacer(modifier = Modifier.width(lDimens.dp4))
+                    Text(actionButtonText)
                 }
             }
         }
@@ -1003,15 +1055,15 @@ fun SettlementsTab(
     val completedSettlements = settlementHistory.filter { it.status != SettlementStatus.PENDING }
 
     LazyColumn(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = lDimens.dp16, vertical = lDimens.dp8),
+        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
     ) {
         // Pending Requests Section (people requesting money from you)
         item {
             Text(
                 "Requests For You",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
             )
         }
 
@@ -1020,7 +1072,7 @@ fun SettlementsTab(
                 EmptyState(
                     title = "No pending requests",
                     message = "You don't have any payment requests to approve",
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = lDimens.dp16)
                 )
             }
         } else {
@@ -1039,7 +1091,7 @@ fun SettlementsTab(
             Text(
                 "Your Pending Requests",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4)
             )
         }
 
@@ -1048,7 +1100,7 @@ fun SettlementsTab(
                 EmptyState(
                     title = "No outgoing requests",
                     message = "You haven't requested any payments yet",
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = lDimens.dp16)
                 )
             }
         } else {
@@ -1067,7 +1119,7 @@ fun SettlementsTab(
             Text(
                 "Settlement History",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4)
             )
         }
 
@@ -1076,7 +1128,7 @@ fun SettlementsTab(
                 EmptyState(
                     title = "No settlement history",
                     message = "Past settlements will appear here",
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = lDimens.dp16)
                 )
             }
         } else {
@@ -1087,7 +1139,7 @@ fun SettlementsTab(
 
         // Bottom spacer
         item {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp80))
         }
     }
 }
@@ -1107,7 +1159,7 @@ fun PendingSettlementCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(lDimens.dp16)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1116,13 +1168,13 @@ fun PendingSettlementCard(
             ) {
                 Column {
                     Text(
-                        if (isIncoming) "Payment Request" else "Your Request",
+                        text = if (isIncoming) "Payment Request" else "Your Request",
                         style = MaterialTheme.typography.titleMedium,
                         color = colors.textPrimary
                     )
 
                     Text(
-                        if (isIncoming)
+                        text = if (isIncoming)
                             "${settlement.fromUserName ?: "Someone"} requested payment"
                         else
                             "Requested from ${settlement.toUserName ?: "someone"}",
@@ -1131,7 +1183,7 @@ fun PendingSettlementCard(
                     )
 
                     Text(
-                        formatDateTime(settlement.timestamp),
+                        text = formatDateTime(settlement.timestamp),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.textSecondary
                     )
@@ -1145,31 +1197,43 @@ fun PendingSettlementCard(
 
             // Action buttons for incoming requests
             if (isIncoming && onApprove != null && onDecline != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(lDimens.dp12))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = onDecline,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.cardBackground,
+                        colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = colors.error
                         ),
-                        modifier = Modifier.padding(end = 8.dp)
+                        border = androidx.compose.foundation.BorderStroke(lDimens.dp1, colors.error),
+                        modifier = Modifier.padding(end = lDimens.dp8)
                     ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(lDimens.dp16)
+                        )
+                        Spacer(modifier = Modifier.width(lDimens.dp4))
                         Text("Decline")
                     }
 
                     Button(
                         onClick = onApprove,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.primary,
+                            containerColor = colors.success,
                             contentColor = Color.White
                         )
                     ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(lDimens.dp16)
+                        )
+                        Spacer(modifier = Modifier.width(lDimens.dp4))
                         Text("Approve")
                     }
                 }
@@ -1190,19 +1254,19 @@ fun SettlementHistoryCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(lDimens.dp16),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}",
+                    text = "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}",
                     style = MaterialTheme.typography.titleMedium,
                     color = colors.textPrimary
                 )
 
                 Text(
-                    formatDateTime(settlement.timestamp),
+                    text = formatDateTime(settlement.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.textSecondary
                 )
@@ -1210,7 +1274,7 @@ fun SettlementHistoryCard(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
             ) {
                 CurrencyDisplay(
                     amount = settlement.amount,
@@ -1225,7 +1289,7 @@ fun SettlementHistoryCard(
                         else -> colors.textSecondary.copy(alpha = 0.1f)
                     },
                     shape = CircleShape,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(lDimens.dp24)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -1240,7 +1304,7 @@ fun SettlementHistoryCard(
                                 SettlementStatus.DECLINED -> colors.error
                                 else -> colors.textSecondary
                             },
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(lDimens.dp16)
                         )
                     }
                 }
@@ -1271,7 +1335,7 @@ fun SettleUpDialog(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(lDimens.dp16))
 
                 OutlinedTextField(
                     value = settlementAmount,
@@ -1287,7 +1351,15 @@ fun SettleUpDialog(
                     label = { Text("Amount") },
                     prefix = { Text("₹") },
                     isError = !isValidAmount,
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = colors.cardBackground,
+                        unfocusedContainerColor = colors.cardBackground,
+                        focusedBorderColor = colors.primary,
+                        unfocusedBorderColor = colors.border,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary
+                    )
                 )
 
                 if (!isValidAmount) {
@@ -1335,14 +1407,14 @@ fun EmptyState(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(lDimens.dp16),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Surface(
             shape = CircleShape,
             color = colors.primary.copy(alpha = 0.1f),
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(lDimens.dp56)
         ) {
             Icon(
                 imageVector = when {
@@ -1353,12 +1425,12 @@ fun EmptyState(
                 contentDescription = null,
                 tint = colors.primary,
                 modifier = Modifier
-                    .padding(16.dp)
-                    .size(24.dp)
+                    .padding(lDimens.dp16)
+                    .size(lDimens.dp24)
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp16))
 
         Text(
             title,
@@ -1367,7 +1439,7 @@ fun EmptyState(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp4))
 
         Text(
             message,
@@ -1385,8 +1457,7 @@ fun formatDateHeader(timestamp: Long): String {
     val now = Clock.System.now()
     val instant = Instant.fromEpochMilliseconds(timestamp)
     val nowDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    val expenseDate = dateTime.date
+    val expenseDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     return when {
         expenseDate == nowDate -> "Today"

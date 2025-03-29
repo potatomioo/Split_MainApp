@@ -213,7 +213,17 @@ android {
     dependencies {
         debugImplementation(compose.uiTooling)
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
+
+tasks.matching { it.name.contains("copyRoomSchemas") }.configureEach {
+    this.enabled = false
+}
+
 dependencies {
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.material3)

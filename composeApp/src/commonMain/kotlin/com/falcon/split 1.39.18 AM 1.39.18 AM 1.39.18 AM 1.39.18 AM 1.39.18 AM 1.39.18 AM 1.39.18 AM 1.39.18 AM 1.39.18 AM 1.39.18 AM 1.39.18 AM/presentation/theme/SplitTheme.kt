@@ -288,6 +288,7 @@ val SplitShapes = Shapes(
 @Composable
 fun SplitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    onThemeUpdated: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     // Select colors based on theme

@@ -1,6 +1,5 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
-import GroupsScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,9 +54,8 @@ import androidx.navigation.compose.rememberNavController
 import com.falcon.split.MainViewModel
 import com.falcon.split.MainViewModelFactory
 import com.falcon.split.presentation.theme.LocalSplitColors
-import com.falcon.split.presentation.theme.getAppTypography
+//import com.falcon.split.presentation.theme.getAppTypography
 import com.falcon.split.data.network.ApiClient
-import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.Res
@@ -73,9 +71,13 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.LayoutDirection
+import com.falcon.split.Presentation.history.HistoryViewModel
+import com.falcon.split.data.Repository.HistoryRepository
 import com.falcon.split.presentation.group.GroupViewModel
+import com.falcon.split.presentation.screens.history.HistoryScreen
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.launch
 
@@ -89,7 +91,8 @@ fun NavHostMain(
     openUserOptionsMenu: MutableState<Boolean>,
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController,
-    viewModel: GroupViewModel
+    viewModel: GroupViewModel,
+    historyRepository: HistoryRepository
 ) {
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -105,13 +108,17 @@ fun NavHostMain(
 
     val screens = listOf(
         BottomBarScreen.Home,
-        BottomBarScreen.Reels,
-        BottomBarScreen.Profile
+        BottomBarScreen.History,
+        BottomBarScreen.Groups
     )
 
-    val newsViewModel: MainViewModel = viewModel(
+    val historyVM: MainViewModel = viewModel(
         factory = MainViewModelFactory(client, prefs)
     )
+
+    val historyViewModel = remember {
+        HistoryViewModel(historyRepository)
+    }
 
     val colors = LocalSplitColors.current
     val isDarkTheme = isSystemInDarkTheme()
@@ -130,7 +137,7 @@ fun NavHostMain(
                 Text(
                     text = title,
                     fontSize = 23.sp,
-                    style = getAppTypography(isDarkTheme).titleLarge,
+//                    style = getAppTypography(isDarkTheme).titleLarge,
                     color = colors.textPrimary
                 )
                 Row(
@@ -195,25 +202,21 @@ fun NavHostMain(
                     prefs,
                     snackBarHostState,
                     navControllerBottomNav,
-                    newsViewModel,
+                    historyVM,
                     navControllerMain,
                     topPadding = innerPadding.calculateTopPadding()
                 )
-                1 -> HistoryScreen(
+                1 -> IntegratedHistoryScreen(
                     onNavigate,
                     prefs,
-                    newsViewModel,
+                    historyVM,
                     snackBarHostState,
-                    navControllerMain
+                    navControllerMain,
                 )
                 2 -> GroupsScreen(
-                    onCreateGroupClick = {
-                        navControllerMain.navigate("create_group")
-                    },
-                    onGroupClick = { group ->
-                        navControllerMain.navigate("group_details/${group.id}")
-                    },
-                    navControllerMain = navControllerMain,
+                    onCreateGroupClick = { navControllerMain.navigate("create_group") },
+                    onGroupClick = { group -> navControllerMain.navigate("group_details/${group.id}") },
+                    navControllerMain,
                     viewModel
                 )
             }
@@ -245,6 +248,25 @@ fun navigateTo(
     }
 }
 
+@Composable
+fun IntegratedHistoryScreen(
+    onNavigate: (rootName: String) -> Unit,
+    prefs: DataStore<Preferences>,
+    newsViewModel: MainViewModel,
+    snackBarHostState: androidx.compose.material3.SnackbarHostState,
+    navControllerMain: NavHostController,
+    modifier: Modifier = Modifier
+) {
+    // Call the new History Screen implementation
+    HistoryScreen(
+        onNavigate = onNavigate,
+        prefs = prefs,
+        newsViewModel = newsViewModel,
+        snackBarHostState = snackBarHostState,
+        navControllerMain = navControllerMain,
+    )
+}
+
 sealed class AppScreen(val route: String) {
     data object Detail : AppScreen("nav_detail")
 }
@@ -267,7 +289,7 @@ sealed class BottomBarScreen(
         badgeCount = mutableStateOf(12)
     )
 
-    data object Reels : BottomBarScreen(
+    data object History : BottomBarScreen(
         index = 1,
         route = "REELS",
         title = "History",
@@ -275,7 +297,7 @@ sealed class BottomBarScreen(
         selectedIcon = Res.drawable.history_icon_filled,
     )
 
-    data object Profile : BottomBarScreen(
+    data object Groups : BottomBarScreen(
         index = 2,
         route = "PROFILE",
         title = "Groups",
@@ -320,8 +342,8 @@ fun BottomNavigationBar(
     navController: NavHostController,
 ) {
     val homeItem = BottomBarScreen.Home
-    val reelsItem = BottomBarScreen.Reels
-    val profileItem = BottomBarScreen.Profile
+    val reelsItem = BottomBarScreen.History
+    val profileItem = BottomBarScreen.Groups
 
     val screens = listOf(
         homeItem,
@@ -471,8 +493,8 @@ private fun navigateBottomBar(navController: NavController, destination: String)
 private val NavController.shouldShowBottomBar
     get() = when (this.currentBackStackEntry?.destination?.route) {
         BottomBarScreen.Home.route,
-        BottomBarScreen.Reels.route,
-        BottomBarScreen.Profile.route,
+        BottomBarScreen.History.route,
+        BottomBarScreen.Groups.route,
             -> true
 
         else -> false

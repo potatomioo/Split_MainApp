@@ -2,7 +2,6 @@
 
 package com.falcon.split
 
-import SettingScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -79,6 +78,8 @@ import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.screens.mainNavigation.navigateTo
 import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.Repository.HistoryRepository
+import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
 import com.falcon.split.userManager.UserManager
@@ -132,6 +133,7 @@ fun App(
     AndroidSignInComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
     groupRepository: GroupRepository? = null,
     expenseRepository: ExpenseRepository? = null,
+    historyRepository: HistoryRepository? = null,
     darkTheme: MutableState<Boolean>?,
     userManager: UserManager
 ) {
@@ -267,17 +269,20 @@ fun App(
                     expenseRepository!!,
                     userManager
                 ) }
-                NavHostMain(
-                    client = client,
-                    onNavigate = { routeName ->
-                        navigateTo(routeName, navControllerMain)
-                    },
-                    prefs = prefs,
-                    openUserOptionsMenu = openUserOptionsMenu,
-                    snackBarHostState = snackBarHostState,
-                    navControllerMain = navControllerMain,
-                    viewModel = groupViewModel
-                )
+                if (historyRepository != null) {
+                    NavHostMain(
+                        client = client,
+                        onNavigate = { routeName ->
+                            navigateTo(routeName, navControllerMain)
+                        },
+                        prefs = prefs,
+                        openUserOptionsMenu = openUserOptionsMenu,
+                        snackBarHostState = snackBarHostState,
+                        navControllerMain = navControllerMain,
+                        viewModel = groupViewModel,
+                        historyRepository = historyRepository
+                    )
+                }
                 if (openUserOptionsMenu.value) {
                     OptionMenuPopup(
                         openUserOptionsMenu,
