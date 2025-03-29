@@ -8,15 +8,15 @@ import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
 
 
-@Composable
-fun HistoryScreen(
-    onNavigate: (String) -> Unit,
-    prefs: DataStore<Preferences>,
-    newsViewModel: MainViewModel,
-    snackBarHostState: SnackbarHostState,
-    navControllerMain: NavHostController,
-) {
-    MyRewardsUpperComposable()
-}
+//@Composable
+//fun HistoryScreen(
+//    onNavigate: (String) -> Unit,
+//    prefs: DataStore<Preferences>,
+//    newsViewModel: MainViewModel,
+//    snackBarHostState: SnackbarHostState,
+//    navControllerMain: NavHostController,
+//) {
+//    MyRewardsUpperComposable()
+//}
 
 
