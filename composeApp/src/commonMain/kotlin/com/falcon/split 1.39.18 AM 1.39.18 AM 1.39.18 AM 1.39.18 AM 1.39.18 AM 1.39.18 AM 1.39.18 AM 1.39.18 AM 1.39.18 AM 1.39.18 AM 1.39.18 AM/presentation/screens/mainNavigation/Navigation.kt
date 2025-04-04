@@ -74,8 +74,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.LayoutDirection
-import com.falcon.split.Presentation.history.HistoryViewModel
-import com.falcon.split.data.Repository.HistoryRepository
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.history.HistoryScreen
 import com.falcon.split.presentation.theme.lDimens
@@ -92,7 +90,6 @@ fun NavHostMain(
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController,
     viewModel: GroupViewModel,
-    historyRepository: HistoryRepository
 ) {
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -116,9 +113,6 @@ fun NavHostMain(
         factory = MainViewModelFactory(client, prefs)
     )
 
-    val historyViewModel = remember {
-        HistoryViewModel(historyRepository)
-    }
 
     val colors = LocalSplitColors.current
     val isDarkTheme = isSystemInDarkTheme()
@@ -204,7 +198,8 @@ fun NavHostMain(
                     navControllerBottomNav,
                     historyVM,
                     navControllerMain,
-                    topPadding = innerPadding.calculateTopPadding()
+                    topPadding = innerPadding.calculateTopPadding(),
+                    viewModel = viewModel
                 )
                 1 -> IntegratedHistoryScreen(
                     onNavigate,

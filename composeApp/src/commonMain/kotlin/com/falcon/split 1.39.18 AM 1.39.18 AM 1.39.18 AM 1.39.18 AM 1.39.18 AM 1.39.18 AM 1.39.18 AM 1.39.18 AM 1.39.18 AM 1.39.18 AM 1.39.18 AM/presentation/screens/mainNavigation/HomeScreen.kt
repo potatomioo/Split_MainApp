@@ -1,6 +1,7 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,9 +26,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -35,33 +38,43 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
+import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
+import com.falcon.split.presentation.expense.ExpenseState
+import com.falcon.split.presentation.group.GroupState
+import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -79,26 +92,59 @@ fun HomeScreen(
     navControllerBottomNav: NavHostController,
     mainViewModel: MainViewModel,
     navControllerMain: NavHostController,
-    topPadding: androidx.compose.ui.unit.Dp
+    topPadding : Dp,
+    viewModel: GroupViewModel
 ) {
     val colors = LocalSplitColors.current
+    val scope = rememberCoroutineScope()
 
-    // Sample data until connected to repository
-    val userName = "Potato"
-    val totalToReceive = 475.0
-    val totalToPay = 181.67
+    // Get state from GroupViewModel
+    val groupState by viewModel.groupState.collectAsState()
+    val expenseState by viewModel.expenseState.collectAsState()
+    val pendingSettlements by viewModel.pendingSettlements.collectAsState()
+
+    // User data
+    val currentUserId = viewModel.currentUserId
+    val userName = "You" // Replace with actual user name if available
+
+    // Load data when screen is mounted
+    LaunchedEffect(Unit) {
+        viewModel.loadGroups()
+        viewModel.loadPendingSettlements()
+
+        // Add this line to load the user's expenses
+        if (currentUserId != null) {
+            viewModel.loadUserExpenses(currentUserId)
+        }
+    }
+
+    // Calculate total balances
+    val totalToReceive = remember(groupState) {
+        if (groupState is GroupState.Success) {
+            val groups = (groupState as GroupState.Success).groups
+            groups.sumOf { group ->
+                val userMember = group.members.find { it.userId == currentUserId }
+                if (userMember?.balance != null && userMember.balance > 0) userMember.balance else 0.0
+            }
+        } else {
+            0.0
+        }
+    }
+
+    val totalToPay = remember(groupState) {
+        if (groupState is GroupState.Success) {
+            val groups = (groupState as GroupState.Success).groups
+            groups.sumOf { group ->
+                val userMember = group.members.find { it.userId == currentUserId }
+                if (userMember?.balance != null && userMember.balance < 0) -userMember.balance else 0.0
+            }
+        } else {
+            0.0
+        }
+    }
 
     // Get time-based greeting
     val greeting = getGreeting(userName)
-
-    // Sample data for recent activity
-    val recentActivity = remember { getSampleRecentActivity() }
-
-    // Sample data for user's groups
-    val userGroups = remember { getSampleGroups() }
-
-    // Sample data for pending settlements
-    val pendingSettlements = remember { getSampleSettlements() }
 
     Scaffold(
         topBar = {
@@ -125,12 +171,12 @@ fun HomeScreen(
                 containerColor = colors.primary,
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
+                    defaultElevation = lDimens.dp6,
                     pressedElevation = lDimens.dp12
                 )
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp8),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
@@ -139,15 +185,14 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-
         LazyColumn(
             contentPadding = PaddingValues(
-                start = 0.dp,
+                start = lDimens.dp0,
                 top = padding.calculateTopPadding(),
-                end = 0.dp,
-                bottom = padding.calculateBottomPadding() + 80.dp // Extra space for FAB
+                end = lDimens.dp0,
+                bottom = padding.calculateBottomPadding() + lDimens.dp80
             ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(lDimens.dp16),
             modifier = Modifier
                 .fillMaxSize()
                 .background(colors.backgroundPrimary)
@@ -163,17 +208,17 @@ fun HomeScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
                     ) {
                         // Balance overview card
                         SplitCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 100.dp) // Positioned below the header image
+                                .padding(top = lDimens.dp100) // Positioned below the header image
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .padding(16.dp)
+                                    .padding(lDimens.dp16)
                                     .fillMaxWidth()
                             ) {
                                 Text(
@@ -185,7 +230,7 @@ fun HomeScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 16.dp),
+                                        .padding(top = lDimens.dp16),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     // You'll get
@@ -197,7 +242,7 @@ fun HomeScreen(
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = colors.textSecondary
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(lDimens.dp4))
                                         CurrencyDisplay(
                                             amount = totalToReceive,
                                             isIncome = true,
@@ -214,7 +259,7 @@ fun HomeScreen(
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = colors.textSecondary
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(lDimens.dp4))
                                         CurrencyDisplay(
                                             amount = totalToPay,
                                             isIncome = false,
@@ -233,22 +278,14 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = lDimens.dp16),
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
                 ) {
                     // Create group button
                     QuickActionButton(
                         icon = Icons.Default.Person,
                         text = "New Group",
                         onClick = { navControllerMain.navigate("create_group") },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // Add expense button
-                    QuickActionButton(
-                        icon = Icons.Default.Person,
-                        text = "Add Expense",
-                        onClick = { navControllerMain.navigate("create_expense") },
                         modifier = Modifier.weight(1f)
                     )
 
@@ -263,6 +300,7 @@ fun HomeScreen(
             }
 
             // Recent Activity section
+            // Recent Activity section
             item {
                 SectionHeader(
                     title = "Recent Activity",
@@ -270,31 +308,48 @@ fun HomeScreen(
                     onActionClick = { /* Navigate to full history */ }
                 )
 
-                if (recentActivity.isEmpty()) {
-                    EmptyStateMessage(
-                        message = "No recent activity",
-                        submessage = "Your recent expenses and settlements will appear here"
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Group by date
-                        val groupedActivity = recentActivity.groupBy { it.date }
-
-                        groupedActivity.forEach { (date, activities) ->
-                            Text(
-                                text = date,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = colors.textSecondary,
-                                modifier = Modifier.padding(vertical = 4.dp)
+                when (expenseState) {
+                    is ExpenseState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(lDimens.dp100),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colors.primary)
+                        }
+                    }
+                    is ExpenseState.Success -> {
+                        val expenses = (expenseState as ExpenseState.Success).expenses
+                        if (expenses.isEmpty()) {
+                            EmptyStateMessage(
+                                message = "No recent activity",
+                                submessage = "Your recent expenses and settlements will appear here"
                             )
-
-                            activities.forEach { activity ->
-                                ActivityItem(activity)
+                        } else {
+                            // Show most recent 3 expenses
+                            Column(
+                                modifier = Modifier.padding(horizontal = lDimens.dp16),
+                                verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                            ) {
+                                // Sort expenses by ID (assuming ID contains timestamp) and take recent ones
+                                expenses.sortedByDescending { it.expenseId.toLongOrNull() ?: 0L }
+                                    .take(3)
+                                    .forEach { expense ->
+                                        currentUserId?.let {
+                                            RecentActivityItem(expense = expense,
+                                                it
+                                            )
+                                        }
+                                    }
                             }
                         }
+                    }
+                    is ExpenseState.Error -> {
+                        EmptyStateMessage(
+                            message = "Couldn't load activity",
+                            submessage = "There was an error loading your recent activity"
+                        )
                     }
                 }
             }
@@ -307,43 +362,108 @@ fun HomeScreen(
                     onActionClick = { /* Navigate to groups screen */ }
                 )
 
-                if (userGroups.isEmpty()) {
-                    EmptyStateMessage(
-                        message = "No groups yet",
-                        submessage = "Create a group to start tracking expenses with friends"
-                    )
-                } else {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(userGroups) { group ->
-                            GroupCard(
-                                group = group,
-                                onClick = {
-                                    navControllerMain.navigate("group_details/${group.id}")
-                                }
-                            )
+                when (groupState) {
+                    is GroupState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(lDimens.dp100),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colors.primary)
                         }
                     }
+                    is GroupState.Success -> {
+                        val groups = (groupState as GroupState.Success).groups
+                        if (groups.isEmpty()) {
+                            EmptyStateMessage(
+                                message = "No groups yet",
+                                submessage = "Create a group to start tracking expenses with friends"
+                            )
+                        } else {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = lDimens.dp16),
+                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
+                            ) {
+                                items(groups) { group ->
+                                    GroupCard(
+                                        group = group,
+                                        onClick = {
+                                            navControllerMain.navigate("group_details/${group.id}")
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    is GroupState.Error -> {
+                        EmptyStateMessage(
+                            message = "Couldn't load groups",
+                            submessage = "There was an error loading your groups"
+                        )
+                    }
+                    else -> {}
                 }
             }
 
             // Pending Settlements section
+            // Pending Settlements section
             item {
-                if (pendingSettlements.isNotEmpty()) {
-                    SectionHeader(
-                        title = "Pending Settlements",
-                        actionText = null,
-                        onActionClick = null
-                    )
+                SectionHeader(
+                    title = "Pending Settlements",
+                    actionText = null,
+                    onActionClick = null
+                )
 
+                val incomingRequests = pendingSettlements.filter { it.toUserId == currentUserId }
+                val outgoingRequests = pendingSettlements.filter { it.fromUserId == currentUserId }
+
+                if (incomingRequests.isEmpty() && outgoingRequests.isEmpty()) {
+                    EmptyStateMessage(
+                        message = "No pending settlements",
+                        submessage = "You don't have any payment requests to approve or pending"
+                    )
+                } else {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(horizontal = lDimens.dp16),
+                        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
                     ) {
-                        pendingSettlements.forEach { settlement ->
-                            SettlementItem(settlement)
+                        // Show incoming requests that need approval
+                        if (incomingRequests.isNotEmpty()) {
+                            Text(
+                                "Requests For You",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colors.textPrimary,
+                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
+                            )
+
+                            incomingRequests.forEach { settlement ->
+                                PendingSettlementItem(
+                                    settlement = settlement,
+                                    isIncoming = true,
+                                    onApprove = { viewModel.approveSettlement(settlement.id) },
+                                    onDecline = { viewModel.declineSettlement(settlement.id) }
+                                )
+                            }
+                        }
+
+                        // Show outgoing requests that are pending approval
+                        if (outgoingRequests.isNotEmpty()) {
+                            Text(
+                                "Your Pending Requests",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colors.textPrimary,
+                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
+                            )
+
+                            outgoingRequests.forEach { settlement ->
+                                PendingSettlementItem(
+                                    settlement = settlement,
+                                    isIncoming = false,
+                                    onApprove = null,
+                                    onDecline = null
+                                )
+                            }
                         }
                     }
                 }
@@ -351,11 +471,155 @@ fun HomeScreen(
 
             // Bottom spacer for FAB
             item {
-                Spacer(modifier = Modifier.height(80.dp))
+                Spacer(modifier = Modifier.height(lDimens.dp80))
             }
         }
     }
 }
+
+@Composable
+fun RecentActivityItem(
+    expense: Expense,
+    currentUserId: String
+) {
+    val colors = LocalSplitColors.current
+    val currentUserId =
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(lDimens.dp12),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // Show the group ID as a fallback if no better info is available
+                Text(
+                    text = expense.groupId,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.textSecondary
+                )
+
+                Text(
+                    text = expense.description,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = if (expense.paidByUserId == currentUserId) "You paid" else "${expense.paidByUserName ?: "Someone"} paid",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                CurrencyDisplay(
+                    amount = expense.amount,
+                    isIncome = expense.paidByUserId != currentUserId
+                )
+
+                Text(
+                    text = formatExpenseDateTime(expense.expenseId.toLongOrNull() ?: 0L),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PendingSettlementItem(
+    settlement: Settlement,
+    isIncoming: Boolean,
+    onApprove: (() -> Unit)?,
+    onDecline: (() -> Unit)?
+) {
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(lDimens.dp16)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = if (isIncoming) "Payment Request" else "Your Request",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
+                    )
+
+                    Text(
+                        text = if (isIncoming)
+                            "${settlement.fromUserName ?: "Someone"} requested payment"
+                        else
+                            "Requested from ${settlement.toUserName ?: "someone"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+                }
+
+                CurrencyDisplay(
+                    amount = settlement.amount,
+                    isIncome = false
+                )
+            }
+
+            // Only show action buttons for incoming requests
+            if (isIncoming && onApprove != null && onDecline != null) {
+                Spacer(modifier = Modifier.height(lDimens.dp12))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = onDecline,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = colors.error
+                        ),
+                        border = BorderStroke(lDimens.dp1, colors.error),
+                        modifier = Modifier.padding(end = lDimens.dp8)
+                    ) {
+                        Text("Decline")
+                    }
+
+                    Button(
+                        onClick = onApprove,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.success,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Approve")
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun QuickActionButton(
@@ -368,20 +632,20 @@ fun QuickActionButton(
 
     ElevatedButton(
         onClick = onClick,
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(lDimens.dp48),
         colors = ButtonDefaults.elevatedButtonColors(
             containerColor = colors.cardBackground,
             contentColor = colors.textPrimary
         ),
-        contentPadding = PaddingValues(horizontal = 8.dp)
+        contentPadding = PaddingValues(horizontal = lDimens.dp8)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = colors.primary,
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(lDimens.dp18)
         )
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(lDimens.dp4))
         Text(
             text = text,
             style = MaterialTheme.typography.labelMedium,
@@ -402,7 +666,7 @@ fun SectionHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -423,64 +687,6 @@ fun SectionHeader(
     }
 }
 
-@Composable
-fun ActivityItem(activity: RecentActivity) {
-    val colors = LocalSplitColors.current
-
-    SplitCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = activity.groupName,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = colors.textSecondary
-                )
-
-                Text(
-                    text = activity.description,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colors.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = activity.participants,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                CurrencyDisplay(
-                    amount = activity.amount,
-                    isIncome = activity.isIncome
-                )
-
-                Text(
-                    text = activity.time,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.textSecondary
-                )
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
 fun GroupCard(
@@ -492,14 +698,14 @@ fun GroupCard(
     Card(
         onClick = onClick,
         modifier = Modifier
-            .width(150.dp),
+            .width(lDimens.dp150),
         colors = CardDefaults.cardColors(
             containerColor = colors.cardBackground
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(lDimens.dp12)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(lDimens.dp12),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Group icon
@@ -508,11 +714,11 @@ fun GroupCard(
                 contentDescription = null,
                 tint = colors.primary,
                 modifier = Modifier
-                    .size(40.dp)
-                    .padding(4.dp)
+                    .size(lDimens.dp40)
+                    .padding(lDimens.dp4)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp8))
 
             // Group name
             Text(
@@ -531,82 +737,13 @@ fun GroupCard(
                 color = colors.textSecondary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp8))
 
             // Balance
             CurrencyDisplay(
                 amount = group.totalAmount ?: 0.0,
                 isIncome = (group.totalAmount ?: 0.0) >= 0
             )
-        }
-    }
-}
-
-@Composable
-fun SettlementItem(settlement: Settlement) {
-    val colors = LocalSplitColors.current
-
-    SplitCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Payment Request",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colors.textPrimary
-                    )
-
-                    Text(
-                        text = "${settlement.fromUserName ?: "Someone"} requested",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary
-                    )
-                }
-
-                CurrencyDisplay(
-                    amount = settlement.amount,
-                    isIncome = false
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ElevatedButton(
-                    onClick = { /* Decline settlement */ },
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = colors.cardBackground,
-                        contentColor = colors.error
-                    ),
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text("Decline")
-                }
-
-                ElevatedButton(
-                    onClick = { /* Approve settlement */ },
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = colors.primary,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("Approve")
-                }
-            }
         }
     }
 }
@@ -621,7 +758,7 @@ fun EmptyStateMessage(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(32.dp),
+            .padding(lDimens.dp32),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -632,7 +769,7 @@ fun EmptyStateMessage(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp4))
 
         Text(
             text = submessage,
@@ -656,131 +793,12 @@ fun getGreeting(name: String): String {
     }
 }
 
-// Sample data classes and functions
-data class RecentActivity(
-    val groupName: String,
-    val description: String,
-    val amount: Double,
-    val isIncome: Boolean,
-    val participants: String,
-    val date: String,
-    val time: String
-)
 
-// Sample data functions
-fun getSampleRecentActivity(): List<RecentActivity> {
-    return listOf(
-        RecentActivity(
-            groupName = "Weekend Trip",
-            description = "Dinner at Restaurant",
-            amount = 120.0,
-            isIncome = false,
-            participants = "You paid, 4 people involved",
-            date = "Today",
-            time = "7:30 PM"
-        ),
-        RecentActivity(
-            groupName = "Apartment",
-            description = "Monthly Rent",
-            amount = 350.0,
-            isIncome = true,
-            participants = "John paid you",
-            date = "Today",
-            time = "2:15 PM"
-        ),
-        RecentActivity(
-            groupName = "Office Lunch",
-            description = "Pizza Party",
-            amount = 45.75,
-            isIncome = false,
-            participants = "Sarah paid, you owe",
-            date = "Yesterday",
-            time = "1:00 PM"
-        ),
-        RecentActivity(
-            groupName = "Movie Night",
-            description = "Tickets & Popcorn",
-            amount = 32.50,
-            isIncome = true,
-            participants = "Mike paid you",
-            date = "Yesterday",
-            time = "9:20 AM"
-        )
-    )
-}
+private fun formatExpenseDateTime(timestamp: Long): String {
+    if (timestamp == 0L) return ""
 
-fun getSampleGroups(): List<Group> {
-    // Create sample group members
-    val members1 = listOf(
-        GroupMember(userId = "user1", phoneNumber = "1234567890", name = "You", balance = 50.0),
-        GroupMember(userId = "user2", phoneNumber = "2345678901", name = "John", balance = -25.0),
-        GroupMember(userId = "user3", phoneNumber = "3456789012", name = "Sarah", balance = -25.0)
-    )
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
-    val members2 = listOf(
-        GroupMember(userId = "user1", phoneNumber = "1234567890", name = "You", balance = -180.0),
-        GroupMember(userId = "user4", phoneNumber = "4567890123", name = "Mike", balance = 60.0),
-        GroupMember(userId = "user5", phoneNumber = "5678901234", name = "Emma", balance = 60.0),
-        GroupMember(userId = "user6", phoneNumber = "6789012345", name = "Dave", balance = 60.0)
-    )
-
-    val members3 = listOf(
-        GroupMember(userId = "user1", phoneNumber = "1234567890", name = "You", balance = 0.0),
-        GroupMember(userId = "user7", phoneNumber = "7890123456", name = "Lisa", balance = 0.0),
-        GroupMember(userId = "user8", phoneNumber = "8901234567", name = "Tom", balance = 0.0)
-    )
-
-    return listOf(
-        Group(
-            id = "group1",
-            name = "Weekend Trip",
-            createdBy = "user1",
-            members = members1,
-            createdAt = Clock.System.now().toEpochMilliseconds() - 1000000,
-            totalAmount = 50.0
-        ),
-        Group(
-            id = "group2",
-            name = "Apartment",
-            createdBy = "user4",
-            members = members2,
-            createdAt = Clock.System.now().toEpochMilliseconds() - 5000000,
-            totalAmount = -180.0
-        ),
-        Group(
-            id = "group3",
-            name = "Movie Night",
-            createdBy = "user1",
-            members = members3,
-            createdAt = Clock.System.now().toEpochMilliseconds() - 10000000,
-            totalAmount = 0.0
-        )
-    )
-}
-
-fun getSampleSettlements(): List<Settlement> {
-    return listOf(
-        Settlement(
-            id = "settlement1",
-            groupId = "group1",
-            fromUserId = "user2",
-            toUserId = "user1",
-            amount = 25.0,
-            timestamp = Clock.System.now().toEpochMilliseconds() - 100000,
-            status = SettlementStatus.PENDING,
-            fromUserName = "John",
-            toUserName = "You"
-        ),
-        Settlement(
-            id = "settlement2",
-            groupId = "group2",
-            fromUserId = "user1",
-            toUserId = "user4",
-            amount = 60.0,
-            timestamp = Clock.System.now().toEpochMilliseconds() - 200000,
-            status = SettlementStatus.PENDING,
-            fromUserName = "You",
-            toUserName = "Mike"
-        )
-    )
+    return "${dateTime.month.name.take(3)} ${dateTime.dayOfMonth}, ${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
 }
