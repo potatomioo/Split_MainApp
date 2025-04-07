@@ -15,6 +15,7 @@ import kotlinx.coroutines.tasks.await
 class FirebaseGroupRepository : GroupRepository {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val historyRepository = FirebaseHistoryRepository()
 
     override suspend fun getPhoneNumberFromId(userId: String): String? {
         val querySnapshot = db.collection("phoneNumbers")
@@ -89,6 +90,15 @@ class FirebaseGroupRepository : GroupRepository {
             )
 
             groupRef.set(group).await()
+
+            val memberIds = groupMembers.mapNotNull { it.userId }
+            historyRepository.createGroupHistoryItem(
+                groupId = groupRef.id,
+                groupName = name,
+                createdByUserId = currentUser.uid,
+                createdByUserName = currentUserName,
+                memberIds = memberIds
+            )
 
             Result.success(group)
         } catch (e: Exception) {
@@ -205,6 +215,20 @@ class FirebaseGroupRepository : GroupRepository {
             if (group.createdBy != currentUser.uid) {
                 return Result.failure(Exception("Only the group creator can delete this group"))
             }
+
+            val currentUserDoc = db.collection("users").document(currentUser.uid).get().await()
+            val currentUserName = currentUserDoc.getString("name") ?: currentUser.displayName
+
+            // Record history before deletion
+            val memberIds = group.members.mapNotNull { it.userId }
+            historyRepository.deleteGroupHistoryItem(
+                groupId = groupId,
+                groupName = group.name,
+                deletedByUserId = currentUser.uid,
+                deletedByUserName = currentUserName,
+                memberIds = memberIds
+            )
+
             val expensesQuery = db.collection("expenses")
                 .whereEqualTo("groupId", groupId)
                 .get()

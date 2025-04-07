@@ -17,6 +17,7 @@ import kotlinx.coroutines.tasks.await
 class FirebaseExpenseRepository : ExpenseRepository {
     private val db = FirebaseFirestore.getInstance()
     private val expenseCalculator = ExpenseCalculator()
+    private val historyRepository = FirebaseHistoryRepository()
 
     override suspend fun addExpense(
         groupId: String,
@@ -30,6 +31,14 @@ class FirebaseExpenseRepository : ExpenseRepository {
         val paidByUserName: String = currentUser.displayName ?: "Unknown"
 
         return try {
+            val groupSnapshot = db.collection("groups").document(groupId).get().await()
+            val group = groupSnapshot.toObject(Group::class.java)
+                ?: return Result.failure(Exception("Group not found"))
+
+            // Generate expense ID beforehand
+            val expenseRef = db.collection("expenses").document()
+            val expenseId = expenseRef.id
+
             db.runTransaction { transaction ->
                 // 1. Get the group to access its members
                 val groupRef = db.collection("groups").document(groupId)
@@ -99,6 +108,18 @@ class FirebaseExpenseRepository : ExpenseRepository {
                     "totalAmount" to (group.totalAmount ?: 0.0) + amount
                 ))
             }.await()
+
+            val memberIds = group.members.mapNotNull { it.userId }
+            historyRepository.addExpenseHistoryItem(
+                groupId = groupId,
+                groupName = group.name,
+                expenseId = expenseId,
+                expenseDescription = description,
+                expenseAmount = amount,
+                paidByUserId = paidByUserId,
+                paidByUserName = paidByUserName,
+                memberIds = memberIds
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -220,6 +241,21 @@ class FirebaseExpenseRepository : ExpenseRepository {
                 return Result.failure(Exception("Only the user who owes can initiate settlement"))
             }
 
+            val groupDoc = db.collection("groups").document(groupId).get().await()
+            val group = groupDoc.toObject(Group::class.java)
+                ?: return Result.failure(Exception("Group not found"))
+
+            // Get user names for history
+            val fromUserDoc = db.collection("users").document(fromUserId).get().await()
+            val fromUserName = fromUserDoc.getString("name") ?: "Unknown"
+
+            val toUserDoc = db.collection("users").document(toUserId).get().await()
+            val toUserName = toUserDoc.getString("name") ?: "Unknown"
+
+            // Generate settlement ID beforehand
+            val settlementRef = db.collection("settlements").document()
+            val settlementId = settlementRef.id
+
             db.runTransaction { transaction ->
                 // 1. Get the group document
                 val groupRef = db.collection("groups").document(groupId)
@@ -250,19 +286,30 @@ class FirebaseExpenseRepository : ExpenseRepository {
                 // 4. Create a pending settlement record
                 val settlementRef = db.collection("settlements").document()
                 val settlement = Settlement(
-                    id = settlementRef.id,
+                    id = settlementId,
                     groupId = groupId,
                     fromUserId = fromUserId,
                     toUserId = toUserId,
                     amount = amount,
                     timestamp = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                     status = SettlementStatus.PENDING,
-                    fromUserName = fromMember.name,
-                    toUserName = toMember.name
+                    fromUserName = fromUserName,
+                    toUserName = toUserName
                 )
 
                 transaction.set(settlementRef, settlement)
             }.await()
+
+            historyRepository.settlementRequestHistoryItem(
+                groupId = groupId,
+                groupName = group.name,
+                settlementId = settlementId,
+                settlementAmount = amount,
+                fromUserId = fromUserId,
+                fromUserName = fromUserName,
+                toUserId = toUserId,
+                toUserName = toUserName
+            )
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -274,6 +321,36 @@ class FirebaseExpenseRepository : ExpenseRepository {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
                 ?: return Result.failure(Exception("User not logged in"))
+
+            // Get settlement details for history
+            val settlementDoc = db.collection("settlements").document(settlementId).get().await()
+            val settlement = settlementDoc.toObject(Settlement::class.java) ?:
+            return Result.failure(Exception("Settlement not found"))
+
+            // Get group details
+            val groupDoc = db.collection("groups").document(settlement.groupId).get().await()
+            val group = groupDoc.toObject(Group::class.java) ?:
+            return Result.failure(Exception("Group not found"))
+
+            // Get user names
+            val fromUserDoc = db.collection("users").document(settlement.fromUserId).get().await()
+            val fromUserName = fromUserDoc.getString("name") ?: "Unknown"
+
+            val toUserDoc = db.collection("users").document(settlement.toUserId).get().await()
+            val toUserName = toUserDoc.getString("name") ?: "Unknown"
+
+
+            historyRepository.settlementCompletedHistoryItem(
+                groupId = settlement.groupId,
+                groupName = group.name,
+                settlementId = settlementId,
+                settlementAmount = settlement.amount,
+                fromUserId = settlement.fromUserId,
+                fromUserName = fromUserName,
+                toUserId = settlement.toUserId,
+                toUserName = toUserName,
+                approved = true
+            )
 
             db.runTransaction { transaction ->
                 // 1. Get the settlement document
@@ -349,6 +426,35 @@ class FirebaseExpenseRepository : ExpenseRepository {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
                 ?: return Result.failure(Exception("User not logged in"))
+
+            val settlementDoc = db.collection("settlements").document(settlementId).get().await()
+            val settlement = settlementDoc.toObject(Settlement::class.java) ?:
+            return Result.failure(Exception("Settlement not found"))
+
+            // Get group details
+            val groupDoc = db.collection("groups").document(settlement.groupId).get().await()
+            val group = groupDoc.toObject(Group::class.java) ?:
+            return Result.failure(Exception("Group not found"))
+
+            // Get user names
+            val fromUserDoc = db.collection("users").document(settlement.fromUserId).get().await()
+            val fromUserName = fromUserDoc.getString("name") ?: "Unknown"
+
+            val toUserDoc = db.collection("users").document(settlement.toUserId).get().await()
+            val toUserName = toUserDoc.getString("name") ?: "Unknown"
+
+            // Record settlement decline in history
+            historyRepository.settlementCompletedHistoryItem(
+                groupId = settlement.groupId,
+                groupName = group.name,
+                settlementId = settlementId,
+                settlementAmount = settlement.amount,
+                fromUserId = settlement.fromUserId,
+                fromUserName = fromUserName,
+                toUserId = settlement.toUserId,
+                toUserName = toUserName,
+                approved = false
+            )
 
             db.runTransaction { transaction ->
                 // 1. Get the settlement document
