@@ -1,6 +1,5 @@
 package com.falcon.split.data.repository
 
-
 import com.falcon.split.HistoryRepository
 import com.falcon.split.presentation.history.HistoryActionType
 import com.falcon.split.presentation.history.HistoryItem
@@ -8,6 +7,7 @@ import com.falcon.split.presentation.history.UserHistory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -16,6 +16,56 @@ import kotlinx.coroutines.tasks.await
 class FirebaseHistoryRepository : HistoryRepository {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
+    // Define the FirestoreUserHistory class here to handle Timestamp objects
+    class FirestoreUserHistory {
+        var userId: String = ""
+        var historyItems: List<Map<String, Any>> = emptyList()
+
+        // Handle both Timestamp and Long for lastUpdated
+        // This is the critical part - we need to support both formats
+        private var lastUpdated: Any? = null
+
+        fun getLastUpdatedTime(): Long {
+            return when (lastUpdated) {
+                is Timestamp -> (lastUpdated as Timestamp).seconds * 1000
+                is Long -> lastUpdated as Long
+                else -> System.currentTimeMillis()
+            }
+        }
+
+        fun toCommon(): UserHistory {
+            return UserHistory(
+                userId = userId,
+                historyItems = historyItems.map { map ->
+                    // Handle timestamp which can be Timestamp or Long
+                    val timestamp = when (val ts = map["timestamp"]) {
+                        is Timestamp -> ts.seconds * 1000
+                        is Long -> ts
+                        else -> System.currentTimeMillis()
+                    }
+
+                    HistoryItem(
+                        id = map["id"] as? String ?: "",
+                        timestamp = timestamp,
+                        actionType = HistoryActionType.valueOf(map["actionType"] as String),
+                        actionByUserId = map["actionByUserId"] as String,
+                        actionByUserName = map["actionByUserName"] as? String,
+                        groupId = map["groupId"] as? String,
+                        groupName = map["groupName"] as? String,
+                        expenseId = map["expenseId"] as? String,
+                        expenseAmount = map["expenseAmount"] as? Double,
+                        settlementId = map["settlementId"] as? String,
+                        settlementAmount = map["settlementAmount"] as? Double,
+                        targetUserId = map["targetUserId"] as? String,
+                        targetUserName = map["targetUserName"] as? String,
+                        description = map["description"] as String,
+                        read = map["read"] as? Boolean ?: false
+                    )
+                }
+            )
+        }
+    }
 
     override suspend fun getUserHistory(page: Int, itemsPerPage: Int): Flow<List<HistoryItem>> = callbackFlow {
         try {
@@ -42,14 +92,16 @@ class FirebaseHistoryRepository : HistoryRepository {
                 }
 
                 try {
-                    // Convert to UserHistory
-                    val userHistory = snapshot.toObject(UserHistory::class.java)
+                    // Convert to FirestoreUserHistory then to common model
+                    val firestoreUserHistory = snapshot.toObject(FirestoreUserHistory::class.java)
 
-                    if (userHistory == null) {
-                        println("DEBUG: Failed to convert document to UserHistory")
+                    if (firestoreUserHistory == null) {
+                        println("DEBUG: Failed to convert document to FirestoreUserHistory")
                         trySend(emptyList())
                         return@addSnapshotListener
                     }
+
+                    val userHistory = firestoreUserHistory.toCommon()
 
                     // Apply pagination
                     val startIndex = page * itemsPerPage
@@ -95,7 +147,8 @@ class FirebaseHistoryRepository : HistoryRepository {
                 return false
             }
 
-            val userHistory = userHistoryDoc.toObject(UserHistory::class.java) ?: return false
+            val firestoreUserHistory = userHistoryDoc.toObject(FirestoreUserHistory::class.java) ?: return false
+            val userHistory = firestoreUserHistory.toCommon()
 
             // Calculate if there are more items beyond the current page
             val nextPageStartIndex = (page + 1) * itemsPerPage
@@ -114,29 +167,29 @@ class FirebaseHistoryRepository : HistoryRepository {
             // Get the user history document
             val userHistoryRef = db.collection("userHistories").document(userId)
 
-            // Use transactions to update the specific history item within the array
-            db.runTransaction { transaction ->
-                val userHistoryDoc = transaction.get(userHistoryRef)
-                if (!userHistoryDoc.exists()) {
-                    throw Exception("User history document does not exist")
+            // This is a more complex operation because we need to update a specific item in an array
+            // We need to get the document, modify the array, and update it
+            val document = userHistoryRef.get().await()
+            if (!document.exists()) {
+                return Result.failure(Exception("User history document does not exist"))
+            }
+
+            val firestoreUserHistory = document.toObject(FirestoreUserHistory::class.java)
+                ?: return Result.failure(Exception("Could not convert document to FirestoreUserHistory"))
+
+            val updatedItems = firestoreUserHistory.historyItems.map { item ->
+                if (item["id"] == historyItemId) {
+                    // Create a new map with the read field set to true
+                    item.toMutableMap().apply {
+                        this["read"] = true
+                    }
+                } else {
+                    item
                 }
+            }
 
-                val userHistory = userHistoryDoc.toObject(UserHistory::class.java)
-                    ?: throw Exception("Could not convert document to UserHistory")
-
-                // Find the index of the history item
-                val index = userHistory.historyItems.indexOfFirst { it.id == historyItemId }
-                if (index == -1) {
-                    throw Exception("History item not found")
-                }
-
-                // Update the history item's read status
-                val updatedItems = userHistory.historyItems.toMutableList()
-                updatedItems[index] = updatedItems[index].copy(read = true)
-
-                // Update the document
-                transaction.update(userHistoryRef, "historyItems", updatedItems)
-            }.await()
+            // Update the document with the modified array
+            userHistoryRef.update("historyItems", updatedItems).await()
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -153,22 +206,24 @@ class FirebaseHistoryRepository : HistoryRepository {
             // Get the user history document
             val userHistoryRef = db.collection("userHistories").document(userId)
 
-            // Use transactions to update all history items
-            db.runTransaction { transaction ->
-                val userHistoryDoc = transaction.get(userHistoryRef)
-                if (!userHistoryDoc.exists()) {
-                    throw Exception("User history document does not exist")
+            // Similar to markHistoryItemAsRead, but we update all items
+            val document = userHistoryRef.get().await()
+            if (!document.exists()) {
+                return Result.failure(Exception("User history document does not exist"))
+            }
+
+            val firestoreUserHistory = document.toObject(FirestoreUserHistory::class.java)
+                ?: return Result.failure(Exception("Could not convert document to FirestoreUserHistory"))
+
+            val updatedItems = firestoreUserHistory.historyItems.map { item ->
+                // Create a new map with the read field set to true
+                item.toMutableMap().apply {
+                    this["read"] = true
                 }
+            }
 
-                val userHistory = userHistoryDoc.toObject(UserHistory::class.java)
-                    ?: throw Exception("Could not convert document to UserHistory")
-
-                // Mark all items as read
-                val updatedItems = userHistory.historyItems.map { it.copy(read = true) }
-
-                // Update the document
-                transaction.update(userHistoryRef, "historyItems", updatedItems)
-            }.await()
+            // Update the document with the modified array
+            userHistoryRef.update("historyItems", updatedItems).await()
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -188,30 +243,8 @@ class FirebaseHistoryRepository : HistoryRepository {
             // Create a unique ID for the history item
             val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
 
-            // Reference to the user's history document
-            val userHistoryRef = db.collection("userHistories").document(userId)
-
             // Add the history item to the user's history
-            db.runTransaction { transaction ->
-                val userHistoryDoc = transaction.get(userHistoryRef)
-
-                if (userHistoryDoc.exists()) {
-                    // Update existing document
-                    transaction.update(
-                        userHistoryRef,
-                        "historyItems", FieldValue.arrayUnion(itemWithId),
-                        "lastUpdated", FieldValue.serverTimestamp()
-                    )
-                } else {
-                    // Create new document
-                    val newUserHistory = UserHistory(
-                        userId = userId,
-                        historyItems = listOf(itemWithId),
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    transaction.set(userHistoryRef, newUserHistory)
-                }
-            }.await()
+            addHistoryItemToUser(userId, itemWithId)
 
             println("DEBUG: Successfully added history item for user $userId")
             Result.success(Unit)
@@ -223,7 +256,6 @@ class FirebaseHistoryRepository : HistoryRepository {
     }
 
     // Helper methods to create history items for various actions
-
     suspend fun createGroupHistoryItem(
         groupId: String,
         groupName: String,
@@ -296,33 +328,8 @@ class FirebaseHistoryRepository : HistoryRepository {
                         description = "$deletedByUserName deleted the group \"$groupName\""
                     )
 
-                    // Add the history item to the member's history document
-                    val memberHistoryRef = db.collection("userHistories").document(memberId)
-
-                    // Create a unique ID for the history item
-                    val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
-
-                    db.runTransaction { transaction ->
-                        val memberHistoryDoc = transaction.get(memberHistoryRef)
-
-                        if (memberHistoryDoc.exists()) {
-                            // Update existing document
-                            transaction.update(
-                                memberHistoryRef,
-                                "historyItems", FieldValue.arrayUnion(itemWithId),
-                                "lastUpdated", FieldValue.serverTimestamp()
-                            )
-                        } else {
-                            // Create new document
-                            val newUserHistory = UserHistory(
-                                userId = memberId,
-                                historyItems = listOf(itemWithId),
-                                lastUpdated = System.currentTimeMillis()
-                            )
-                            transaction.set(memberHistoryRef, newUserHistory)
-                        }
-                    }.await()
-
+                    // Add to member's history
+                    addHistoryItemToUser(memberId, historyItem)
                     println("DEBUG: Added group deleted history for member $memberId")
                 }
             }
@@ -362,37 +369,13 @@ class FirebaseHistoryRepository : HistoryRepository {
                         description = "$paidByUserName added an expense \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
                     )
 
-                    // Add the history item to the member's history document
-                    val memberHistoryRef = db.collection("userHistories").document(memberId)
-
-                    // Create a unique ID for the history item
-                    val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
-
-                    db.runTransaction { transaction ->
-                        val memberHistoryDoc = transaction.get(memberHistoryRef)
-
-                        if (memberHistoryDoc.exists()) {
-                            // Update existing document
-                            transaction.update(
-                                memberHistoryRef,
-                                "historyItems", FieldValue.arrayUnion(itemWithId),
-                                "lastUpdated", FieldValue.serverTimestamp()
-                            )
-                        } else {
-                            // Create new document
-                            val newUserHistory = UserHistory(
-                                userId = memberId,
-                                historyItems = listOf(itemWithId),
-                                lastUpdated = System.currentTimeMillis()
-                            )
-                            transaction.set(memberHistoryRef, newUserHistory)
-                        }
-                    }.await()
-
+                    // Add to member's history
+                    addHistoryItemToUser(memberId, historyItem)
                     println("DEBUG: Added expense history for member $memberId")
                 }
             }
 
+            // Create a history item for the expense creator too
             val creatorHistoryItem = HistoryItem(
                 actionType = HistoryActionType.EXPENSE_ADDED,
                 actionByUserId = paidByUserId,
@@ -406,7 +389,7 @@ class FirebaseHistoryRepository : HistoryRepository {
 
             // Add to creator's history
             addHistoryItemToUser(paidByUserId, creatorHistoryItem)
-            println("DEBUG: Added group created history for creator $paidByUserId")
+            println("DEBUG: Added expense history for creator $paidByUserId")
 
             return Result.success(Unit)
         } catch (e: Exception) {
@@ -473,7 +456,6 @@ class FirebaseHistoryRepository : HistoryRepository {
         }
     }
 
-
     suspend fun settlementCompletedHistoryItem(
         groupId: String,
         groupName: String,
@@ -512,69 +494,16 @@ class FirebaseHistoryRepository : HistoryRepository {
                 description = description
             )
 
-            // Add the history item to the initiator's history document
-            val fromUserHistoryRef = db.collection("userHistories").document(fromUserId)
-
-            // Create a unique ID for the history item
-            val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
-
-            db.runTransaction { transaction ->
-                val fromUserHistoryDoc = transaction.get(fromUserHistoryRef)
-
-                if (fromUserHistoryDoc.exists()) {
-                    // Update existing document
-                    transaction.update(
-                        fromUserHistoryRef,
-                        "historyItems", FieldValue.arrayUnion(itemWithId),
-                        "lastUpdated", FieldValue.serverTimestamp()
-                    )
-                } else {
-                    // Create new document
-                    val newUserHistory = UserHistory(
-                        userId = fromUserId,
-                        historyItems = listOf(itemWithId),
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    transaction.set(fromUserHistoryRef, newUserHistory)
-                }
-            }.await()
-
+            // Add to initiator's history
+            addHistoryItemToUser(fromUserId, historyItem)
             println("DEBUG: Added settlement completion history for user $fromUserId")
+
             return Result.success(Unit)
         } catch (e: Exception) {
             println("DEBUG: Error creating settlement completion history - ${e.message}")
             e.printStackTrace()
             return Result.failure(e)
         }
-    }
-
-    private suspend fun addHistoryItemToUser(userId: String, historyItem: HistoryItem) {
-        // Create a unique ID for the history item
-        val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
-
-        // Add the history item to the user's history document
-        val userHistoryRef = db.collection("userHistories").document(userId)
-
-        db.runTransaction { transaction ->
-            val userHistoryDoc = transaction.get(userHistoryRef)
-
-            if (userHistoryDoc.exists()) {
-                // Update existing document
-                transaction.update(
-                    userHistoryRef,
-                    "historyItems", FieldValue.arrayUnion(itemWithId),
-                    "lastUpdated", FieldValue.serverTimestamp()
-                )
-            } else {
-                // Create new document
-                val newUserHistory = UserHistory(
-                    userId = userId,
-                    historyItems = listOf(itemWithId),
-                    lastUpdated = System.currentTimeMillis()
-                )
-                transaction.set(userHistoryRef, newUserHistory)
-            }
-        }.await()
     }
 
     suspend fun memberAddedHistoryItem(
@@ -600,39 +529,70 @@ class FirebaseHistoryRepository : HistoryRepository {
                 description = "$addedByUserName added you to the group \"$groupName\""
             )
 
-            // Add the history item to the new member's history document
-            val newMemberHistoryRef = db.collection("userHistories").document(newMemberId)
-
-            // Create a unique ID for the history item
-            val itemWithId = historyItem.copy(id = db.collection("temp").document().id)
-
-            db.runTransaction { transaction ->
-                val newMemberHistoryDoc = transaction.get(newMemberHistoryRef)
-
-                if (newMemberHistoryDoc.exists()) {
-                    // Update existing document
-                    transaction.update(
-                        newMemberHistoryRef,
-                        "historyItems", FieldValue.arrayUnion(itemWithId),
-                        "lastUpdated", FieldValue.serverTimestamp()
-                    )
-                } else {
-                    // Create new document
-                    val newUserHistory = UserHistory(
-                        userId = newMemberId,
-                        historyItems = listOf(itemWithId),
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    transaction.set(newMemberHistoryRef, newUserHistory)
-                }
-            }.await()
-
+            // Add to new member's history
+            addHistoryItemToUser(newMemberId, historyItem)
             println("DEBUG: Added member added history for user $newMemberId")
+
             return Result.success(Unit)
         } catch (e: Exception) {
             println("DEBUG: Error creating member added history - ${e.message}")
             e.printStackTrace()
             return Result.failure(e)
+        }
+    }
+
+    private suspend fun addHistoryItemToUser(userId: String, historyItem: HistoryItem) {
+        try {
+            // Create a unique ID if one doesn't exist
+            val itemId = historyItem.id.ifEmpty { db.collection("temp").document().id }
+            val itemWithId = if (historyItem.id.isEmpty()) historyItem.copy(id = itemId) else historyItem
+
+            // Create a Firestore-friendly map of the history item
+            val historyItemMap = mapOf(
+                "id" to itemWithId.id,
+                "timestamp" to Timestamp(itemWithId.timestamp / 1000, 0),
+                "actionType" to itemWithId.actionType.name,
+                "actionByUserId" to itemWithId.actionByUserId,
+                "actionByUserName" to itemWithId.actionByUserName,
+                "groupId" to itemWithId.groupId,
+                "groupName" to itemWithId.groupName,
+                "expenseId" to itemWithId.expenseId,
+                "expenseAmount" to itemWithId.expenseAmount,
+                "settlementId" to itemWithId.settlementId,
+                "settlementAmount" to itemWithId.settlementAmount,
+                "targetUserId" to itemWithId.targetUserId,
+                "targetUserName" to itemWithId.targetUserName,
+                "description" to itemWithId.description,
+                "read" to itemWithId.read
+            )
+
+            // Add the history item to the user's history document
+            val userHistoryRef = db.collection("userHistories").document(userId)
+
+            // Check if the document exists first
+            val documentSnapshot = userHistoryRef.get().await()
+
+            if (documentSnapshot.exists()) {
+                // Update existing document - use update instead of transaction
+                userHistoryRef.update(
+                    "historyItems", FieldValue.arrayUnion(historyItemMap),
+                    "lastUpdated", FieldValue.serverTimestamp()
+                ).await()
+            } else {
+                // Create new document - use set instead of transaction
+                val newUserHistory = mapOf(
+                    "userId" to userId,
+                    "historyItems" to listOf(historyItemMap),
+                    "lastUpdated" to FieldValue.serverTimestamp()
+                )
+                userHistoryRef.set(newUserHistory).await()
+            }
+
+            println("DEBUG: Successfully added history item to user $userId")
+        } catch (e: Exception) {
+            println("DEBUG: Error in addHistoryItemToUser - ${e.message}")
+            e.printStackTrace()
+            throw e
         }
     }
 }
