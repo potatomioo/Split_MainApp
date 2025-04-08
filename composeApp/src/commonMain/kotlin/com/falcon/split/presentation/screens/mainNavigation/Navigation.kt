@@ -75,7 +75,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.LayoutDirection
 import com.falcon.split.presentation.group.GroupViewModel
-import com.falcon.split.presentation.screens.history.HistoryScreen
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.launch
 
@@ -90,6 +91,7 @@ fun NavHostMain(
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController,
     viewModel: GroupViewModel,
+    historyViewModel: HistoryViewModel
 ) {
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -207,6 +209,7 @@ fun NavHostMain(
                     historyVM,
                     snackBarHostState,
                     navControllerMain,
+                    historyViewModel = historyViewModel
                 )
                 2 -> GroupsScreen(
                     onCreateGroupClick = { navControllerMain.navigate("create_group") },
@@ -250,11 +253,13 @@ fun IntegratedHistoryScreen(
     newsViewModel: MainViewModel,
     snackBarHostState: androidx.compose.material3.SnackbarHostState,
     navControllerMain: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    historyViewModel: HistoryViewModel
 ) {
     // Call the new History Screen implementation
     HistoryScreen(
         onNavigate = onNavigate,
+        historyViewModel = historyViewModel,
         prefs = prefs,
         newsViewModel = newsViewModel,
         snackBarHostState = snackBarHostState,

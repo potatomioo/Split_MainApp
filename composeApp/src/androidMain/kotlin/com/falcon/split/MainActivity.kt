@@ -54,6 +54,7 @@ import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
 import com.falcon.split.data.repository.FirebaseExpenseRepository
 import com.falcon.split.data.repository.FirebaseGroupRepository
+import com.falcon.split.data.repository.FirebaseHistoryRepository
 import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.sign_in.GoogleAuthUiClient
@@ -81,6 +82,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var contactManager: AndroidContactManager
     private val groupRepository by lazy { FirebaseGroupRepository() }
     private val expenseRepository by lazy { FirebaseExpenseRepository() }
+    private val historyRepository by lazy { FirebaseHistoryRepository() }
 
     val userManager = FirebaseUserManager()
 
@@ -156,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     },
                     groupRepository = groupRepository,
                     expenseRepository = expenseRepository,
+                    historyRepository = historyRepository,
                     darkTheme = darkTheme,
                     userManager = userManager
                 )

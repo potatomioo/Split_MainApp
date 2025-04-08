@@ -79,6 +79,7 @@ import com.falcon.split.presentation.screens.mainNavigation.navigateTo
 import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.Repository.GroupRepository
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
 import com.falcon.split.userManager.UserManager
@@ -132,6 +133,7 @@ fun App(
     AndroidSignInComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
     groupRepository: GroupRepository? = null,
     expenseRepository: ExpenseRepository? = null,
+    historyRepository: HistoryRepository? = null,
     darkTheme: MutableState<Boolean>?,
     userManager: UserManager
 ) {
@@ -267,6 +269,11 @@ fun App(
                     expenseRepository!!,
                     userManager
                 ) }
+                val historyViewModel = remember {
+                    HistoryViewModel(
+                        historyRepository = historyRepository!!
+                    )
+                }
                 NavHostMain(
                     client = client,
                     onNavigate = { routeName ->
@@ -277,6 +284,7 @@ fun App(
                     snackBarHostState = snackBarHostState,
                     navControllerMain = navControllerMain,
                     viewModel = groupViewModel,
+                    historyViewModel = historyViewModel
                 )
                 if (openUserOptionsMenu.value) {
                     OptionMenuPopup(
