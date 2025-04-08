@@ -1,7 +1,9 @@
 package com.falcon.split.presentation.history
 
 import kotlinx.datetime.Clock
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 enum class HistoryActionType {
@@ -33,12 +35,17 @@ data class HistoryItem(
     val read: Boolean = false // Whether the user has read this history item
 )
 
+// In common main
 @Serializable
 data class UserHistory(
-    val userId: String = "",  // User ID this history belongs to
+    val userId: String = "",
     val historyItems: List<HistoryItem> = emptyList(),
-    val lastUpdated: Long = Clock.System.now().toEpochMilliseconds()
-)
+    @SerialName("lastUpdated")
+    private val _lastUpdated: Long? = null
+) {
+    @Transient
+    val lastUpdated: Long = _lastUpdated ?: Clock.System.now().toEpochMilliseconds()
+}
 
 @Serializable
 enum class HistoryFilterType {
