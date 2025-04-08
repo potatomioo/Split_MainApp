@@ -201,7 +201,8 @@ fun NavHostMain(
                     historyVM,
                     navControllerMain,
                     topPadding = innerPadding.calculateTopPadding(),
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    historyViewModel
                 )
                 1 -> IntegratedHistoryScreen(
                     onNavigate,
