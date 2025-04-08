@@ -9,4 +9,5 @@ interface HistoryRepository {
     suspend fun markHistoryItemAsRead(historyId: String): Result<Unit>
     suspend fun addHistoryItem(historyItem: HistoryItem): Result<Unit>
     suspend fun markAllHistoryAsRead(): Result<Unit>
+    suspend fun getRecentHistory(limit: Int = 4): Flow<List<HistoryItem>>
 }

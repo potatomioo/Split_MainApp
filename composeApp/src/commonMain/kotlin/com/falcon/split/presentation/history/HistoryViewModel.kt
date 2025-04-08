@@ -44,6 +44,10 @@ class HistoryViewModel(
     private val _unreadCount = MutableStateFlow(0)
     val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
+    private val _recentHistoryItems = MutableStateFlow<List<HistoryItem>>(emptyList())
+    val recentHistoryItems: StateFlow<List<HistoryItem>> = _recentHistoryItems.asStateFlow()
+
+
     init {
         loadInitialHistory()
     }
@@ -228,5 +232,18 @@ class HistoryViewModel(
     private fun updateUnreadCount() {
         val count = _historyItems.value.count { !it.read }
         _unreadCount.value = count
+    }
+    fun loadRecentHistory(limit: Int = 4) {
+        viewModelScope.launch {
+            try {
+                historyRepository.getRecentHistory(limit)
+                    .collect { items ->
+                        _recentHistoryItems.value = items
+                        println("DEBUG: Loaded ${items.size} recent history items")
+                    }
+            } catch (e: Exception) {
+                println("DEBUG: Error loading recent history - ${e.message}")
+            }
+        }
     }
 }

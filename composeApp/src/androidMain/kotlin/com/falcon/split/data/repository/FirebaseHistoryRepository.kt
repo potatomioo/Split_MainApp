@@ -256,6 +256,57 @@ class FirebaseHistoryRepository : HistoryRepository {
         }
     }
 
+    override suspend fun getRecentHistory(limit: Int): Flow<List<HistoryItem>> = callbackFlow {
+        try {
+            val currentUser = auth.currentUser ?: throw Exception("No user logged in")
+            val userId = currentUser.uid
+
+            println("DEBUG: Fetching recent history for user $userId, limit $limit")
+
+            // Reference to the user's history document
+            val userHistoryRef = db.collection("userHistories").document(userId)
+            val documentSnapshot = userHistoryRef.get().await()
+
+            if (!documentSnapshot.exists()) {
+                println("DEBUG: No history document exists for user $userId")
+                trySend(emptyList())
+                close()
+                return@callbackFlow
+            }
+
+            try {
+                // Convert to FirestoreUserHistory
+                val firestoreUserHistory = documentSnapshot.toObject(FirestoreUserHistory::class.java)
+
+                if (firestoreUserHistory == null) {
+                    println("DEBUG: Failed to convert document to FirestoreUserHistory")
+                    trySend(emptyList())
+                    close()
+                    return@callbackFlow
+                }
+
+                val userHistory = firestoreUserHistory.toCommon()
+
+                // Get only the most recent items
+                val recentItems = userHistory.historyItems
+                    .sortedByDescending { it.timestamp }
+                    .take(limit)
+
+                println("DEBUG: Fetched ${recentItems.size} recent history items")
+                trySend(recentItems)
+                close()
+            } catch (e: Exception) {
+                println("DEBUG: Error processing recent history data - ${e.message}")
+                e.printStackTrace()
+                close(e)
+            }
+        } catch (e: Exception) {
+            println("DEBUG: Error fetching recent history - ${e.message}")
+            e.printStackTrace()
+            close(e)
+        }
+    }
+
     // Helper methods to create history items for various actions
     suspend fun createGroupHistoryItem(
         groupId: String,

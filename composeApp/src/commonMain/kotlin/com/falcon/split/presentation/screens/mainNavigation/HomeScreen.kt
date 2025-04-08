@@ -72,6 +72,8 @@ import com.falcon.split.presentation.expense.ExpenseState
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryItemCard
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
@@ -97,8 +99,9 @@ fun HomeScreen(
     mainViewModel: MainViewModel,
     navControllerMain: NavHostController,
     topPadding : Dp,
-    viewModel: GroupViewModel
-) {
+    viewModel: GroupViewModel,
+    historyViewModel: HistoryViewModel,
+    ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
 
@@ -115,6 +118,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         viewModel.loadGroups()  // This loads all groups the user is part of
         viewModel.loadPendingSettlements()
+        historyViewModel.loadRecentHistory(4)
 
         // Get expenses for all groups this user is part of
         if (groupState is GroupState.Success) {
@@ -311,71 +315,26 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Recent Activity",
                     actionText = "View All",
-                    onActionClick = { /* Navigate to full history */ }
+                    onActionClick = { navControllerMain.navigate("history") }  // Navigate to full history screen
                 )
 
-                // Get data for recent activity
-                val recentActivity = mutableListOf<Any>()
+                val recentHistoryItems by historyViewModel.recentHistoryItems.collectAsState()
 
-                // Add expenses if available
-                if (expenseState is ExpenseState.Success) {
-                    recentActivity.addAll((expenseState as ExpenseState.Success).expenses)
-                }
-
-                // Add groups if available (for group creation events)
-                if (groupState is GroupState.Success) {
-                    val groups = (groupState as GroupState.Success).groups
-                    // Filter to recent groups (created in last 7 days)
-                    val recentGroups = groups.filter { group ->
-                        val groupCreationTime = group.createdAt ?: 0L
-                        val now = Clock.System.now().toEpochMilliseconds()
-                        val sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000L
-                        now - groupCreationTime < sevenDaysInMillis
-                    }
-                    recentActivity.addAll(recentGroups)
-                }
-
-                // Add settlements if available
-                recentActivity.addAll(viewModel.settlements.value)
-
-                // Sort by timestamp (recent first)
-                val sortedActivity = recentActivity.sortedByDescending { item ->
-                    when (item) {
-                        is Expense -> item.expenseId.toLongOrNull() ?: 0L
-                        is Group -> item.createdAt ?: 0L
-                        is Settlement -> item.timestamp
-                        else -> 0L
-                    }
-                }.take(4)
-
-                if (sortedActivity.isEmpty()) {
+                if (recentHistoryItems.isEmpty()) {
                     EmptyStateMessage(
                         message = "No recent activity",
-                        submessage = "Your recent expenses, groups, and settlements will appear here"
+                        submessage = "Your recent activity will appear here"
                     )
                 } else {
                     Column(
                         modifier = Modifier.padding(horizontal = lDimens.dp16),
                         verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
                     ) {
-                        sortedActivity.forEach { item ->
-                            when (item) {
-                                is Expense -> currentUserId?.let {
-                                    RecentActivityItem(expense = item,
-                                        it
-                                    )
-                                }
-                                is Group -> currentUserId?.let {
-                                    GroupCreationItem(group = item,
-                                        it
-                                    )
-                                }
-                                is Settlement -> currentUserId?.let {
-                                    SettlementActivityItem(settlement = item,
-                                        it
-                                    )
-                                }
-                            }
+                        recentHistoryItems.forEach { historyItem ->
+                            HistoryItemCard(
+                                historyItem = historyItem,
+                                onMarkAsRead = { historyViewModel.markAsRead(it) }
+                            )
                         }
                     }
                 }
@@ -504,82 +463,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun RecentActivityItem(expense: Expense, currentUserId: String) {
-    val colors = LocalSplitColors.current
-
-    SplitCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(lDimens.dp12),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Activity icon
-            Box(
-                modifier = Modifier
-                    .size(lDimens.dp40)
-                    .clip(CircleShape)
-                    .background(colors.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = null,
-                    tint = colors.primary,
-                    modifier = Modifier.size(lDimens.dp24)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(lDimens.dp12))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (expense.paidByUserId == currentUserId) "You" else
-                            (expense.paidByUserName ?: "Someone"),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = colors.textPrimary
-                    )
-
-                    Text(
-                        text = " added an expense",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textPrimary
-                    )
-                }
-
-                Text(
-                    text = "\"${expense.description}\" in group ${expense.groupId}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.textPrimary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    text = formatExpenseDateTime(expense.expenseId.toLongOrNull() ?: 0L),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.textSecondary
-                )
-            }
-
-            Spacer(modifier = Modifier.width(lDimens.dp8))
-
-            // Amount
-            CurrencyDisplay(
-                amount = expense.amount,
-                isIncome = expense.paidByUserId != currentUserId
-            )
-        }
-    }
-}
 
 @Composable
 fun PendingSettlementItem(
