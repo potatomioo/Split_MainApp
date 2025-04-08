@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.falcon.split.presentation.group.CreateGroupState
 import com.falcon.split.presentation.group.CreateGroupViewModel
 import com.falcon.split.contact.ContactManager
+import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
@@ -33,6 +34,8 @@ fun CreateGroupScreen(
     contactManager: ContactManager,
     viewModel: CreateGroupViewModel = viewModel()
 ) {
+    val colors = LocalSplitColors.current
+
     var groupName by remember { mutableStateOf("") }
     var showContactPicker by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -75,7 +78,10 @@ fun CreateGroupScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Create New Group") },
+                title = { Text(
+                    "Create New Group",
+                    color = colors.textPrimary
+                ) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -113,7 +119,10 @@ fun CreateGroupScreen(
                     OutlinedTextField(
                         value = groupName,
                         onValueChange = { groupName = it },
-                        label = { Text("Group Name") },
+                        label = { Text(
+                            "Group Name",
+                            color = colors.textPrimary
+                        ) },
                         placeholder = { Text("Enter group name") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -138,7 +147,8 @@ fun CreateGroupScreen(
                     ) {
                         Text(
                             text = "Select Members",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.textPrimary
                         )
                         Button(
                             onClick = { showContactPicker = true },
@@ -192,12 +202,13 @@ fun CreateGroupScreen(
                                                     text = contact.contactName,
                                                     style = MaterialTheme.typography.bodyLarge,
                                                     maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    color = colors.textPrimary
                                                 )
                                                 Text(
                                                     text = contact.contactNumber,
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = colors.textSecondary
                                                 )
                                             }
                                         }
@@ -249,12 +260,14 @@ fun CreateGroupScreen(
                     Icon(
                         Icons.Default.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        tint = colors.primary
                     )
                     Spacer(modifier = Modifier.width(lDimens.dp8))
                     Text(
                         "Create Group",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary
                     )
                 }
             }

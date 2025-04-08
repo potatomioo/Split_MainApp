@@ -18,11 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.falcon.split.presentation.AppFontFamily
 
-
-/**
- * Split App Color Palette
- * A modern, accessible color system with both light and dark theme variants
- */
+//Theme color file with all the defined sections.
 
 // Brand Colors
 val SplitGreen = Color(0xFF8FCB39)       // Primary brand green
@@ -61,9 +57,7 @@ val DarkError = Color(0xFFE35D6A)        // Error states - lighter red
 val DarkWarning = Color(0xFFFFD43B)      // Warning states - brighter amber
 val DarkInfo = Color(0xFF4ECBE0)         // Info states - lighter teal
 
-/**
- * SplitColors class to maintain consistent colors throughout the app
- */
+
 class SplitColors(
     // Background colors
     val backgroundPrimary: Color,        // Main app background
@@ -96,9 +90,9 @@ val LocalSplitColors = staticCompositionLocalOf {
     lightSplitColors() // Default to light theme colors
 }
 
-/**
- * Light theme colors configuration
- */
+
+ //Light theme colors configuration
+
 fun lightSplitColors() = SplitColors(
     backgroundPrimary = LightBackground,
     backgroundSecondary = LightSurface,
@@ -117,9 +111,8 @@ fun lightSplitColors() = SplitColors(
     info = LightInfo
 )
 
-/**
- * Dark theme colors configuration
- */
+ //Dark theme colors configuration
+
 fun darkSplitColors() = SplitColors(
     backgroundPrimary = DarkBackground,
     backgroundSecondary = DarkSurface,
@@ -138,9 +131,7 @@ fun darkSplitColors() = SplitColors(
     info = DarkInfo
 )
 
-/**
- * Typography system based on Nunito font family with responsive scaling
- */
+
 @Composable
 fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography {
     val colors = LocalSplitColors.current
@@ -273,18 +264,14 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
     )
 }
 
-/**
- * Shape system for consistent UI elements
- */
+
 val SplitShapes = Shapes(
     small = RoundedCornerShape(4.dp),
     medium = RoundedCornerShape(8.dp),
     large = RoundedCornerShape(12.dp)
 )
 
-/**
- * Main theme composition
- */
+
 @Composable
 fun SplitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

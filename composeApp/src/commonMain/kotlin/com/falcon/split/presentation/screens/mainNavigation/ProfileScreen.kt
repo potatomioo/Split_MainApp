@@ -102,7 +102,10 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile") },
+                title = { Text(
+                    "Profile",
+                    color = colors.textPrimary
+                ) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Back")
@@ -175,6 +178,19 @@ fun ProfileScreen(
                         modifier = Modifier.padding(bottom = lDimens.dp16)
                     )
 
+                    //Name
+                    ProfileInfoItem(
+                        icon = Icons.Default.Person,
+                        label = "Name",
+                        value = userModel?.username ?: "",
+                        onCopy = {
+                            ClipboardManager.copyToClipboard(userModel?.username ?: "")
+                            scope.launch {
+                                snackbarHostState.showSnackbar("User Name copied to clipboard")
+                            }
+                        }
+                    )
+
                     // Email
                     ProfileInfoItem(
                         icon = Icons.Default.Email,
@@ -217,18 +233,6 @@ fun ProfileScreen(
                         onEdit = { showUpiDialog = true }
                     )
 
-                    // User ID (for reference)
-                    ProfileInfoItem(
-                        icon = Icons.Default.Person,
-                        label = "User ID",
-                        value = userModel?.userId ?: "",
-                        onCopy = {
-                            ClipboardManager.copyToClipboard(userModel?.userId ?: "")
-                            scope.launch {
-                                snackbarHostState.showSnackbar("User ID copied to clipboard")
-                            }
-                        }
-                    )
                 }
             }
 

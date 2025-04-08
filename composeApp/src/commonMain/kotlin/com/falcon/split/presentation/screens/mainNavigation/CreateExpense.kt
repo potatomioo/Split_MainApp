@@ -41,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -117,7 +118,10 @@ fun CreateExpense(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add New Expense") },
+                title = { Text(
+                    "Add New Expense",
+                    color = colors.textPrimary
+                ) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
@@ -225,7 +229,10 @@ fun CreateExpense(
                                         keyboardActions = KeyboardActions(
                                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                                         ),
-                                        placeholder = { Text("0.00") },
+                                        placeholder = { Text(
+                                            "0.00",
+                                             color = colors.textSecondary
+                                        ) },
                                         modifier = Modifier.fillMaxWidth(),
                                         singleLine = true,
                                         isError = amountError != null,
@@ -249,7 +256,10 @@ fun CreateExpense(
                                 description = it
                                 descriptionError = if (it.isEmpty()) "Description is required" else null
                             },
-                            label = { Text("Description") },
+                            label = { Text(
+                                "Description",
+                                color = colors.textSecondary
+                            ) },
                             placeholder = { Text("What's this expense for?") },
                             leadingIcon = {
                                 Icon(
@@ -306,8 +316,14 @@ fun CreateExpense(
                             OutlinedTextField(
                                 value = selectedGroup?.name ?: "",
                                 onValueChange = { /* Group is selected via dropdown */ },
-                                label = { Text("Group") },
-                                placeholder = { Text("Select a group") },
+                                label = { Text(
+                                    "Group",
+                                    color = colors.textSecondary
+                                ) },
+                                placeholder = { Text(
+                                    "Select a group",
+                                    color = colors.textSecondary
+                                ) },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.ThumbUp,
@@ -347,7 +363,10 @@ fun CreateExpense(
                             ) {
                                 groups.forEach { group ->
                                     DropdownMenuItem(
-                                        text = { Text(group.name) },
+                                        text = { Text(
+                                            group.name,
+                                            color = colors.textSecondary
+                                        ) },
                                         onClick = {
                                             selectedGroupId = group.id
                                             viewModel.selectGroup(group.id)

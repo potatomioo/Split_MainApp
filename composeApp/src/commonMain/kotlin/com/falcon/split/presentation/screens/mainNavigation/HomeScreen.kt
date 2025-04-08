@@ -160,7 +160,10 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(greeting) },
+                title = { Text(
+                    greeting,
+                    color = colors.textPrimary
+                ) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colors.backgroundPrimary,
                     titleContentColor = colors.textPrimary
@@ -526,7 +529,9 @@ fun PendingSettlementItem(
                         border = BorderStroke(lDimens.dp1, colors.error),
                         modifier = Modifier.padding(end = lDimens.dp8)
                     ) {
-                        Text("Decline")
+                        Text("Decline",
+                            color = colors.textPrimary
+                        )
                     }
 
                     Button(
@@ -574,7 +579,8 @@ fun QuickActionButton(
             text = text,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            color = colors.textPrimary
         )
     }
 }

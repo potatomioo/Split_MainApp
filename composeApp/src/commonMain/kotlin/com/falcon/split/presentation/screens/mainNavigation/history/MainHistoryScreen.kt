@@ -63,7 +63,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -148,12 +147,15 @@ fun HistoryScreen(
                         Button(
                             onClick = { historyViewModel.markAllAsRead() },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = colors.primary.copy(alpha = 0.1f),
+                                containerColor = colors.primary,
                                 contentColor = colors.primary
                             ),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            contentPadding = PaddingValues(horizontal = lDimens.dp12, lDimens.dp8)
                         ) {
-                            Text("Mark All Read")
+                            Text(
+                                "Mark All Read",
+                                color = colors.textPrimary
+                            )
                         }
                     }
                 }
@@ -177,7 +179,7 @@ fun HistoryScreen(
                         .fillMaxWidth()
                         .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
                         .height(lDimens.dp56)
-                        .clip(RoundedCornerShape(28.dp))
+                        .clip(RoundedCornerShape(lDimens.dp28))
                         .focusRequester(focusRequester),
                     placeholder = {
                         Text(
@@ -212,7 +214,7 @@ fun HistoryScreen(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(lDimens.dp28),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colors.cardBackground,
                         unfocusedContainerColor = colors.cardBackground,
@@ -229,7 +231,7 @@ fun HistoryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
                 ) {
                     // Filter Button
                     Surface(
@@ -239,15 +241,15 @@ fun HistoryScreen(
                         onClick = { showFilterOptions = !showFilterOptions }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
+                            modifier = Modifier.padding(horizontal = lDimens.dp12),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
                                 tint = if (showFilterOptions) Color.White else colors.textPrimary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(lDimens.dp16)
                             )
                             Text(
                                 text = "Filter",
@@ -262,14 +264,14 @@ fun HistoryScreen(
                     // Active Filter Chip
                     if (filterType != HistoryFilterType.ALL) {
                         Surface(
-                            modifier = Modifier.height(36.dp),
-                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier.height(lDimens.dp36),
+                            shape = RoundedCornerShape(lDimens.dp18),
                             color = colors.primary.copy(alpha = 0.1f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(start = 12.dp, end = 8.dp),
+                                modifier = Modifier.padding(start = lDimens.dp12, lDimens.dp8),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
                             ) {
                                 Text(
                                     text = when(filterType) {
@@ -283,13 +285,13 @@ fun HistoryScreen(
 
                                 IconButton(
                                     onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) },
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(lDimens.dp24)
                                 ) {
                                     Icon(
                                         Icons.Default.Clear,
                                         contentDescription = "Clear filter",
                                         tint = colors.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(lDimens.dp16)
                                     )
                                 }
                             }
@@ -303,43 +305,43 @@ fun HistoryScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
                     ) {
                         // Filter Options
                         Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)),
+                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
                             color = if (filterType == HistoryFilterType.ALL) colors.primary else colors.cardBackground,
                             onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) }
                         ) {
                             Text(
                                 text = "All",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
                                 color = if (filterType == HistoryFilterType.ALL) Color.White else colors.textPrimary,
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
 
                         Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)),
+                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
                             color = if (filterType == HistoryFilterType.EXPENSES) colors.primary else colors.cardBackground,
                             onClick = { historyViewModel.setFilterType(HistoryFilterType.EXPENSES) }
                         ) {
                             Text(
                                 text = "Expenses",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
                                 color = if (filterType == HistoryFilterType.EXPENSES) Color.White else colors.textPrimary,
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
 
                         Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(16.dp)),
+                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
                             color = if (filterType == HistoryFilterType.SETTLEMENTS) colors.primary else colors.cardBackground,
                             onClick = { historyViewModel.setFilterType(HistoryFilterType.SETTLEMENTS) }
                         ) {
                             Text(
                                 text = "Settlements",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
                                 color = if (filterType == HistoryFilterType.SETTLEMENTS) Color.White else colors.textPrimary,
                                 style = MaterialTheme.typography.labelMedium
                             )
@@ -347,7 +349,7 @@ fun HistoryScreen(
                     }
 
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = lDimens.dp16),
+                        modifier = Modifier.padding(vertical = lDimens.dp8, horizontal = lDimens.dp16),
                         color = colors.divider
                     )
                 }
@@ -391,7 +393,7 @@ fun HistoryScreen(
                                 textAlign = TextAlign.Center
                             )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(lDimens.dp8))
 
                             Text(
                                 (historyState as HistoryState.Error).message,
@@ -400,7 +402,7 @@ fun HistoryScreen(
                                 textAlign = TextAlign.Center
                             )
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(lDimens.dp24))
 
                             Button(
                                 onClick = { historyViewModel.loadInitialHistory() },
@@ -453,7 +455,7 @@ fun HistoryItemList(
 
     LazyColumn(
         contentPadding = PaddingValues(horizontal = lDimens.dp16, vertical = lDimens.dp8),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
     ) {
         // Display each time period section
         groupedItems.forEach { (timePeriod, items) ->
@@ -463,7 +465,7 @@ fun HistoryItemList(
                     text = timePeriod,
                     style = MaterialTheme.typography.titleMedium,
                     color = colors.textPrimary,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = lDimens.dp8)
                 )
             }
 
@@ -485,13 +487,13 @@ fun HistoryItemList(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = lDimens.dp16),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (isLoading) {
                         // Show progress indicator when loading
                         CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(lDimens.dp32),
                             color = colors.primary
                         )
                     } else {
@@ -505,7 +507,7 @@ fun HistoryItemList(
                                 containerColor = colors.primary,
                                 contentColor = Color.White
                             ),
-                            modifier = Modifier.padding(horizontal = 32.dp)
+                            modifier = Modifier.padding(horizontal = lDimens.dp32)
                         ) {
                             Text("Load More")
                         }
@@ -516,7 +518,7 @@ fun HistoryItemList(
 
         // Bottom spacer
         item {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(lDimens.dp80))
         }
     }
 }
@@ -532,14 +534,14 @@ fun HistoryItemCard(
     val cardModifier = if (!historyItem.read) {
         Modifier
             .fillMaxWidth()
-            .shadow(elevation = 1.dp, shape = RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
+            .shadow(elevation = lDimens.dp1, shape = RoundedCornerShape(lDimens.dp12))
+            .clip(RoundedCornerShape(lDimens.dp12))
             .background(colors.cardBackground)
             .clickable { onMarkAsRead(historyItem.id) }
     } else {
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(lDimens.dp12))
             .background(colors.cardBackground)
     }
 
@@ -553,7 +555,7 @@ fun HistoryItemCard(
             // Action icon
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(lDimens.dp40)
                     .clip(CircleShape)
                     .background(getHistoryItemBackgroundColor(historyItem.actionType, colors)),
                 contentAlignment = Alignment.Center
@@ -562,7 +564,7 @@ fun HistoryItemCard(
                     imageVector = getHistoryItemIcon(historyItem.actionType),
                     contentDescription = null,
                     tint = getHistoryItemIconColor(historyItem.actionType, colors),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(lDimens.dp24)
                 )
             }
 
@@ -586,7 +588,7 @@ fun HistoryItemCard(
                 // Time and group info (if applicable)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
                 ) {
                     // Time
                     Text(
@@ -634,7 +636,7 @@ fun HistoryItemCard(
                 Box(
                     modifier = Modifier
                         .padding(start = lDimens.dp8)
-                        .size(8.dp)
+                        .size(lDimens.dp8)
                         .background(colors.primary, CircleShape)
                 )
             }
@@ -649,7 +651,7 @@ fun EmptyState(searchQuery: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(lDimens.dp32),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -657,12 +659,12 @@ fun EmptyState(searchQuery: String) {
             imageVector = Icons.Default.Search,
             contentDescription = null,
             modifier = Modifier
-                .size(80.dp)
-                .padding(16.dp),
+                .size(lDimens.dp80)
+                .padding(lDimens.dp16),
             tint = colors.textSecondary.copy(alpha = 0.5f)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp16))
 
         Text(
             text = if (searchQuery.isEmpty()) "No Activity Yet" else "No Results Found",
@@ -671,7 +673,7 @@ fun EmptyState(searchQuery: String) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(lDimens.dp8))
 
         Text(
             text = if (searchQuery.isEmpty())
