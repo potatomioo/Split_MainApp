@@ -61,8 +61,11 @@ class HistoryViewModel(
 
         // Check if we can load more
         if (!currentPagination.hasMoreItems || currentPagination.isLoading) {
+            println("DEBUG ViewModel: Cannot load more. HasMore: ${currentPagination.hasMoreItems}, IsLoading: ${currentPagination.isLoading}")
             return
         }
+
+        println("DEBUG ViewModel: Loading page ${currentPagination.currentPage + 1}")
 
         // Update pagination state
         _pagination.update {
@@ -72,6 +75,7 @@ class HistoryViewModel(
             )
         }
 
+        // Load the next page
         loadHistoryItems()
     }
     fun setFilterType(type: HistoryFilterType) {
@@ -129,19 +133,33 @@ class HistoryViewModel(
             val itemsPerPage = _pagination.value.itemsPerPage
 
             try {
+                // Set loading state
+                _pagination.update { it.copy(isLoading = true) }
+
+                // Check if we're refreshing or loading more
+                val isRefreshing = _isRefreshing.value
+                val isLoadingMore = page > 0
+
+                // If we're refreshing, set state to Loading
+                if (isRefreshing) {
+                    _historyState.value = HistoryState.Loading
+                }
+
+                // Fetch the data
                 historyRepository.getUserHistory(page, itemsPerPage)
                     .collect { newItems ->
                         // Apply filter if needed
                         val filteredItems = filterItems(newItems)
 
-                        // If this is the first page, replace all items
+                        // If this is page 0 or refreshing, replace all items
                         // Otherwise, append to existing items
-                        val combinedItems = if (page == 0) {
+                        val combinedItems = if (page == 0 || isRefreshing) {
                             filteredItems
                         } else {
                             _historyItems.value + filteredItems
                         }
 
+                        // Update the list
                         _historyItems.value = combinedItems
 
                         // Update state to success
@@ -149,6 +167,8 @@ class HistoryViewModel(
 
                         // Check if there are more items to load
                         val hasMore = historyRepository.hasMoreHistory(page, itemsPerPage)
+
+                        // Update pagination state
                         _pagination.update {
                             it.copy(
                                 hasMoreItems = hasMore,
@@ -163,8 +183,13 @@ class HistoryViewModel(
                         if (_isRefreshing.value) {
                             _isRefreshing.value = false
                         }
+
+                        // Log what happened
+                        println("DEBUG ViewModel: Loaded ${filteredItems.size} items for page $page. " +
+                                "Total items: ${combinedItems.size}. Has more: $hasMore")
                     }
             } catch (e: Exception) {
+                println("DEBUG ViewModel: Error loading history - ${e.message}")
                 _historyState.value = HistoryState.Error(e.message ?: "Unknown error")
                 _pagination.update { it.copy(isLoading = false) }
                 _isRefreshing.value = false

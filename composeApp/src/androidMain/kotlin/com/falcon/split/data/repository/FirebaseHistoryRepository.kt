@@ -77,59 +77,57 @@ class FirebaseHistoryRepository : HistoryRepository {
             // Reference to the user's history document
             val userHistoryRef = db.collection("userHistories").document(userId)
 
-            // Add a snapshot listener to get real-time updates
-            val listener = userHistoryRef.addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    println("DEBUG: Error fetching history - ${error.message}")
-                    close(error)
-                    return@addSnapshotListener
-                }
+            // Get the document once instead of using a listener for pagination
+            val documentSnapshot = userHistoryRef.get().await()
 
-                if (snapshot == null || !snapshot.exists()) {
-                    println("DEBUG: No history document exists for user $userId")
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
-
-                try {
-                    // Convert to FirestoreUserHistory then to common model
-                    val firestoreUserHistory = snapshot.toObject(FirestoreUserHistory::class.java)
-
-                    if (firestoreUserHistory == null) {
-                        println("DEBUG: Failed to convert document to FirestoreUserHistory")
-                        trySend(emptyList())
-                        return@addSnapshotListener
-                    }
-
-                    val userHistory = firestoreUserHistory.toCommon()
-
-                    // Apply pagination
-                    val startIndex = page * itemsPerPage
-                    val endIndex = (page + 1) * itemsPerPage
-
-                    // Sort history items by timestamp (newest first) and apply pagination
-                    val paginatedItems = userHistory.historyItems
-                        .sortedByDescending { it.timestamp }
-                        .let {
-                            if (startIndex < it.size) {
-                                it.subList(startIndex, minOf(endIndex, it.size))
-                            } else {
-                                emptyList()
-                            }
-                        }
-
-                    println("DEBUG: Fetched ${paginatedItems.size} history items for page $page")
-                    trySend(paginatedItems)
-                } catch (e: Exception) {
-                    println("DEBUG: Error processing history data - ${e.message}")
-                    e.printStackTrace()
-                    close(e)
-                }
+            if (!documentSnapshot.exists()) {
+                println("DEBUG: No history document exists for user $userId")
+                trySend(emptyList())
+                close()
+                return@callbackFlow
             }
 
-            awaitClose { listener.remove() }
+            try {
+                // Convert to FirestoreUserHistory
+                val firestoreUserHistory = documentSnapshot.toObject(FirestoreUserHistory::class.java)
+
+                if (firestoreUserHistory == null) {
+                    println("DEBUG: Failed to convert document to FirestoreUserHistory")
+                    trySend(emptyList())
+                    close()
+                    return@callbackFlow
+                }
+
+                val userHistory = firestoreUserHistory.toCommon()
+
+                // Sort all history items by timestamp (newest first)
+                val sortedItems = userHistory.historyItems.sortedByDescending { it.timestamp }
+
+                // Apply pagination
+                val startIndex = page * itemsPerPage
+
+                // Check if we're trying to access beyond the available items
+                if (startIndex >= sortedItems.size) {
+                    trySend(emptyList())
+                    close()
+                    return@callbackFlow
+                }
+
+                val endIndex = minOf(startIndex + itemsPerPage, sortedItems.size)
+                val paginatedItems = sortedItems.subList(startIndex, endIndex)
+
+                println("DEBUG: Fetched ${paginatedItems.size} history items for page $page (items ${startIndex+1}-${endIndex} of ${sortedItems.size})")
+                trySend(paginatedItems)
+
+                // Close the flow after sending the items since we're not using a listener
+                close()
+            } catch (e: Exception) {
+                println("DEBUG: Error processing history data - ${e.message}")
+                e.printStackTrace()
+                close(e)
+            }
         } catch (e: Exception) {
-            println("DEBUG: Error setting up history listener - ${e.message}")
+            println("DEBUG: Error setting up history data fetch - ${e.message}")
             e.printStackTrace()
             close(e)
         }
@@ -152,7 +150,10 @@ class FirebaseHistoryRepository : HistoryRepository {
 
             // Calculate if there are more items beyond the current page
             val nextPageStartIndex = (page + 1) * itemsPerPage
-            return userHistory.historyItems.size > nextPageStartIndex
+            val hasMore = userHistory.historyItems.size > nextPageStartIndex
+
+            println("DEBUG: Has more history items? $hasMore (total: ${userHistory.historyItems.size}, nextPageStart: $nextPageStartIndex)")
+            return hasMore
         } catch (e: Exception) {
             println("DEBUG: Error checking for more history - ${e.message}")
             return false

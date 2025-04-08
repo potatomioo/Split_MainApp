@@ -449,10 +449,9 @@ fun HistoryItemList(
     isLoading: Boolean,
     hasMoreItems: Boolean
 ) {
-    val lazyListState = rememberLazyListState()
+    val colors = LocalSplitColors.current
 
     LazyColumn(
-        state = lazyListState,
         contentPadding = PaddingValues(horizontal = lDimens.dp16, vertical = lDimens.dp8),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -463,7 +462,7 @@ fun HistoryItemList(
                 Text(
                     text = timePeriod,
                     style = MaterialTheme.typography.titleMedium,
-                    color = LocalSplitColors.current.textPrimary,
+                    color = colors.textPrimary,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -480,43 +479,36 @@ fun HistoryItemList(
             }
         }
 
-        // Load more indicator or button
-        if (hasMoreItems) {
+        // Load more item
+        if (hasMoreItems || isLoading) {
             item(key = "load_more") {
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (isLoading) {
+                        // Show progress indicator when loading
                         CircularProgressIndicator(
                             modifier = Modifier.size(32.dp),
-                            color = LocalSplitColors.current.primary
+                            color = colors.primary
                         )
-                    }
-                } else {
-                    Button(
-                        onClick = onLoadMore,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = LocalSplitColors.current.primary.copy(alpha = 0.1f),
-                            contentColor = LocalSplitColors.current.primary
-                        )
-                    ) {
-                        Text("Load More")
-                    }
-                }
-
-                // Trigger load more when reaching the end of the list
-                LaunchedEffect(lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()) {
-                    val lastVisibleItem = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()
-                    val totalItems = lazyListState.layoutInfo.totalItemsCount
-
-                    if (lastVisibleItem != null && lastVisibleItem.index >= totalItems - 3 && !isLoading && hasMoreItems) {
-                        onLoadMore()
+                    } else {
+                        // Show load more button when not loading
+                        Button(
+                            onClick = {
+                                println("DEBUG UI: Load More clicked")
+                                onLoadMore()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.primary,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        ) {
+                            Text("Load More")
+                        }
                     }
                 }
             }
@@ -786,3 +778,6 @@ private fun getHistoryItemIconColor(actionType: HistoryActionType, colors: Split
         HistoryActionType.SETTLEMENT_DECLINED -> colors.error
     }
 }
+
+
+//For time setup, converting milliseconds in timestamp and back to milliseconds while reading data.
