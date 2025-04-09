@@ -79,6 +79,7 @@ import com.falcon.split.presentation.screens.mainNavigation.navigateTo
 import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.Repository.GroupRepository
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
+import com.falcon.split.presentation.screens.mainNavigation.SettleUpScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
@@ -380,6 +381,21 @@ fun App(
                     contactManager = contactManager,
                     viewModel = groupViewModel,
                     userManager = userManager
+                )
+            }
+            composable(
+                route = Routes.SETTLE_UP.name
+            ){
+                val viewModel = remember { GroupViewModel(
+                    groupRepository!!,
+                    expenseRepository = expenseRepository!!,
+                    userManager = userManager
+                )}
+                SettleUpScreen(
+                    navController = navControllerMain,
+                    viewModel = viewModel,
+                    contactManager = contactManager,
+                    onNavigateBack = {navControllerMain.popBackStack()}
                 )
             }
         }

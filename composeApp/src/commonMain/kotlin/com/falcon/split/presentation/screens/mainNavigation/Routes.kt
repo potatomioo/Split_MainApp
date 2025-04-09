@@ -9,4 +9,6 @@ enum class Routes(name: String) {
     CREATE_EXPENSE(name = "create_expense"),
     PROFILE(name = "profile"),
     SETTINGS(name = "settings"),
+    GROUP_DETAILS(name = "group_details"),
+    SETTLE_UP(name = "settle_up")
 }

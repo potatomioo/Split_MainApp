@@ -307,7 +307,7 @@ fun HomeScreen(
                     QuickActionButton(
                         icon = Icons.Default.Person,
                         text = "Settle Up",
-                        onClick = { /* Navigate to settle up screen */ },
+                        onClick = { navControllerMain.navigate(Routes.SETTLE_UP.name) },
                         modifier = Modifier.weight(1f)
                     )
                 }
