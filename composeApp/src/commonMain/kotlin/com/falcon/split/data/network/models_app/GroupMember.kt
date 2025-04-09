@@ -8,5 +8,6 @@ data class GroupMember (
     val phoneNumber: String = "",
     val name: String? =  null,
     val balance: Double = 0.0,
-    val individualBalances: Map<String, Double> = mapOf()
+    val individualBalances: Map<String, Double> = mapOf(),
+    val upiId : String? = null
 )

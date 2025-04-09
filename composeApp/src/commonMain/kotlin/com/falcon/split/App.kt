@@ -154,6 +154,12 @@ fun App(
         PermissionsViewModel(controller)
     }
 
+    val groupViewModelForPayment = GroupViewModel(
+        groupRepository!!,
+        expenseRepository!!,
+        userManager
+    )
+
     when(viewModel.notificationPermissionState) {
         PermissionState.Granted -> {
             println("Notification Permission Granted")
@@ -244,17 +250,28 @@ fun App(
         var startDestination = runBlocking {
             if (getFirebaseUserAsUserModel(prefs) != null) Routes.APP_CONTENT.name else Routes.WELCOME_PAGE.name
         }
-//        startDestination = Routes.SETTINGS.name // TODO: Remove Later
         NavHost(navController = navControllerMain, startDestination = startDestination) {
-            composable(Routes.PAYMENT_SCREEN.name) {
+            composable(
+                route = "${Routes.PAYMENT_SCREEN.name}/{userId}/{amount}/{groupId}",
+                arguments = listOf(
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("amount") { type = NavType.StringType },
+                    navArgument("groupId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                val amount = backStackEntry.arguments?.getString("amount")?.toDoubleOrNull() ?: 0.0
+                val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+
+
                 PaymentScreen(
-                    paymentAmount = 1000,
-                    personName = "John Doe",
-                    paymentUpiId = "john@okhdfcbank",
+                    paymentAmount = amount,
+                    userId = userId,
+                    groupId = groupId,
                     snackBarHostState = snackBarHostState,
-                ) {
-                    navControllerMain.popBackStack()
-                }
+                    viewModel = groupViewModelForPayment,
+                    onNavigateBack = { navControllerMain.popBackStack() }
+                )
             }
             composable(Routes.WELCOME_PAGE.name) {
                 WelcomePage(navControllerMain)

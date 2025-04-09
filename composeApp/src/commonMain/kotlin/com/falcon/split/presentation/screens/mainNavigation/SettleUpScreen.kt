@@ -385,7 +385,6 @@ fun BalancesList(
                         } else null,
                         onPay = if (!isIncoming && isRegistered && currentUserBalance != 0.0) {
                             {
-                                // Navigate to payment screen
                                 onPay(member.userId!!, kotlin.math.abs(currentUserBalance))
                             }
                         } else null,
