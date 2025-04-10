@@ -68,6 +68,7 @@ import split.composeapp.generated.resources.home_icon_filled
 import split.composeapp.generated.resources.home_icon_outlined
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -100,6 +101,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.LayoutDirection
 import coil3.compose.AsyncImage
@@ -250,7 +252,9 @@ fun NavHostMain(
                 Spacer(modifier = Modifier.height(lDimens.dp16))
 
 
-                LazyColumn {
+                LazyColumn (
+
+                ){
                     item{
                         // Account section
                         SectionHeader("Account")
@@ -733,7 +737,7 @@ sealed class BottomBarScreen(
         title = "Home",
         unSelectedIcon = Res.drawable.home_icon_outlined,
         selectedIcon = Res.drawable.home_icon_filled,
-        badgeCount = mutableStateOf(12)
+        badgeCount = mutableStateOf(12),
     )
 
     data object History : BottomBarScreen(
@@ -873,6 +877,8 @@ fun AppBottomNavigationBarItem(
     badgeCount: MutableState<Int>? = null
 ) {
     val colors = LocalSplitColors.current
+    val interactionSource = remember { MutableInteractionSource() }
+
 
     BadgedBox(
         badge = {
@@ -883,13 +889,14 @@ fun AppBottomNavigationBarItem(
             } else if (hasUpdate?.value != null){
                 Badge()
             }
-        }
+        },
+        modifier = Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,  // Remove the ripple effect
+            onClick = onClick
+        )
     ) {
         Column(
-            modifier = modifier
-                .clickable(
-                    onClick = onClick,
-                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(lDimens.dp4)
         ) {
@@ -903,12 +910,11 @@ fun AppBottomNavigationBarItem(
                 ),
                 contentDescription = unSelectedIcon.toString(),
                 contentScale = ContentScale.Crop,
+                colorFilter = ColorFilter.tint(colors.textPrimary),
                 modifier = modifier.then(
-                    Modifier.clickable {
-                        onClick()
-                    }
+                    Modifier
                         .size(lDimens.dp24)
-                )
+                ),
             )
 
             Text(
