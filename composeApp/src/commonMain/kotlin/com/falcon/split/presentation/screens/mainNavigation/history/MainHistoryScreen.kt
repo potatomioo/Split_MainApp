@@ -128,318 +128,263 @@ fun HistoryScreen(
         groupHistoryItemsByDate(historyItems)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+//            .padding(padding)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+//                    .pullRefresh(pullRefreshState)
+        ) {
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { historyViewModel.setSearchQuery(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                    .height(lDimens.dp56)
+                    .clip(RoundedCornerShape(lDimens.dp28))
+                    .focusRequester(focusRequester),
+                placeholder = {
                     Text(
-                        "Activity",
-                        color = colors.textPrimary
+                        text = "Search your activity",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colors.backgroundSecondary,
-                    titleContentColor = colors.textPrimary
-                ),
-                actions = {
-                    // Mark all as read button
-                    if (unreadCount > 0) {
-                        Button(
-                            onClick = { historyViewModel.markAllAsRead() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colors.primary,
-                                contentColor = colors.primary
-                            ),
-                            contentPadding = PaddingValues(horizontal = lDimens.dp12, lDimens.dp8)
-                        ) {
-                            Text(
-                                "Mark All Read",
-                                color = colors.textPrimary
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search icon",
+                        tint = colors.textSecondary
+                    )
+                },
+                trailingIcon = {
+                    AnimatedVisibility(
+                        visible = searchQuery.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(onClick = {
+                            historyViewModel.setSearchQuery("")
+                            focusManager.clearFocus()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear search query",
+                                tint = colors.textSecondary
                             )
                         }
                     }
-                }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(lDimens.dp28),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = colors.cardBackground,
+                    unfocusedContainerColor = colors.cardBackground,
+                    focusedBorderColor = colors.primary,
+                    unfocusedBorderColor = colors.textSecondary.copy(alpha = 0.2f),
+                    cursorColor = colors.primary,
+                    focusedTextColor = colors.textPrimary,
+                    unfocusedTextColor = colors.textPrimary
+                )
             )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-//                    .pullRefresh(pullRefreshState)
+
+            // Filter Options
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
+                horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
             ) {
-                // Search Bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { historyViewModel.setSearchQuery(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
-                        .height(lDimens.dp56)
-                        .clip(RoundedCornerShape(lDimens.dp28))
-                        .focusRequester(focusRequester),
-                    placeholder = {
-                        Text(
-                            text = "Search your activity",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.textSecondary
-                        )
-                    },
-                    leadingIcon = {
+                // Filter Button
+                Surface(
+                    modifier = Modifier.height(lDimens.dp36),
+                    shape = RoundedCornerShape(lDimens.dp18),
+                    color = if (showFilterOptions) colors.primary else colors.cardBackground,
+                    onClick = { showFilterOptions = !showFilterOptions }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = lDimens.dp12),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search icon",
-                            tint = colors.textSecondary
+                            contentDescription = null,
+                            tint = if (showFilterOptions) Color.White else colors.textPrimary,
+                            modifier = Modifier.size(lDimens.dp16)
                         )
-                    },
-                    trailingIcon = {
-                        AnimatedVisibility(
-                            visible = searchQuery.isNotEmpty(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            IconButton(onClick = {
-                                historyViewModel.setSearchQuery("")
-                                focusManager.clearFocus()
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Clear search query",
-                                    tint = colors.textSecondary
-                                )
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(lDimens.dp28),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = colors.cardBackground,
-                        unfocusedContainerColor = colors.cardBackground,
-                        focusedBorderColor = colors.primary,
-                        unfocusedBorderColor = colors.textSecondary.copy(alpha = 0.2f),
-                        cursorColor = colors.primary,
-                        focusedTextColor = colors.textPrimary,
-                        unfocusedTextColor = colors.textPrimary
-                    )
-                )
+                        Text(
+                            text = "Filter",
+                            color = if (showFilterOptions) Color.White else colors.textPrimary,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
 
-                // Filter Options
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (unreadCount > 0) {
+                    Button(
+                        onClick = { historyViewModel.markAllAsRead() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.primary,
+                            contentColor = colors.primary
+                        ),
+                        contentPadding = PaddingValues(horizontal = lDimens.dp12, lDimens.dp8)
+                    ) {
+                        Text(
+                            "Mark All Read",
+                            color = colors.textPrimary
+                        )
+                    }
+                }
+
+            }
+
+            // Filter Options Row (when expanded)
+            AnimatedVisibility(visible = showFilterOptions) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
                     horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
                 ) {
-                    // Filter Button
+                    // Filter Options
                     Surface(
-                        modifier = Modifier.height(lDimens.dp36),
-                        shape = RoundedCornerShape(lDimens.dp18),
-                        color = if (showFilterOptions) colors.primary else colors.cardBackground,
-                        onClick = { showFilterOptions = !showFilterOptions }
+                        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
+                        color = if (filterType == HistoryFilterType.ALL) colors.primary else colors.cardBackground,
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = lDimens.dp12),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                tint = if (showFilterOptions) Color.White else colors.textPrimary,
-                                modifier = Modifier.size(lDimens.dp16)
-                            )
-                            Text(
-                                text = "Filter",
-                                color = if (showFilterOptions) Color.White else colors.textPrimary,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        Text(
+                            text = "All",
+                            modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
+                            color = if (filterType == HistoryFilterType.ALL) Color.White else colors.textPrimary,
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
+                        color = if (filterType == HistoryFilterType.EXPENSES) colors.primary else colors.cardBackground,
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.EXPENSES) }
+                    ) {
+                        Text(
+                            text = "Expenses",
+                            modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
+                            color = if (filterType == HistoryFilterType.EXPENSES) Color.White else colors.textPrimary,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
 
-                    // Active Filter Chip
-                    if (filterType != HistoryFilterType.ALL) {
-                        Surface(
-                            modifier = Modifier.height(lDimens.dp36),
-                            shape = RoundedCornerShape(lDimens.dp18),
-                            color = colors.primary.copy(alpha = 0.1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(start = lDimens.dp12, lDimens.dp8),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
-                            ) {
-                                Text(
-                                    text = when(filterType) {
-                                        HistoryFilterType.EXPENSES -> "Expenses Only"
-                                        HistoryFilterType.SETTLEMENTS -> "Settlements Only"
-                                        else -> ""
-                                    },
-                                    color = colors.primary,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-
-                                IconButton(
-                                    onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) },
-                                    modifier = Modifier.size(lDimens.dp24)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = "Clear filter",
-                                        tint = colors.primary,
-                                        modifier = Modifier.size(lDimens.dp16)
-                                    )
-                                }
-                            }
-                        }
+                    Surface(
+                        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
+                        color = if (filterType == HistoryFilterType.SETTLEMENTS) colors.primary else colors.cardBackground,
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.SETTLEMENTS) }
+                    ) {
+                        Text(
+                            text = "Settlements",
+                            modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
+                            color = if (filterType == HistoryFilterType.SETTLEMENTS) Color.White else colors.textPrimary,
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
 
-                // Filter Options Row (when expanded)
-                AnimatedVisibility(visible = showFilterOptions) {
-                    Row(
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = lDimens.dp8, horizontal = lDimens.dp16),
+                    color = colors.divider
+                )
+            }
+
+            // History Content
+            when (historyState) {
+                // Loading state
+                is HistoryState.Loading -> {
+                    if (historyItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colors.primary)
+                        }
+                    } else {
+                        // Show existing items while loading more
+                        HistoryItemList(
+                            groupedItems = groupedHistoryItems,
+                            onMarkAsRead = { historyViewModel.markAsRead(it) },
+                            onLoadMore = { historyViewModel.loadMoreHistory() },
+                            isLoading = pagination.isLoading,
+                            hasMoreItems = pagination.hasMoreItems
+                        )
+                    }
+                }
+
+                // Error state
+                is HistoryState.Error -> {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
-                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                            .fillMaxSize()
+                            .padding(lDimens.dp16),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        // Filter Options
-                        Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                            color = if (filterType == HistoryFilterType.ALL) colors.primary else colors.cardBackground,
-                            onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) }
-                        ) {
-                            Text(
-                                text = "All",
-                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                                color = if (filterType == HistoryFilterType.ALL) Color.White else colors.textPrimary,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        Text(
+                            "Something went wrong",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = colors.textPrimary,
+                            textAlign = TextAlign.Center
+                        )
 
-                        Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                            color = if (filterType == HistoryFilterType.EXPENSES) colors.primary else colors.cardBackground,
-                            onClick = { historyViewModel.setFilterType(HistoryFilterType.EXPENSES) }
-                        ) {
-                            Text(
-                                text = "Expenses",
-                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                                color = if (filterType == HistoryFilterType.EXPENSES) Color.White else colors.textPrimary,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(lDimens.dp8))
 
-                        Surface(
-                            modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                            color = if (filterType == HistoryFilterType.SETTLEMENTS) colors.primary else colors.cardBackground,
-                            onClick = { historyViewModel.setFilterType(HistoryFilterType.SETTLEMENTS) }
-                        ) {
-                            Text(
-                                text = "Settlements",
-                                modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                                color = if (filterType == HistoryFilterType.SETTLEMENTS) Color.White else colors.textPrimary,
-                                style = MaterialTheme.typography.labelMedium
+                        Text(
+                            (historyState as HistoryState.Error).message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(lDimens.dp24))
+
+                        Button(
+                            onClick = { historyViewModel.loadInitialHistory() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.primary,
+                                contentColor = Color.White
                             )
+                        ) {
+                            Text("Retry")
                         }
                     }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = lDimens.dp8, horizontal = lDimens.dp16),
-                        color = colors.divider
-                    )
                 }
 
-                // History Content
-                when (historyState) {
-                    // Loading state
-                    is HistoryState.Loading -> {
-                        if (historyItems.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = colors.primary)
-                            }
-                        } else {
-                            // Show existing items while loading more
-                            HistoryItemList(
-                                groupedItems = groupedHistoryItems,
-                                onMarkAsRead = { historyViewModel.markAsRead(it) },
-                                onLoadMore = { historyViewModel.loadMoreHistory() },
-                                isLoading = pagination.isLoading,
-                                hasMoreItems = pagination.hasMoreItems
-                            )
-                        }
-                    }
-
-                    // Error state
-                    is HistoryState.Error -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(lDimens.dp16),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                "Something went wrong",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = colors.textPrimary,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(lDimens.dp8))
-
-                            Text(
-                                (historyState as HistoryState.Error).message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.textSecondary,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Spacer(modifier = Modifier.height(lDimens.dp24))
-
-                            Button(
-                                onClick = { historyViewModel.loadInitialHistory() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = colors.primary,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Retry")
-                            }
-                        }
-                    }
-
-                    // Success state
-                    is HistoryState.Success -> {
-                        if (historyItems.isEmpty()) {
-                            // Empty state
-                            EmptyState(searchQuery = searchQuery)
-                        } else {
-                            // History items list
-                            HistoryItemList(
-                                groupedItems = groupedHistoryItems,
-                                onMarkAsRead = { historyViewModel.markAsRead(it) },
-                                onLoadMore = { historyViewModel.loadMoreHistory() },
-                                isLoading = pagination.isLoading,
-                                hasMoreItems = pagination.hasMoreItems
-                            )
-                        }
+                // Success state
+                is HistoryState.Success -> {
+                    if (historyItems.isEmpty()) {
+                        // Empty state
+                        EmptyState(searchQuery = searchQuery)
+                    } else {
+                        // History items list
+                        HistoryItemList(
+                            groupedItems = groupedHistoryItems,
+                            onMarkAsRead = { historyViewModel.markAsRead(it) },
+                            onLoadMore = { historyViewModel.loadMoreHistory() },
+                            isLoading = pagination.isLoading,
+                            hasMoreItems = pagination.hasMoreItems
+                        )
                     }
                 }
             }
+        }
 //            PullRefreshIndicator(
 //                refreshing = isRefreshing,
 //                state = pullRefreshState,
 //                modifier = Modifier.align(Alignment.TopCenter)
 //            )
-        }
     }
 }
 

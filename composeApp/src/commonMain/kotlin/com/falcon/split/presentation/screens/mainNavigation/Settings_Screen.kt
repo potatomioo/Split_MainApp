@@ -116,11 +116,6 @@ fun SettingScreen(
             // General Settings Section
             SettingsSectionHeader("General")
 
-            // Theme Setting
-            ThemeSettingItem(
-                prefs = prefs,
-                darkTheme = darkTheme
-            )
 
             // Notification Setting
             SettingItem(

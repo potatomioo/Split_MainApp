@@ -298,11 +298,11 @@ fun App(
                         navigateTo(routeName, navControllerMain)
                     },
                     prefs = prefs,
-                    openUserOptionsMenu = openUserOptionsMenu,
                     snackBarHostState = snackBarHostState,
                     navControllerMain = navControllerMain,
                     viewModel = groupViewModel,
-                    historyViewModel = historyViewModel
+                    historyViewModel = historyViewModel,
+                    darkTheme = darkTheme!!
                 )
                 if (openUserOptionsMenu.value) {
                     OptionMenuPopup(

@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun ThemeSwitcher(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = true,
     size: Dp = lDimens.dp50,
     padding: Dp = lDimens.dp5,
     borderWidth: Dp = lDimens.dp1,

@@ -1,5 +1,6 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,19 +67,59 @@ import split.composeapp.generated.resources.history_icon_outlined
 import split.composeapp.generated.resources.home_icon_filled
 import split.composeapp.generated.resources.home_icon_outlined
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.LayoutDirection
+import coil3.compose.AsyncImage
+import com.arkivanov.essenty.backhandler.BackCallback
+import com.arkivanov.essenty.backhandler.BackHandler
+import com.falcon.split.AppBackHandler
+import com.falcon.split.UserModelGoogleFirebaseBased
+import com.falcon.split.getFirebaseUserAsUserModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
+import com.falcon.split.presentation.theme.SplitCard
+import com.falcon.split.presentation.theme.SplitColors
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
+import com.falcon.split.toggleDarkTheme
+import com.falcon.split.utils.rememberEmailUtils
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
@@ -87,11 +128,11 @@ fun NavHostMain(
     navControllerBottomNav: NavHostController = rememberNavController(),
     onNavigate: (rootName: String) -> Unit,
     prefs: DataStore<Preferences>,
-    openUserOptionsMenu: MutableState<Boolean>,
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController,
     viewModel: GroupViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    darkTheme: MutableState<Boolean>
 ) {
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -105,6 +146,24 @@ fun NavHostMain(
         selectedItemIndex = pagerState.currentPage
     }
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val openDrawer = remember { mutableStateOf(false) }
+
+    // Get user model from prefs or viewModel
+    var userModel by remember { mutableStateOf<UserModelGoogleFirebaseBased?>(null) }
+
+    // Load user data
+    LaunchedEffect(Unit) {
+        userModel = getFirebaseUserAsUserModel(prefs)
+    }
+
+    LaunchedEffect(drawerState.currentValue) {
+        openDrawer.value = (drawerState.currentValue == DrawerValue.Open)
+    }
+
+    val appBackHandler = remember { AppBackHandler() }
+
+
     val screens = listOf(
         BottomBarScreen.Home,
         BottomBarScreen.History,
@@ -117,108 +176,504 @@ fun NavHostMain(
 
 
     val colors = LocalSplitColors.current
-    val isDarkTheme = isSystemInDarkTheme()
 
-    Scaffold(
-        topBar = {
-            val title = getTitle(pagerState.currentPage)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = colors.backgroundSecondary)
-                    .padding(start = lDimens.dp12, top = lDimens.dp12)
+    val emailUtils = rememberEmailUtils()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            // Drawer content
+            // Inside the ModalDrawerSheet in NavHostMain
+            ModalDrawerSheet(
+                modifier = Modifier.width(330.dp),
+                drawerContainerColor = colors.backgroundSecondary
             ) {
-                Text(
-                    text = title,
-                    fontSize = 23.sp,
-//                    style = getAppTypography(isDarkTheme).titleLarge,
-                    color = colors.textPrimary
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                // User profile section remains the same
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colors.primary.copy(alpha = 0.1f))
+                        .padding(top = lDimens.dp36, bottom = lDimens.dp24)
                 ) {
-                    IconButton(onClick = {
-                        openUserOptionsMenu.value = true
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Settings",
-                            modifier = Modifier.rotate(90F),
-                            tint = colors.textPrimary
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = lDimens.dp16),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Profile image with border
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .border(width = 3.dp, color = colors.primary, shape = CircleShape)
+                                .background(colors.backgroundSecondary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (userModel?.profilePictureUrl != null) {
+                                AsyncImage(
+                                    model = userModel?.profilePictureUrl,
+                                    contentDescription = "Profile picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = "Profile",
+                                    modifier = Modifier.size(50.dp),
+                                    tint = colors.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(lDimens.dp16))
+
+                        // User name
+                        Text(
+                            text = userModel?.username ?: "User",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = colors.textPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        // User email
+                        Text(
+                            text = userModel?.email ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.textSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(lDimens.dp16))
+
+                // Account section
+                SectionHeader("Account")
+
+                // Profile with subtitle
+                DrawerItemWithSubtitle(
+                    icon = Icons.Default.Person,
+                    title = "Profile",
+                    subtitle = "Manage your account details",
+                    tint = colors.primary,
+                    onClick = {
+                        navControllerMain.navigate(Routes.PROFILE.name)
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                // Settings with subtitle
+                DrawerItemWithSubtitle(
+                    icon = Icons.Default.Settings,
+                    title = "Settings",
+                    subtitle = "App preferences and options",
+                    tint = colors.primary,
+                    onClick = {
+                        navControllerMain.navigate(Routes.SETTINGS.name)
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                // Theme section
+                SectionHeader("Appearance")
+
+                // Theme options (Midnight and Skyhigh)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                ) {
+                    Text(
+                        text = "Theme",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.textPrimary
+                    )
+
+                    Text(
+                        text = if (darkTheme.value) "Midnight" else "Skyhigh",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(lDimens.dp12))
+
+                    // Theme selection buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                    ) {
+                        // Midnight (Dark) theme button
+                        ThemeOptionButton(
+                            name = "Midnight",
+                            icon = Icons.Default.Home,
+                            isSelected = darkTheme.value,
+                            colors = colors,
+                            onClick = {
+                                if (!darkTheme.value) {
+                                    scope.launch {
+                                        darkTheme.value = true
+                                        toggleDarkTheme(prefs)
+                                    }
+                                }
+                            }
+                        )
+
+                        // Skyhigh (Light) theme button
+                        ThemeOptionButton(
+                            name = "Skyhigh",
+                            icon = Icons.Default.ThumbUp,
+                            isSelected = !darkTheme.value,
+                            colors = colors,
+                            onClick = {
+                                if (darkTheme.value) {
+                                    scope.launch {
+                                        darkTheme.value = false
+                                        toggleDarkTheme(prefs)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                // Support section
+                SectionHeader("Support")
+
+                // Contact Us with subtitle
+                DrawerItemWithSubtitle(
+                    icon = Icons.Default.Email,
+                    title = "Contact Us",
+                    subtitle = "Reach out for help or feedback",
+                    tint = colors.primary,
+                    onClick = {
+                        emailUtils.sendEmail(
+                            to = "deeptanshushuklaji@gmail.com",
+                            subject = "Regarding Split App",
+                        )
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                // About with subtitle
+                DrawerItemWithSubtitle(
+                    icon = Icons.Default.Info,
+                    title = "About",
+                    subtitle = "App information and credits",
+                    tint = colors.primary,
+                    onClick = {
+                        // Navigate to about screen or show dialog
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // App version at bottom
+                SplitCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(lDimens.dp16),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Split",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = colors.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            "V - 2025",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.textSecondary
+                        )
+
+                        Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                        Text(
+                            "Split expenses, not friendships",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary
                         )
                     }
                 }
             }
         },
-        bottomBar = {
-            AppBottomNavigationBar(
-                show = true,
-            ) {
+        gesturesEnabled = true
+    ) {
+        Scaffold(
+            topBar = {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = colors.backgroundSecondary)
+                        .padding(top = lDimens.dp20, start = lDimens.dp12, bottom = lDimens.dp10)
                 ) {
-                    screens.forEach { item ->
-                        AppBottomNavigationBarItem(
-                            selectedIcon = item.selectedIcon,
-                            unSelectedIcon = item.unSelectedIcon,
-                            label = item.title,
-                            onClick = {
-                                selectedItemIndex = item.index
-                                scope.launch {
-                                    pagerState.animateScrollToPage(item.index)
+                    // Replace this section with profile image
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Profile image that opens drawer when clicked
+                        Box(
+                            modifier = Modifier
+                                .size(lDimens.dp30)
+                                .clip(CircleShape)
+                                .clickable {
+                                    scope.launch {
+                                        drawerState.open()
+                                        openDrawer.value = true
+                                    }
                                 }
-                            },
-                            selected = mutableStateOf(selectedItemIndex == item.index),
-                            hasUpdate = item.hasUpdate,
-                            badgeCount = item.badgeCount
-                        )
+                                .background(colors.primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // If profile image available, use AsyncImage, otherwise show icon
+                            if (userModel?.profilePictureUrl != null) {
+                                AsyncImage(
+                                    model = userModel!!.profilePictureUrl,
+                                    contentDescription = "Profile",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = "Profile",
+                                    tint = colors.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(lDimens.dp16))
+
+                        if (pagerState.currentPage == 0) {
+                            // For Home screen, show greeting with colored firstName
+                            val (greeting, firstName) = getGreetingParts(userModel?.username ?: "User")
+
+                            // Row to place the greeting and name next to each other
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Regular greeting text
+                                Text(
+                                    text = greeting,
+                                    fontSize = 20.sp,
+                                    color = colors.textPrimary,
+                                    style = getSplitTypography().headlineMedium
+                                )
+
+                                Text(
+                                    text = firstName,
+                                    fontSize = 20.sp,
+                                    color = colors.primary,
+                                    style = getSplitTypography().headlineMedium
+                                )
+                            }
+                        } else {
+                            // For other screens, show title
+                            Text(
+                                text = getTitle(pagerState.currentPage),
+                                fontSize = 20.sp,
+                                color = colors.textPrimary,
+                                style = getSplitTypography().headlineMedium
+                            )
+                        }
+                    }
+                }
+            },
+            bottomBar = {
+                AppBottomNavigationBar(
+                    show = true,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        screens.forEach { item ->
+                            AppBottomNavigationBarItem(
+                                selectedIcon = item.selectedIcon,
+                                unSelectedIcon = item.unSelectedIcon,
+                                label = item.title,
+                                onClick = {
+                                    selectedItemIndex = item.index
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(item.index)
+                                    }
+                                },
+                                selected = mutableStateOf(selectedItemIndex == item.index),
+                                hasUpdate = item.hasUpdate,
+                                badgeCount = item.badgeCount
+                            )
+                        }
                     }
                 }
             }
+        ) { innerPadding ->
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                        bottom = innerPadding.calculateBottomPadding(),
+                        top = innerPadding.calculateTopPadding() - 3.dp
+                    )
+            ) { page ->
+                when (page) {
+                    0 -> HomeScreen(
+                        onNavigate,
+                        prefs,
+                        snackBarHostState,
+                        navControllerBottomNav,
+                        historyVM,
+                        navControllerMain,
+                        topPadding = innerPadding.calculateTopPadding(),
+                        viewModel = viewModel,
+                        historyViewModel
+                    )
+                    1 -> IntegratedHistoryScreen(
+                        onNavigate,
+                        prefs,
+                        historyVM,
+                        snackBarHostState,
+                        navControllerMain,
+                        historyViewModel = historyViewModel
+                    )
+                    2 -> GroupsScreen(
+                        onCreateGroupClick = { navControllerMain.navigate("create_group") },
+                        onGroupClick = { group -> navControllerMain.navigate("group_details/${group.id}") },
+                        navControllerMain,
+                        viewModel
+                    )
+                }
+            }
         }
-    ) { innerPadding ->
-        HorizontalPager(
-            state = pagerState,
+        DisposableEffect(drawerState.currentValue) {
+            if (drawerState.currentValue == DrawerValue.Open) {
+                val callback = BackCallback(onBack = {
+                    scope.launch {
+                        drawerState.close()
+                        openDrawer.value = false
+                    }
+                })
+                appBackHandler.register(callback)
+
+                onDispose {
+                    appBackHandler.unregister(callback)
+                }
+            } else {
+                onDispose { }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    val colors = LocalSplitColors.current
+
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        color = colors.primary,
+        modifier = Modifier.padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+    )
+}
+
+
+@Composable
+private fun DrawerItemWithSubtitle(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                    bottom = innerPadding.calculateBottomPadding(),
-                    top = innerPadding.calculateTopPadding() - 3.dp
+                .fillMaxWidth()
+                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp12),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(lDimens.dp24)
+            )
+
+            Spacer(modifier = Modifier.width(lDimens.dp16))
+
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.textPrimary
                 )
-        ) { page ->
-            when (page) {
-                0 -> HomeScreen(
-                    onNavigate,
-                    prefs,
-                    snackBarHostState,
-                    navControllerBottomNav,
-                    historyVM,
-                    navControllerMain,
-                    topPadding = innerPadding.calculateTopPadding(),
-                    viewModel = viewModel,
-                    historyViewModel
-                )
-                1 -> IntegratedHistoryScreen(
-                    onNavigate,
-                    prefs,
-                    historyVM,
-                    snackBarHostState,
-                    navControllerMain,
-                    historyViewModel = historyViewModel
-                )
-                2 -> GroupsScreen(
-                    onCreateGroupClick = { navControllerMain.navigate("create_group") },
-                    onGroupClick = { group -> navControllerMain.navigate("group_details/${group.id}") },
-                    navControllerMain,
-                    viewModel
+
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ThemeOptionButton(
+    name: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    colors: SplitColors,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+//        modifier = Modifier.weight(1F),
+        color = if (isSelected) colors.primary else colors.backgroundPrimary,
+        shape = RoundedCornerShape(lDimens.dp12),
+        border = if (!isSelected) BorderStroke(lDimens.dp1, colors.divider) else null
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(lDimens.dp12),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = name,
+                tint = if (isSelected) Color.White else colors.textPrimary,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(lDimens.dp4))
+
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isSelected) Color.White else colors.textPrimary
+            )
         }
     }
 }
@@ -478,6 +933,30 @@ fun AppBottomNavigationBarItem(
         }
     }
 }
+
+
+// Update the function to return a Pair of strings (greeting and firstName)
+@Composable
+fun getGreetingParts(name: String): Pair<String, String> {
+    val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val hour = currentDateTime.hour
+
+    // Extract first name (everything before the first space)
+    val firstName = if (name.contains(" ")) {
+        name.substring(0, name.indexOf(" "))
+    } else {
+        name // If there's no space, use the whole name
+    }
+
+    val greeting = when {
+        hour < 12 -> "Good morning, "
+        hour < 17 -> "Good afternoon, "
+        else -> "Good evening, "
+    }
+
+    return Pair(greeting, firstName)
+}
+
 
 private fun navigateBottomBar(navController: NavController, destination: String) {
     navController.navigate(destination) {
