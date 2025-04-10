@@ -3,6 +3,7 @@ package com.falcon.split.presentation.screens.mainNavigation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -112,7 +114,6 @@ fun HomeScreen(
 
     // User data
     val currentUserId = viewModel.currentUserId
-    val userName = "You" // Replace with actual user name if available
 
     // Load data when screen is mounted
     LaunchedEffect(Unit) {
@@ -155,30 +156,8 @@ fun HomeScreen(
     }
 
     // Get time-based greeting
-    val greeting = getGreeting(userName)
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(
-                    greeting,
-                    color = colors.textPrimary
-                ) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colors.backgroundPrimary,
-                    titleContentColor = colors.textPrimary
-                ),
-                actions = {
-                    IconButton(onClick = { /* Open search */ }) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = colors.textPrimary
-                        )
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { navControllerMain.navigate("create_expense") },
@@ -194,7 +173,10 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add")
-                    Text("Add expense", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        "Add expense",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
@@ -214,15 +196,28 @@ fun HomeScreen(
             // Balance header with image background
             item {
                 Box {
-                    UpwardFlipHeaderImage(
-                        Res.drawable.HomePic,
-                        rememberPagerState { 1 }
-                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(lDimens.dp150)
+                            .padding(lDimens.dp0),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = lDimens.dp0
+                        ),
+                        colors = CardDefaults.cardColors(colors.backgroundPrimary)
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.HomePic),
+                            contentDescription = "Header Image",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
 
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
+                            .padding(start = lDimens.dp16, top = lDimens.dp20, end = lDimens.dp16)
                     ) {
                         // Balance overview card
                         SplitCard(
@@ -918,17 +913,6 @@ fun EmptyStateMessage(
 }
 
 // Helper function to get appropriate greeting based on time of day
-@Composable
-fun getGreeting(name: String): String {
-    val currentDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    val hour = currentDateTime.hour
-
-    return when {
-        hour < 12 -> "Good morning, $name"
-        hour < 17 -> "Good afternoon, $name"
-        else -> "Good evening, $name"
-    }
-}
 
 
 private fun formatExpenseDateTime(timestamp: Long): String {
@@ -938,12 +922,4 @@ private fun formatExpenseDateTime(timestamp: Long): String {
     val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
 
     return "${dateTime.month.name.take(3)} ${dateTime.dayOfMonth}, ${dateTime.hour}:${dateTime.minute.toString().padStart(2, '0')}"
-}
-
-private fun getGroupsMap(groupState: GroupState): Map<String, String> {
-    if (groupState is GroupState.Success) {
-        val groups = (groupState as GroupState.Success).groups
-        return groups.associate { it.id to it.name }
-    }
-    return emptyMap()
 }
