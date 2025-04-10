@@ -222,7 +222,7 @@ fun SettingScreen(
                     Spacer(modifier = Modifier.height(lDimens.dp8))
 
                     Text(
-                        "Split expenses, not friendships",
+                        "Split Easy. Stay Friends.",
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.textSecondary
                     )
@@ -412,11 +412,11 @@ fun DeleteAccountDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete Account") },
+        title = { Text("Delete Account", color = colors.textPrimary) },
         text = {
             Text(
                 "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
-                color = colors.textPrimary
+                color = colors.textSecondary
             )
         },
         confirmButton = {
@@ -431,7 +431,7 @@ fun DeleteAccountDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = colors.textPrimary)
             }
         }
     )

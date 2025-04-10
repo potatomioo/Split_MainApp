@@ -393,7 +393,7 @@ fun NavHostMain(
                                 Spacer(modifier = Modifier.height(lDimens.dp8))
 
                                 Text(
-                                    "Split expenses, not friendships",
+                                    "Split Easy. Stay Friends.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = colors.textSecondary
                                 )
