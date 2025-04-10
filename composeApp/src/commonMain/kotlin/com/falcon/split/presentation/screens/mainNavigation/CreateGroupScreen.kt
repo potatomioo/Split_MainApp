@@ -12,7 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -123,9 +125,10 @@ fun CreateGroupScreen(
                             "Group Name",
                             color = colors.textPrimary
                         ) },
-                        placeholder = { Text("Enter group name") },
+                        placeholder = { Text("Enter group name", color = colors.textSecondary) },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = TextStyle(color = colors.textPrimary)
                     )
                 }
             }
@@ -248,6 +251,10 @@ fun CreateGroupScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(lDimens.dp56),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.primary,
+                    contentColor = Color.White
+                ),
                 enabled = groupName.isNotEmpty() && selectedContacts.isNotEmpty() &&
                         state !is CreateGroupState.Loading
             ) {
@@ -261,13 +268,12 @@ fun CreateGroupScreen(
                         Icons.Default.Add,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = colors.primary
+                        tint = colors.textPrimary
                     )
                     Spacer(modifier = Modifier.width(lDimens.dp8))
                     Text(
                         "Create Group",
                         style = MaterialTheme.typography.titleMedium,
-                        color = colors.textPrimary
                     )
                 }
             }

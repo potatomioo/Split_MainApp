@@ -214,7 +214,7 @@ fun SplitCard(
             containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isDarkTheme) lDimens.dp0 else lDimens.dp2
+            defaultElevation = if (isDarkTheme) lDimens.dp2 else lDimens.dp4
         ),
         shape = RoundedCornerShape(lDimens.dp12)
     ) {

@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -198,7 +199,8 @@ fun CreateExpense(
                                 Text(
                                     "Enter Amount",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = colors.textPrimary
+                                    color = colors.textPrimary,
+
                                 )
 
                                 Spacer(modifier = Modifier.height(lDimens.dp8))
@@ -243,7 +245,9 @@ fun CreateExpense(
                                             focusedBorderColor = colors.primary,
                                             unfocusedBorderColor = colors.border,
                                             errorBorderColor = colors.error
-                                        )
+                                        ),
+                                        textStyle = TextStyle(color = colors.textPrimary)
+
                                     )
                                 }
                             }
@@ -285,7 +289,8 @@ fun CreateExpense(
                                 focusedBorderColor = colors.primary,
                                 unfocusedBorderColor = colors.border,
                                 errorBorderColor = colors.error
-                            )
+                            ),
+                            textStyle = TextStyle(color = colors.textPrimary)
                         )
 
                         // Date Picker
@@ -308,7 +313,8 @@ fun CreateExpense(
                                 unfocusedContainerColor = colors.cardBackground,
                                 focusedBorderColor = colors.primary,
                                 unfocusedBorderColor = colors.border
-                            )
+                            ),
+                            textStyle = TextStyle(color = colors.textPrimary)
                         )
 
                         // Group Selection
@@ -350,7 +356,8 @@ fun CreateExpense(
                                     focusedBorderColor = colors.primary,
                                     unfocusedBorderColor = colors.border,
                                     errorBorderColor = colors.error
-                                )
+                                ),
+                                textStyle = TextStyle(color = colors.textPrimary)
                             )
 
                             // Group Dropdown Menu
@@ -519,7 +526,7 @@ fun CreateExpense(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
+                                .height(lDimens.dp56),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colors.primary,
                                 contentColor = Color.White

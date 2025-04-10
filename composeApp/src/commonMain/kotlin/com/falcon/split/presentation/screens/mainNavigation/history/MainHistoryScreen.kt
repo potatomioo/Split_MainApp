@@ -60,6 +60,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -189,7 +190,8 @@ fun HistoryScreen(
                     cursorColor = colors.primary,
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary
-                )
+                ),
+                textStyle = TextStyle(color = colors.textPrimary)
             )
 
             // Filter Options

@@ -73,6 +73,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -185,7 +186,7 @@ fun NavHostMain(
             // Drawer content
             // Inside the ModalDrawerSheet in NavHostMain
             ModalDrawerSheet(
-                modifier = Modifier.width(330.dp),
+                modifier = Modifier.width(lDimens.dp330),
                 drawerContainerColor = colors.backgroundSecondary
             ) {
                 // User profile section remains the same
@@ -204,9 +205,9 @@ fun NavHostMain(
                         // Profile image with border
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
+                                .size(lDimens.dp75)
                                 .clip(CircleShape)
-                                .border(width = 3.dp, color = colors.primary, shape = CircleShape)
+                                .border(width = lDimens.dp3, color = colors.primary, shape = CircleShape)
                                 .background(colors.backgroundSecondary),
                             contentAlignment = Alignment.Center
                         ) {
@@ -221,7 +222,7 @@ fun NavHostMain(
                                 Icon(
                                     Icons.Default.Person,
                                     contentDescription = "Profile",
-                                    modifier = Modifier.size(50.dp),
+                                    modifier = Modifier.size(lDimens.dp50),
                                     tint = colors.primary
                                 )
                             }
@@ -248,162 +249,152 @@ fun NavHostMain(
 
                 Spacer(modifier = Modifier.height(lDimens.dp16))
 
-                // Account section
-                SectionHeader("Account")
 
-                // Profile with subtitle
-                DrawerItemWithSubtitle(
-                    icon = Icons.Default.Person,
-                    title = "Profile",
-                    subtitle = "Manage your account details",
-                    tint = colors.primary,
-                    onClick = {
-                        navControllerMain.navigate(Routes.PROFILE.name)
-                        scope.launch { drawerState.close() }
-                    }
-                )
+                LazyColumn {
+                    item{
+                        // Account section
+                        SectionHeader("Account")
 
-                // Settings with subtitle
-                DrawerItemWithSubtitle(
-                    icon = Icons.Default.Settings,
-                    title = "Settings",
-                    subtitle = "App preferences and options",
-                    tint = colors.primary,
-                    onClick = {
-                        navControllerMain.navigate(Routes.SETTINGS.name)
-                        scope.launch { drawerState.close() }
-                    }
-                )
-
-                // Theme section
-                SectionHeader("Appearance")
-
-                // Theme options (Midnight and Skyhigh)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
-                ) {
-                    Text(
-                        text = "Theme",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = colors.textPrimary
-                    )
-
-                    Text(
-                        text = if (darkTheme.value) "Midnight" else "Skyhigh",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(lDimens.dp12))
-
-                    // Theme selection buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
-                    ) {
-                        // Midnight (Dark) theme button
-                        ThemeOptionButton(
-                            name = "Midnight",
-                            icon = Icons.Default.Home,
-                            isSelected = darkTheme.value,
-                            colors = colors,
+                        // Profile with subtitle
+                        DrawerItemWithSubtitle(
+                            icon = Icons.Default.Person,
+                            title = "Profile",
+                            subtitle = "Manage your account details",
+                            tint = colors.primary,
                             onClick = {
-                                if (!darkTheme.value) {
-                                    scope.launch {
-                                        darkTheme.value = true
-                                        toggleDarkTheme(prefs)
-                                    }
-                                }
+                                navControllerMain.navigate(Routes.PROFILE.name)
+                                scope.launch { drawerState.close() }
                             }
                         )
 
-                        // Skyhigh (Light) theme button
-                        ThemeOptionButton(
-                            name = "Skyhigh",
-                            icon = Icons.Default.ThumbUp,
-                            isSelected = !darkTheme.value,
-                            colors = colors,
+                        // Settings with subtitle
+                        DrawerItemWithSubtitle(
+                            icon = Icons.Default.Settings,
+                            title = "Settings",
+                            subtitle = "App preferences and options",
+                            tint = colors.primary,
                             onClick = {
-                                if (darkTheme.value) {
-                                    scope.launch {
-                                        darkTheme.value = false
-                                        toggleDarkTheme(prefs)
-                                    }
-                                }
+                                navControllerMain.navigate(Routes.SETTINGS.name)
+                                scope.launch { drawerState.close() }
                             }
                         )
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(lDimens.dp8))
+                        // Theme section
+                        SectionHeader("Appearance")
 
-                // Support section
-                SectionHeader("Support")
+                        // Theme options (Midnight and Skyhigh)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                        ) {
+                            // Theme selection buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                            ) {
+                                // Midnight (Dark) theme button
+                                ThemeOptionButton(
+                                    name = "Midnight",
+                                    icon = Icons.Default.Home,
+                                    isSelected = darkTheme.value,
+                                    colors = colors,
+                                    onClick = {
+                                        if (!darkTheme.value) {
+                                            scope.launch {
+                                                darkTheme.value = true
+                                                toggleDarkTheme(prefs)
+                                            }
+                                        }
+                                    }
+                                )
 
-                // Contact Us with subtitle
-                DrawerItemWithSubtitle(
-                    icon = Icons.Default.Email,
-                    title = "Contact Us",
-                    subtitle = "Reach out for help or feedback",
-                    tint = colors.primary,
-                    onClick = {
-                        emailUtils.sendEmail(
-                            to = "deeptanshushuklaji@gmail.com",
-                            subject = "Regarding Split App",
-                        )
-                        scope.launch { drawerState.close() }
-                    }
-                )
-
-                // About with subtitle
-                DrawerItemWithSubtitle(
-                    icon = Icons.Default.Info,
-                    title = "About",
-                    subtitle = "App information and credits",
-                    tint = colors.primary,
-                    onClick = {
-                        // Navigate to about screen or show dialog
-                        scope.launch { drawerState.close() }
-                    }
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // App version at bottom
-                SplitCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(lDimens.dp16),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Split",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = colors.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            "V - 2025",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.textSecondary
-                        )
+                                // Skyhigh (Light) theme button
+                                ThemeOptionButton(
+                                    name = "Skyhigh",
+                                    icon = Icons.Default.ThumbUp,
+                                    isSelected = !darkTheme.value,
+                                    colors = colors,
+                                    onClick = {
+                                        if (darkTheme.value) {
+                                            scope.launch {
+                                                darkTheme.value = false
+                                                toggleDarkTheme(prefs)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(lDimens.dp8))
 
-                        Text(
-                            "Split expenses, not friendships",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary
+                        // Support section
+                        SectionHeader("Support")
+
+                        // Contact Us with subtitle
+                        DrawerItemWithSubtitle(
+                            icon = Icons.Default.Email,
+                            title = "Contact Us",
+                            subtitle = "Reach out for help or feedback",
+                            tint = colors.primary,
+                            onClick = {
+                                emailUtils.sendEmail(
+                                    to = "deeptanshushuklaji@gmail.com",
+                                    subject = "Regarding Split App",
+                                )
+                                scope.launch { drawerState.close() }
+                            }
                         )
+
+                        // About with subtitle
+                        DrawerItemWithSubtitle(
+                            icon = Icons.Default.Info,
+                            title = "About",
+                            subtitle = "App information and credits",
+                            tint = colors.primary,
+                            onClick = {
+                                // Navigate to about screen or show dialog
+                                scope.launch { drawerState.close() }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        // App version at bottom
+                        SplitCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(lDimens.dp16),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Split",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = colors.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Text(
+                                    "V - 2025",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.textSecondary
+                                )
+
+                                Spacer(modifier = Modifier.height(lDimens.dp8))
+
+                                Text(
+                                    "Split expenses, not friendships",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.textSecondary
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -527,7 +518,7 @@ fun NavHostMain(
                         start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                         end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
                         bottom = innerPadding.calculateBottomPadding(),
-                        top = innerPadding.calculateTopPadding() - 3.dp
+                        top = innerPadding.calculateTopPadding() - lDimens.dp3
                     )
             ) { page ->
                 when (page) {
@@ -664,7 +655,7 @@ private fun ThemeOptionButton(
                 imageVector = icon,
                 contentDescription = name,
                 tint = if (isSelected) Color.White else colors.textPrimary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(lDimens.dp20)
             )
 
             Spacer(modifier = Modifier.width(lDimens.dp4))
@@ -853,7 +844,7 @@ fun AppBottomNavigationBar(
                 HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp),
+                        .height(lDimens.dp1),
                     color = colors.textSecondary.copy(alpha = 0.2f)
                 )
 
@@ -916,7 +907,7 @@ fun AppBottomNavigationBarItem(
                     Modifier.clickable {
                         onClick()
                     }
-                        .size(24.dp)
+                        .size(lDimens.dp24)
                 )
             )
 
