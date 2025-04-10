@@ -3,6 +3,7 @@ package com.falcon.split.presentation.screens.mainNavigation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,6 +72,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -393,7 +395,8 @@ fun GroupDetailsTopBar(
                     else -> "Group Details"
                 },
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = colors.textPrimary
             )
         },
         navigationIcon = {
@@ -439,18 +442,7 @@ fun GroupDetailsFAB(
         }
 
         GroupDetailsTab.BALANCES -> {
-            // Settle Up FAB
-            ExtendedFloatingActionButton(
-                onClick = onAddExpense, // For now, still navigate to add expense
-                containerColor = colors.primary,
-                contentColor = Color.White,
-                icon = { Icon(Icons.Default.ThumbUp, contentDescription = null) },
-                text = { Text("Settle Up") },
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = lDimens.dp6,
-                    pressedElevation = lDimens.dp8
-                )
-            )
+            //Nothing for now.
         }
 
         GroupDetailsTab.SETTLEMENTS -> {
@@ -608,8 +600,8 @@ fun GroupSummaryCard(
                     .padding(top = lDimens.dp8),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("${group.expenses.size} expenses")
-                Text("${group.members.size} members")
+                Text("${group.expenses.size} expenses", color = colors.textSecondary)
+                Text("${group.members.size} members", color = colors.textSecondary)
             }
         }
     }
@@ -1327,12 +1319,13 @@ fun SettleUpDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Settle Up with $memberName") },
+        title = { Text("Settle Up with $memberName", color = colors.textPrimary) },
         text = {
             Column {
                 Text(
                     "How much are you settling?",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textSecondary
                 )
 
                 Spacer(modifier = Modifier.height(lDimens.dp16))
@@ -1348,8 +1341,8 @@ fun SettleUpDialog(
                             false
                         }
                     },
-                    label = { Text("Amount") },
-                    prefix = { Text("₹") },
+                    label = { Text("Amount", color = colors.textSecondary) },
+                    prefix = { Text("₹", color = colors.textPrimary) },
                     isError = !isValidAmount,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -1359,7 +1352,8 @@ fun SettleUpDialog(
                         unfocusedBorderColor = colors.border,
                         focusedTextColor = colors.textPrimary,
                         unfocusedTextColor = colors.textPrimary
-                    )
+                    ),
+                    textStyle = TextStyle(color = colors.textPrimary)
                 )
 
                 if (!isValidAmount) {
@@ -1385,12 +1379,15 @@ fun SettleUpDialog(
                 },
                 enabled = isValidAmount && settlementAmount.isNotEmpty()
             ) {
-                Text("Settle")
+                Text("Settle", color = colors.textPrimary)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            TextButton(onClick = onDismiss,border = BorderStroke(
+                width = lDimens.dp1,
+                color = colors.error
+            )) {
+                Text("Cancel", color = colors.error)
             }
         }
     )
