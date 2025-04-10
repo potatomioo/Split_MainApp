@@ -93,7 +93,6 @@ import com.falcon.split.presentation.theme.SplitColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    onNavigate: (rootName: String) -> Unit,
     historyViewModel: HistoryViewModel,
     prefs: DataStore<Preferences>,
     newsViewModel: MainViewModel,

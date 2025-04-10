@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ import com.falcon.split.data.network.models_app.SettlementStatus
 import com.falcon.split.presentation.expense.ExpenseState
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
+import com.falcon.split.presentation.history.HistoryState
 import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryItemCard
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
@@ -313,26 +315,45 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Recent Activity",
                     actionText = "View All",
-                    onActionClick = { navControllerMain.navigate("history") }  // Navigate to full history screen
+                    onActionClick = { navControllerMain.navigate(Routes.MAIN_HISTORY.name) }
                 )
 
                 val recentHistoryItems by historyViewModel.recentHistoryItems.collectAsState()
+                val historyState by historyViewModel.historyState.collectAsState()
 
-                if (recentHistoryItems.isEmpty()) {
-                    EmptyStateMessage(
-                        message = "No recent activity",
-                        submessage = "Your recent activity will appear here"
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier.padding(horizontal = lDimens.dp16),
-                        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
-                    ) {
-                        recentHistoryItems.forEach { historyItem ->
-                            HistoryItemCard(
-                                historyItem = historyItem,
-                                onMarkAsRead = { historyViewModel.markAsRead(it) }
-                            )
+                when {
+                    // Show loading state when historyState is Loading and recentHistoryItems is empty
+                    historyState is HistoryState.Loading && recentHistoryItems.isEmpty() -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(lDimens.dp100),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colors.primary)
+                        }
+                    }
+
+                    // Show empty state when we have loaded but have no items
+                    recentHistoryItems.isEmpty() -> {
+                        EmptyStateMessage(
+                            message = "No recent activity",
+                            submessage = "Your recent activity will appear here"
+                        )
+                    }
+
+                    // Show the history items when we have them
+                    else -> {
+                        Column(
+                            modifier = Modifier.padding(horizontal = lDimens.dp16),
+                            verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                        ) {
+                            recentHistoryItems.forEach { historyItem ->
+                                HistoryItemCard(
+                                    historyItem = historyItem,
+                                    onMarkAsRead = { historyViewModel.markAsRead(it) }
+                                )
+                            }
                         }
                     }
                 }
@@ -587,6 +608,7 @@ fun SectionHeader(
     onActionClick: (() -> Unit)?
 ) {
     val colors = LocalSplitColors.current
+    val interactionSource = remember { MutableInteractionSource() }
 
     Row(
         modifier = Modifier
@@ -606,7 +628,11 @@ fun SectionHeader(
                 text = actionText,
                 style = MaterialTheme.typography.labelMedium,
                 color = colors.primary,
-                modifier = Modifier.clickable { onActionClick() }
+                modifier = Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onActionClick
+                )
             )
         }
     }

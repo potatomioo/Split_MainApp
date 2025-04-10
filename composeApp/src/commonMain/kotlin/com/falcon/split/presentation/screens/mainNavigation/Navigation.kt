@@ -709,7 +709,6 @@ fun IntegratedHistoryScreen(
 ) {
     // Call the new History Screen implementation
     HistoryScreen(
-        onNavigate = onNavigate,
         historyViewModel = historyViewModel,
         prefs = prefs,
         newsViewModel = newsViewModel,

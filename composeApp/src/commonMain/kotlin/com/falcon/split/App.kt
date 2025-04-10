@@ -80,6 +80,7 @@ import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.Repository.GroupRepository
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
 import com.falcon.split.presentation.screens.mainNavigation.SettleUpScreen
+import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
@@ -229,7 +230,7 @@ fun App(
         authReady = true
     }
     val navControllerMain = rememberNavController()
-    val newsViewModel: MainViewModel = viewModel(
+    val mainViewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(client, prefs)
     )
 
@@ -413,6 +414,17 @@ fun App(
                     viewModel = viewModel,
                     contactManager = contactManager,
                     onNavigateBack = {navControllerMain.popBackStack()}
+                )
+            }
+            composable(
+                route = Routes.MAIN_HISTORY.name
+            ){
+                HistoryScreen(
+                    historyViewModel = HistoryViewModel(historyRepository!!),
+                    prefs = prefs,
+                    newsViewModel = mainViewModel,
+                    snackBarHostState = snackBarHostState,
+                    navControllerMain = navControllerMain
                 )
             }
         }

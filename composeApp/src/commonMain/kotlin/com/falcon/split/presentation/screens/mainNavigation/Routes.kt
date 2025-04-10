@@ -10,5 +10,6 @@ enum class Routes(name: String) {
     PROFILE(name = "profile"),
     SETTINGS(name = "settings"),
     GROUP_DETAILS(name = "group_details"),
-    SETTLE_UP(name = "settle_up")
+    SETTLE_UP(name = "settle_up"),
+    MAIN_HISTORY(name = "main_history")
 }
