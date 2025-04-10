@@ -736,7 +736,7 @@ sealed class BottomBarScreen(
         title = "Home",
         unSelectedIcon = Res.drawable.home_icon_outlined,
         selectedIcon = Res.drawable.home_icon_filled,
-        badgeCount = mutableStateOf(12),
+        badgeCount = mutableStateOf(0),
     )
 
     data object History : BottomBarScreen(
@@ -745,6 +745,7 @@ sealed class BottomBarScreen(
         title = "History",
         unSelectedIcon = Res.drawable.history_icon_outlined,
         selectedIcon = Res.drawable.history_icon_filled,
+        badgeCount = mutableStateOf(0)
     )
 
     data object Groups : BottomBarScreen(
@@ -753,7 +754,7 @@ sealed class BottomBarScreen(
         title = "Groups",
         unSelectedIcon = Res.drawable.group_icon_outlined,
         selectedIcon = Res.drawable.group_icon_filled,
-        hasUpdate = mutableStateOf(true)
+        hasUpdate = mutableStateOf(false)
     )
 }
 
@@ -912,7 +913,7 @@ fun AppBottomNavigationBarItem(
                 colorFilter = ColorFilter.tint(colors.textPrimary),
                 modifier = modifier.then(
                     Modifier
-                        .size(lDimens.dp24)
+                        .size(lDimens.dp20)
                 ),
             )
 
