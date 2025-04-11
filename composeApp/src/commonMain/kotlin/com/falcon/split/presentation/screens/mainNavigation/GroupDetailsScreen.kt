@@ -1,12 +1,19 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
+import ContactPicker
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +40,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -52,6 +60,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -70,6 +79,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -119,7 +129,8 @@ fun GroupDetailsScreen(
     navControllerMain: NavHostController,
     contactManager: ContactManager?,
     viewModel: GroupViewModel,
-    userManager: UserManager
+    userManager: UserManager,
+    snackbarHostState: SnackbarHostState
 ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
@@ -132,8 +143,6 @@ fun GroupDetailsScreen(
     val pendingSettlements by viewModel.pendingSettlements.collectAsState()
     val processingSettlementIds by viewModel.processingSettlementId.collectAsState()
 
-    // Options menu state
-    var showOptionsMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     // Tab state
@@ -142,6 +151,8 @@ fun GroupDetailsScreen(
 
     // Count pending settlements for badge
     val pendingSettlementsCount = pendingSettlements.count { it.toUserId == viewModel.currentUserId }
+
+    var isExpanded by remember { mutableStateOf(false) }
 
     // Load data when screen is mounted
     LaunchedEffect(groupId) {
@@ -153,19 +164,53 @@ fun GroupDetailsScreen(
 
     // Create MemberNameResolver
     val nameResolver = remember { MemberNameResolver(contactManager) }
+    var showContactPicker by remember { mutableStateOf(false) }
+
+
+    if (showContactPicker) {
+        ContactPicker(
+            contactManager = contactManager!!
+        ) { contact ->
+            showContactPicker = false
+
+            // If a contact was selected, add it to the group
+            if (contact != null) {
+                // Handle adding member
+                scope.launch {
+                    try {
+                        viewModel.addMembersToGroup(
+                            groupId = groupId,
+                            newMembers = listOf(contact.contactNumber)
+                        )
+                        snackbarHostState.showSnackbar("Added ${contact.contactName} to the group")
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Failed to add member: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             GroupDetailsTopBar(
                 groupState = groupState,
                 onNavigateBack = onNavigateBack,
-                onShowOptions = { showOptionsMenu = true }
+                onShowOptions = { showDeleteDialog = true }
             )
         },
         floatingActionButton = {
-            GroupDetailsFAB(
-                currentTab = currentTab,
-                onAddExpense = { navControllerMain.navigate("create_expense?groupId=$groupId") }
+            ExpandableFloatingActionButton(
+                expanded = isExpanded,
+                onExpandedChange = { isExpanded = it },
+                onAddExpense = {
+                    navControllerMain.navigate("create_expense?groupId=$groupId")
+                },
+                onAddMember = {
+                    if (contactManager != null) {
+                        showContactPicker = true
+                    }
+                }
             )
         }
     ) { padding ->
@@ -279,17 +324,6 @@ fun GroupDetailsScreen(
                 }
             }
 
-            // Options Menu
-            if (showOptionsMenu) {
-                GroupOptionsMenu(
-                    onDismiss = { showOptionsMenu = false },
-                    onDelete = {
-                        showOptionsMenu = false
-                        showDeleteDialog = true
-                    }
-                )
-            }
-
             // Delete Confirmation Dialog
             if (showDeleteDialog) {
                 DeleteConfirmationDialog(
@@ -313,6 +347,18 @@ fun GroupDetailsScreen(
                 }
                 else -> {}
             }
+        }
+        if (isExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = colors.backgroundPrimary.copy(alpha = 0.75f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { isExpanded = false }
+                    )
+            )
         }
     }
 }
@@ -399,7 +445,7 @@ fun GroupDetailsTopBar(
         },
         actions = {
             IconButton(onClick = onShowOptions) {
-                Icon(Icons.Default.MoreVert, "More options")
+                Icon(Icons.Default.Delete, "Delete")
             }
         },
         colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
@@ -412,105 +458,6 @@ fun GroupDetailsTopBar(
 }
 
 @Composable
-fun GroupDetailsFAB(
-    currentTab: GroupDetailsTab,
-    onAddExpense: () -> Unit
-) {
-    val colors = LocalSplitColors.current
-
-    when (currentTab) {
-        GroupDetailsTab.EXPENSES -> {
-            // Add Expense FAB
-            FloatingActionButton(
-                onClick = onAddExpense,
-                containerColor = colors.primary,
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = lDimens.dp6,
-                    pressedElevation = lDimens.dp8
-                )
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Expense")
-            }
-        }
-
-        GroupDetailsTab.BALANCES -> {
-            //Nothing for now.
-        }
-
-        GroupDetailsTab.SETTLEMENTS -> {
-            // No FAB for settlements tab
-        }
-    }
-}
-
-@Composable
-fun GroupOptionsMenu(
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val colors = LocalSplitColors.current
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
-            .padding(top = lDimens.dp56, end = lDimens.dp8),
-        contentAlignment = Alignment.TopEnd
-    ) {
-        Surface(
-            color = colors.cardBackground,
-            shape = RoundedCornerShape(lDimens.dp8),
-            modifier = Modifier
-                .width(lDimens.dp200)
-                .padding(lDimens.dp8)
-        ) {
-            Column(modifier = Modifier.padding(lDimens.dp8)) {
-                MenuItem(
-                    text = "Delete Group",
-                    icon = Icons.Default.Delete,
-                    iconTint = colors.error,
-                    textColor = colors.error,
-                    onClick = onDelete
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun MenuItem(
-    text: String,
-    icon: ImageVector,
-    iconTint: Color,
-    textColor: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(lDimens.dp4))
-            .padding(lDimens.dp8)
-            .clickable { onClick() },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(lDimens.dp24)
-        )
-
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = textColor
-        )
-    }
-}
-
-@Composable
 fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
@@ -519,18 +466,19 @@ fun DeleteConfirmationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete Group") },
-        text = { Text("Are you sure you want to delete this group? This action cannot be undone.") },
+        title = { Text("Delete Group", color = colors.textPrimary) },
+        text = { Text("Are you sure you want to delete this group? This action cannot be undone.", color = colors.textSecondary) },
         confirmButton = {
             TextButton(
-                onClick = onConfirm
+                onClick = onConfirm,
+                border = BorderStroke(lDimens.dp1, colors.error)
             ) {
                 Text("Delete", color = colors.error)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = colors.textSecondary)
             }
         }
     )
@@ -599,6 +547,119 @@ fun GroupSummaryCard(
         }
     }
 }
+
+
+//Animation wala floating button
+@Composable
+fun ExpandableFloatingActionButton(
+    modifier: Modifier = Modifier,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onAddExpense: () -> Unit,
+    onAddMember: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    // Rotation animation for the FAB icon
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 45f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "rotationAnimation"
+    )
+
+    Box(modifier = modifier) {
+        // Main FAB that rotates to form an X when expanded
+        FloatingActionButton(
+            onClick = { onExpandedChange(!expanded) },
+            containerColor = colors.primary,
+            contentColor = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(lDimens.dp56)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = if (expanded) "Close menu" else "Open menu",
+                modifier = Modifier.rotate(rotation)
+            )
+        }
+
+        // "Add Member" option
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn(animationSpec = tween(durationMillis = 300)) +
+                    slideInVertically(animationSpec = tween(durationMillis = 300)) { it },
+            exit = fadeOut(animationSpec = tween(durationMillis = 300)) +
+                    slideOutVertically(animationSpec = tween(durationMillis = 300)) { it },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = lDimens.dp200, end = lDimens.dp8)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth(0.5f)
+            ) {
+                Text(
+                    "Add a member",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.textPrimary,
+                    modifier = Modifier.padding(end = lDimens.dp16)
+                )
+
+                FloatingActionButton(
+                    onClick = {
+                        onAddMember()
+                        onExpandedChange(false)
+                    },
+                    containerColor = colors.cardBackground,
+                    contentColor = colors.primary,
+                    modifier = Modifier.size(lDimens.dp48)
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = "Add Member")
+                }
+            }
+        }
+
+        // "Add Expense" option
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn(animationSpec = tween(durationMillis = 300)) +
+                    slideInVertically(animationSpec = tween(durationMillis = 300)) { it },
+            exit = fadeOut(animationSpec = tween(durationMillis = 300)) +
+                    slideOutVertically(animationSpec = tween(durationMillis = 300)) { it },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = lDimens.dp130, end = lDimens.dp8)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth(0.5f)
+            ) {
+                Text(
+                    "Add an expense",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.textPrimary,
+                    modifier = Modifier.padding(end = lDimens.dp16)
+                )
+
+                FloatingActionButton(
+                    onClick = {
+                        onAddExpense()
+                        onExpandedChange(false)
+                    },
+                    containerColor = colors.cardBackground,
+                    contentColor = colors.primary,
+                    modifier = Modifier.size(lDimens.dp48)
+                ) {
+                    Icon(Icons.Default.ThumbUp, contentDescription = "Add Expense")
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun ExpensesTab(

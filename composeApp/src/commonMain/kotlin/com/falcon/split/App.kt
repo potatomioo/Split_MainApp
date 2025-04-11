@@ -401,7 +401,8 @@ fun App(
                     navControllerMain = navControllerMain,
                     contactManager = contactManager,
                     viewModel = groupViewModel,
-                    userManager = userManager
+                    userManager = userManager,
+                    snackBarHostState
                 )
             }
             composable(
