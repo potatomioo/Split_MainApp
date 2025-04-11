@@ -415,15 +415,17 @@ fun NavHostMain(
                         .background(color = colors.backgroundSecondary)
                         .padding(top = lDimens.dp20, start = lDimens.dp12, bottom = lDimens.dp10)
                 ) {
-                    // Replace this section with profile image
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Profile image that opens drawer when clicked
                         Box(
                             modifier = Modifier
                                 .size(lDimens.dp30)
                                 .clip(CircleShape)
+                                .border(
+                                    BorderStroke(lDimens.dp1, colors.primary),
+                                    shape = CircleShape
+                                )
                                 .clickable {
                                     scope.launch {
                                         drawerState.open()
@@ -433,7 +435,6 @@ fun NavHostMain(
                                 .background(colors.primary.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            // If profile image available, use AsyncImage, otherwise show icon
                             if (userModel?.profilePictureUrl != null) {
                                 AsyncImage(
                                     model = userModel!!.profilePictureUrl,

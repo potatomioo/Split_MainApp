@@ -1,6 +1,8 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -148,7 +150,11 @@ fun ProfileScreen(
                     AsyncImage(
                         model = userModel?.profilePictureUrl,
                         contentDescription = "Profile picture",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .border(
+                                BorderStroke(lDimens.dp2, colors.primary),
+                                shape = CircleShape
+                            ),
                         contentScale = ContentScale.Crop
                     )
                 } else {
