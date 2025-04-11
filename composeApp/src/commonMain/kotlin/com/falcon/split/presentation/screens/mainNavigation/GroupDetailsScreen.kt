@@ -101,6 +101,7 @@ import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
+import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.userManager.UserManager
 import com.falcon.split.utils.MemberNameResolver
@@ -264,14 +265,14 @@ fun GroupDetailsScreen(
                                             BadgedBox(
                                                 badge = {
                                                     Badge {
-                                                        Text(pendingSettlementsCount.toString())
+                                                        Text(pendingSettlementsCount.toString(),color = colors.textPrimary)
                                                     }
                                                 }
                                             ) {
-                                                Text(tab.title)
+                                                Text(tab.title, color = colors.textPrimary)
                                             }
                                         } else {
-                                            Text(tab.title)
+                                            Text(tab.title,color = colors.textPrimary)
                                         }
                                     },
                                     icon = { Icon(tab.icon, contentDescription = null) }
@@ -297,7 +298,8 @@ fun GroupDetailsScreen(
                                     nameResolver = nameResolver,
                                     onSettleUp = { toUserId, amount ->
                                         viewModel.settleBalance(group.id, toUserId, amount)
-                                    },{}
+                                    },{},
+                                    colors = colors
                                 )
 
                                 2 -> SettlementsTab(
@@ -525,7 +527,7 @@ fun GroupSummaryCard(
             Text(
                 "Total Expenses",
                 style = MaterialTheme.typography.titleMedium,
-                color = colors.textSecondary
+                color = colors.textPrimary
             )
 
             Text(
@@ -800,7 +802,8 @@ fun BalancesTab(
     currentUserId: String,
     nameResolver: MemberNameResolver,
     onSettleUp: (toUserId: String, amount: Double) -> Unit,
-    onRemind: (userId: String) -> Unit
+    onRemind: (userId: String) -> Unit,
+    colors: SplitColors
 ) {
     var showSettleDialog by remember { mutableStateOf(false) }
     var selectedMember by remember { mutableStateOf<GroupMember?>(null) }
@@ -828,7 +831,8 @@ fun BalancesTab(
                 Text(
                     "Your Balance",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8)
+                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8),
+                    color = colors.textPrimary
                 )
 
                 if (currentUserMember != null) {
@@ -845,7 +849,8 @@ fun BalancesTab(
                 Text(
                     "All Members",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8)
+                    modifier = Modifier.padding(top = lDimens.dp16, bottom = lDimens.dp8),
+                    color = colors.textPrimary
                 )
             }
 
@@ -1092,7 +1097,7 @@ fun SettlementsTab(
     nameResolver: MemberNameResolver,
     onApprove: (String) -> Unit,
     onDecline: (String) -> Unit,
-    processingSettlementIds : Set<String> = emptySet()
+    processingSettlementIds : Set<String> = emptySet(),
 ) {
     val colors = LocalSplitColors.current
 
@@ -1110,7 +1115,8 @@ fun SettlementsTab(
             Text(
                 "Requests For You",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
+                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4),
+                color = colors.textPrimary
             )
         }
 
@@ -1139,7 +1145,8 @@ fun SettlementsTab(
             Text(
                 "Your Pending Requests",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4)
+                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4),
+                color = colors.textPrimary
             )
         }
 
@@ -1168,7 +1175,8 @@ fun SettlementsTab(
             Text(
                 "Settlement History",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4)
+                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4),
+                color = colors.textPrimary
             )
         }
 
