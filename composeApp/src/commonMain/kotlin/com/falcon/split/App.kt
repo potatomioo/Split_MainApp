@@ -66,6 +66,7 @@ import com.falcon.split.presentation.expense.CreateExpenseViewModel
 import com.falcon.split.presentation.group.CreateGroupViewModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.contact.ContactManager
+import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models.UserState
 import com.falcon.split.presentation.screens.WelcomePage
@@ -137,7 +138,8 @@ fun App(
     expenseRepository: ExpenseRepository? = null,
     historyRepository: HistoryRepository? = null,
     darkTheme: MutableState<Boolean>?,
-    userManager: UserManager
+    userManager: UserManager,
+    userProfileManager : UserProfileManager
 ) {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -360,7 +362,8 @@ fun App(
             composable(Routes.PROFILE.name) {
                 ProfileScreen(
                     navControllerMain,
-                    prefs
+                    prefs,
+                    userProfileManager = userProfileManager
                 ) {
                     scope.launch {
                         deleteUser(prefs)

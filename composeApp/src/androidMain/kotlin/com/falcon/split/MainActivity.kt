@@ -47,9 +47,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.falcon.split.AndroidUserManager.AndroidUserProfileManager
 import com.falcon.split.AndroidUserManager.FirebaseUserManager
 import com.falcon.split.SpecificScreens.PhoneNumberBottomSheet
 import com.falcon.split.contact.AndroidContactManager
+import com.falcon.split.data.FirestoreManager
+import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
 import com.falcon.split.data.repository.FirebaseExpenseRepository
@@ -85,6 +88,9 @@ class MainActivity : ComponentActivity() {
     private val historyRepository by lazy { FirebaseHistoryRepository() }
 
     val userManager = FirebaseUserManager()
+
+    val firestoreManager = FirestoreManager()
+    val userProfileManager = AndroidUserProfileManager(firestoreManager = firestoreManager)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -160,7 +166,8 @@ class MainActivity : ComponentActivity() {
                     expenseRepository = expenseRepository,
                     historyRepository = historyRepository,
                     darkTheme = darkTheme,
-                    userManager = userManager
+                    userManager = userManager,
+                    userProfileManager = userProfileManager
                 )
             }
         }

@@ -61,10 +61,12 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.falcon.split.ClipboardManager
 import com.falcon.split.UserModelGoogleFirebaseBased
+import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.getFirebaseUserAsUserModel
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
+import com.falcon.split.saveFirebaseUser
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -76,6 +78,7 @@ import split.composeapp.generated.resources.picture_preview
 fun ProfileScreen(
     navController: NavHostController,
     prefs: DataStore<Preferences>,
+    userProfileManager: UserProfileManager,
     onSignOut: () -> Unit
 ) {
     val colors = LocalSplitColors.current
@@ -96,6 +99,10 @@ fun ProfileScreen(
     // Load user data
     LaunchedEffect(Unit) {
         userModel = getFirebaseUserAsUserModel(prefs)
+        upiId = userModel?.upiId ?: ""
+    }
+
+    LaunchedEffect(userModel) {
         upiId = userModel?.upiId ?: ""
     }
 
@@ -221,7 +228,7 @@ fun ProfileScreen(
                     ProfileInfoItem(
                         icon = Icons.Default.ThumbUp,
                         label = "UPI ID",
-                        value = userModel?.upiId ?: "Not set",
+                        value = if (userModel?.upiId.isNullOrBlank()) "Not set" else userModel?.upiId!!,
                         onCopy = {
                             if (userModel?.upiId != null) {
                                 ClipboardManager.copyToClipboard(userModel?.upiId ?: "")
@@ -277,12 +284,29 @@ fun ProfileScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            // TODO: Update UPI ID in the user model and save
-                            // This would typically call a method on the viewModel
-                            // to update the UPI ID in Firebase
-                            showUpiDialog = false
                             scope.launch {
-                                snackbarHostState.showSnackbar("UPI ID updated")
+                                try {
+                                    println("DEBUG: Attempting to update UPI ID to: $upiId")
+                                    userProfileManager.updateUserUpiId(upiId).onSuccess {
+                                        println("DEBUG: UPI ID updated successfully in Firestore")
+                                        // Update local user model
+                                        userModel = userModel?.copy(upiId = upiId)
+
+                                        // Also update the local state in prefs to ensure persistence
+                                        saveFirebaseUser(prefs, userModel!!)
+                                        println("DEBUG: Updated local user model and prefs")
+
+                                        showUpiDialog = false
+                                        snackbarHostState.showSnackbar("UPI ID updated successfully")
+                                    }.onFailure { error ->
+                                        println("DEBUG: Failed to update UPI ID: ${error.message}")
+                                        snackbarHostState.showSnackbar("Failed to update UPI ID: ${error.message}")
+                                    }
+                                } catch (e: Exception) {
+                                    println("DEBUG: Exception updating UPI ID: ${e.message}")
+                                    e.printStackTrace()
+                                    snackbarHostState.showSnackbar("An error occurred: ${e.message}")
+                                }
                             }
                         }
                     ) {

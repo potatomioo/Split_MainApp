@@ -45,7 +45,7 @@ class GoogleAuthUiClient(
             SignInResult(
                 data = firebaseUser?.run {
                     UserModelGoogleFirebaseBased(
-                        userId = uid,  // Use Firebase UID
+                        userId = uid,
                         username = displayName,
                         profilePictureUrl = photoUrl?.toString(),
                         email = email
