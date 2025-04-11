@@ -8,7 +8,9 @@ import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
 import com.falcon.split.presentation.expense.ExpenseState
 import com.falcon.split.userManager.UserManager
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,6 +39,13 @@ class GroupViewModel(
 
     private val _processingSettlementId = MutableStateFlow<Set<String>>(emptySet())
     val processingSettlementId = _processingSettlementId.asStateFlow()
+
+    private val _deleteErrorEvent = MutableSharedFlow<String>()
+    val deleteErrorEvent = _deleteErrorEvent.asSharedFlow()
+
+    private val _deleteSuccess = MutableStateFlow(false)
+    val deleteSuccess = _deleteSuccess.asStateFlow()
+
 
     init {
         loadGroups()
@@ -222,20 +231,17 @@ class GroupViewModel(
     fun deleteGroup(groupId: String) {
         viewModelScope.launch {
             try {
-                // Show loading state
-                _groupState.value = GroupState.Loading
-
-                // Call repository method to delete the group
                 groupRepository.deleteGroup(groupId)
                     .onSuccess {
-                        // Load groups again after successful deletion
+                        _deleteSuccess.value = true
                         loadGroups()
                     }
                     .onFailure { error ->
-                        _groupState.value = GroupState.Error(error.message ?: "Failed to delete group")
+                        // Signal failure, with error message
+                        _deleteErrorEvent.emit(error.message ?: "Failed to delete group")
                     }
             } catch (e: Exception) {
-                _groupState.value = GroupState.Error(e.message ?: "Unknown error")
+                _deleteErrorEvent.emit(e.message ?: "Unknown error")
             }
         }
     }

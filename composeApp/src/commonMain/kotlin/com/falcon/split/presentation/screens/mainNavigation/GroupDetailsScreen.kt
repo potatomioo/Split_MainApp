@@ -155,12 +155,29 @@ fun GroupDetailsScreen(
 
     var isExpanded by remember { mutableStateOf(false) }
 
+    var deleteErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val deleteSuccess by viewModel.deleteSuccess.collectAsState()
+
+
     // Load data when screen is mounted
     LaunchedEffect(groupId) {
         viewModel.loadGroupDetails(groupId)
         viewModel.loadGroupExpenses(groupId)
         viewModel.loadSettlementHistory(groupId)
         viewModel.loadPendingSettlements()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.deleteErrorEvent.collect { errorMessage ->
+            deleteErrorMessage = errorMessage
+        }
+    }
+
+    LaunchedEffect(deleteSuccess) {
+        if (deleteSuccess) {
+            onNavigateBack()
+        }
     }
 
     // Create MemberNameResolver
@@ -190,6 +207,24 @@ fun GroupDetailsScreen(
                 }
             }
         }
+    }
+
+    if (deleteErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { deleteErrorMessage = null },
+            title = { Text("Cannot Delete Group", color = colors.textPrimary) },
+            text = { Text(deleteErrorMessage!!, color = colors.textSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = { deleteErrorMessage = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.primary
+                    )
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -332,7 +367,6 @@ fun GroupDetailsScreen(
                     onConfirm = {
                         showDeleteDialog = false
                         viewModel.deleteGroup(groupId)
-                        onNavigateBack()
                     },
                     onDismiss = { showDeleteDialog = false }
                 )
