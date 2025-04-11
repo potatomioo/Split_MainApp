@@ -130,6 +130,7 @@ fun GroupDetailsScreen(
     val settlementState by viewModel.settlementState.collectAsState()
     val settlements by viewModel.settlements.collectAsState()
     val pendingSettlements by viewModel.pendingSettlements.collectAsState()
+    val processingSettlementIds by viewModel.processingSettlementId.collectAsState()
 
     // Options menu state
     var showOptionsMenu by remember { mutableStateOf(false) }
@@ -264,7 +265,8 @@ fun GroupDetailsScreen(
                                     },
                                     onDecline = { settlementId ->
                                         viewModel.declineSettlement(settlementId)
-                                    }
+                                    },
+                                    processingSettlementIds
                                 )
                             }
                         }
@@ -302,14 +304,6 @@ fun GroupDetailsScreen(
 
             // Settlement Success/Error Dialog
             when (settlementState) {
-                is SettlementState.Success -> {
-                    SettlementResultDialog(
-                        success = true,
-                        message = "Operation completed successfully.",
-                        onDismiss = { viewModel.resetSettlementState() }
-                    )
-                }
-
                 is SettlementState.Error -> {
                     SettlementResultDialog(
                         success = false,
@@ -317,7 +311,6 @@ fun GroupDetailsScreen(
                         onDismiss = { viewModel.resetSettlementState() }
                     )
                 }
-
                 else -> {}
             }
         }
@@ -1037,7 +1030,8 @@ fun SettlementsTab(
     currentUserId: String,
     nameResolver: MemberNameResolver,
     onApprove: (String) -> Unit,
-    onDecline: (String) -> Unit
+    onDecline: (String) -> Unit,
+    processingSettlementIds : Set<String> = emptySet()
 ) {
     val colors = LocalSplitColors.current
 
@@ -1069,11 +1063,12 @@ fun SettlementsTab(
             }
         } else {
             items(incomingRequests) { settlement ->
-                PendingSettlementCard(
+                PendingSettlementItem(
                     settlement = settlement,
                     isIncoming = true,
                     onApprove = { onApprove(settlement.id) },
-                    onDecline = { onDecline(settlement.id) }
+                    onDecline = { onDecline(settlement.id) },
+                    processingSettlements = processingSettlementIds
                 )
             }
         }
@@ -1097,11 +1092,12 @@ fun SettlementsTab(
             }
         } else {
             items(outgoingRequests) { settlement ->
-                PendingSettlementCard(
+                PendingSettlementItem(
                     settlement = settlement,
                     isIncoming = false,
                     onApprove = null,
-                    onDecline = null
+                    onDecline = null,
+                    processingSettlements = processingSettlementIds
                 )
             }
         }
@@ -1132,104 +1128,6 @@ fun SettlementsTab(
         // Bottom spacer
         item {
             Spacer(modifier = Modifier.height(lDimens.dp80))
-        }
-    }
-}
-
-@Composable
-fun PendingSettlementCard(
-    settlement: Settlement,
-    isIncoming: Boolean,
-    onApprove: (() -> Unit)?,
-    onDecline: (() -> Unit)?
-) {
-    val colors = LocalSplitColors.current
-
-    SplitCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(lDimens.dp16)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = if (isIncoming) "Payment Request" else "Your Request",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colors.textPrimary
-                    )
-
-                    Text(
-                        text = if (isIncoming)
-                            "${settlement.fromUserName ?: "Someone"} requested payment"
-                        else
-                            "Requested from ${settlement.toUserName ?: "someone"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary
-                    )
-
-                    Text(
-                        text = formatDateTime(settlement.timestamp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary
-                    )
-                }
-
-                CurrencyDisplay(
-                    amount = settlement.amount,
-                    isIncome = false
-                )
-            }
-
-            // Action buttons for incoming requests
-            if (isIncoming && onApprove != null && onDecline != null) {
-                Spacer(modifier = Modifier.height(lDimens.dp12))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(
-                        onClick = onDecline,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = colors.error
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(lDimens.dp1, colors.error),
-                        modifier = Modifier.padding(end = lDimens.dp8)
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = null,
-                            modifier = Modifier.size(lDimens.dp16)
-                        )
-                        Spacer(modifier = Modifier.width(lDimens.dp4))
-                        Text("Decline")
-                    }
-
-                    Button(
-                        onClick = onApprove,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.success,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(lDimens.dp16)
-                        )
-                        Spacer(modifier = Modifier.width(lDimens.dp4))
-                        Text("Approve")
-                    }
-                }
-            }
         }
     }
 }

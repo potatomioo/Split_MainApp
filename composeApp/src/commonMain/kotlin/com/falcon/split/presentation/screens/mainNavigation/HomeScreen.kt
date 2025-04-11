@@ -117,6 +117,9 @@ fun HomeScreen(
     // User data
     val currentUserId = viewModel.currentUserId
 
+    //ProcessingSettlement
+    val processingSettlementIds by viewModel.processingSettlementId.collectAsState()
+
     // Load data when screen is mounted
     LaunchedEffect(Unit) {
         viewModel.loadGroups()  // This loads all groups the user is part of
@@ -447,7 +450,8 @@ fun HomeScreen(
                                     settlement = settlement,
                                     isIncoming = true,
                                     onApprove = { viewModel.approveSettlement(settlement.id) },
-                                    onDecline = { viewModel.declineSettlement(settlement.id) }
+                                    onDecline = { viewModel.declineSettlement(settlement.id) },
+                                    processingSettlements = processingSettlementIds
                                 )
                             }
                         }
@@ -466,7 +470,8 @@ fun HomeScreen(
                                     settlement = settlement,
                                     isIncoming = false,
                                     onApprove = null,
-                                    onDecline = null
+                                    onDecline = null,
+                                    processingSettlements = processingSettlementIds
                                 )
                             }
                         }
@@ -488,9 +493,11 @@ fun PendingSettlementItem(
     settlement: Settlement,
     isIncoming: Boolean,
     onApprove: (() -> Unit)?,
-    onDecline: (() -> Unit)?
+    onDecline: (() -> Unit)?,
+    processingSettlements: Set<String> = emptySet()
 ) {
     val colors = LocalSplitColors.current
+    val isProcessing = processingSettlements.contains(settlement.id)
 
     SplitCard(
         modifier = Modifier.fillMaxWidth()
@@ -528,36 +535,51 @@ fun PendingSettlementItem(
                 )
             }
 
-            // Only show action buttons for incoming requests
             if (isIncoming && onApprove != null && onDecline != null) {
                 Spacer(modifier = Modifier.height(lDimens.dp12))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(
-                        onClick = onDecline,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = colors.error
-                        ),
-                        border = BorderStroke(lDimens.dp1, colors.error),
-                        modifier = Modifier.padding(end = lDimens.dp8)
+                if (isProcessing) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = lDimens.dp8),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Decline",
-                            color = colors.textPrimary
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(lDimens.dp24),
+                            color = colors.primary
                         )
                     }
-
-                    Button(
-                        onClick = onApprove,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.success,
-                            contentColor = Color.White
-                        )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Approve")
+                        OutlinedButton(
+                            onClick = onDecline,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = colors.error
+                            ),
+                            border = BorderStroke(lDimens.dp1, colors.error),
+                            modifier = Modifier.padding(end = lDimens.dp8),
+                            enabled = !isProcessing
+                        ) {
+                            Text("Decline",
+                                color = colors.textPrimary
+                            )
+                        }
+
+                        Button(
+                            onClick = onApprove,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.success,
+                                contentColor = Color.White
+                            ),
+                            enabled = !isProcessing
+                        ) {
+                            Text("Approve")
+                        }
                     }
                 }
             }

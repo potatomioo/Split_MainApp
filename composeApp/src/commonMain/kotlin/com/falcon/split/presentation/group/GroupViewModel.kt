@@ -10,6 +10,7 @@ import com.falcon.split.presentation.expense.ExpenseState
 import com.falcon.split.userManager.UserManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GroupViewModel(
@@ -34,9 +35,21 @@ class GroupViewModel(
     private val _pendingSettlements = MutableStateFlow<List<Settlement>>(emptyList())
     val pendingSettlements = _pendingSettlements.asStateFlow()
 
+    private val _processingSettlementId = MutableStateFlow<Set<String>>(emptySet())
+    val processingSettlementId = _processingSettlementId.asStateFlow()
+
     init {
         loadGroups()
     }
+
+    private fun addProcessingSettlement(settlementId: String) {
+        _processingSettlementId.update { it + settlementId }
+    }
+
+    private fun removeProcessingSettlement(settlementId: String) {
+        _processingSettlementId.update { it - settlementId }
+    }
+
 
     fun loadGroups() {
         viewModelScope.launch {
@@ -162,6 +175,9 @@ class GroupViewModel(
 
     fun approveSettlement(settlementId: String) {
         viewModelScope.launch {
+
+            if (_processingSettlementId.value.contains(settlementId)) return@launch
+            addProcessingSettlement(settlementId)
             _settlementState.value = SettlementState.Loading
 
             try {
@@ -174,12 +190,17 @@ class GroupViewModel(
                     }
             } catch (e: Exception) {
                 _settlementState.value = SettlementState.Error(e.message ?: "Unknown error")
+            }finally {
+                removeProcessingSettlement(settlementId)
             }
         }
     }
 
     fun declineSettlement(settlementId: String) {
         viewModelScope.launch {
+            if (_processingSettlementId.value.contains(settlementId)) return@launch
+
+            addProcessingSettlement(settlementId)
             _settlementState.value = SettlementState.Loading
 
             try {
@@ -192,6 +213,8 @@ class GroupViewModel(
                     }
             } catch (e: Exception) {
                 _settlementState.value = SettlementState.Error(e.message ?: "Unknown error")
+            }finally {
+                removeProcessingSettlement(settlementId)
             }
         }
     }
