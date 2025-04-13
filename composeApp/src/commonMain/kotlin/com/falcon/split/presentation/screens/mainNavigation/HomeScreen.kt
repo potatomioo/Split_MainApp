@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ThumbUp
@@ -57,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -89,6 +91,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import split.composeapp.generated.resources.ExclusiveFeature
 import split.composeapp.generated.resources.HomePic
 import split.composeapp.generated.resources.Res
 import split.composeapp.generated.resources.group_icon_outlined
@@ -359,6 +362,27 @@ fun HomeScreen(
                             }
                         }
                     }
+                }
+            }
+
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(lDimens.dp200)
+                        .padding(lDimens.dp20)
+                        .clickable {  },
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = lDimens.dp0
+                    ),
+                    colors = CardDefaults.cardColors(colors.backgroundPrimary)
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.ExclusiveFeature),
+                        contentDescription = "FeatureImage",
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
             }
 
