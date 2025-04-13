@@ -70,6 +70,7 @@ import androidx.navigation.NavHostController
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
+import com.falcon.split.presentation.history.HistoryItem
 import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
@@ -372,6 +373,10 @@ fun GroupsContent(
 ) {
     val colors = LocalSplitColors.current
 
+    val groupedGroups = remember(groups) {
+        groupItemsByDate(groups)
+    }
+
     LazyColumn(
         state = lazyState,
         contentPadding = PaddingValues(bottom = 80.dp), // Space for FAB
@@ -379,43 +384,6 @@ fun GroupsContent(
             .fillMaxSize()
             .background(colors.backgroundPrimary)
     ) {
-        // Header with image
-        item {
-            Box {
-                UpwardFlipHeaderImage(
-                    Res.drawable.GroupPic,
-                    pagerState
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                "Your Groups",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = colors.textPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Text(
-                                "$totalGroupCount ${if (totalGroupCount == 1) "group" else "groups"}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.textSecondary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // Search bar
         item {
             OutlinedTextField(
@@ -595,19 +563,29 @@ fun GroupsContent(
         }
 
         // Group items
-        items(
-            items = groups,
-            key = { it.id }
-        ) { group ->
-            EnhancedGroupCard(
-                group = group,
-                currentUserId = "user1", // TODO: Replace with actual userId from viewModel
-                onClick = { onGroupClick(group) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
-                    .animateItemPlacement()
-            )
+        groupedGroups.forEach { (timePeriod,groups) ->
+            item(key = "header_$timePeriod") {
+                Text(
+                    text = timePeriod,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary,
+                    modifier = Modifier.padding(vertical = lDimens.dp8, horizontal = lDimens.dp16)
+                )
+            }
+            items(
+                items = groups,
+                key = {it.id}
+            ) { group ->
+                EnhancedGroupCard(
+                    group = group,
+                    currentUserId = "user1",
+                    onClick = { onGroupClick(group) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                        .animateItemPlacement()
+                )
+            }
         }
 
         // Bottom spacer for FAB
@@ -836,26 +814,27 @@ fun EnhancedGroupCard(
     }
 }
 
-// Helper function to format time ago from timestamp
-fun formatTimeAgo(timestamp: Long?): String {
-    if (timestamp == null) return "Unknown"
+private fun groupItemsByDate(items: List<Group>): Map<String, List<Group>> {
 
-    val now = Clock.System.now()
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val elapsedMillis = now.toEpochMilliseconds() - instant.toEpochMilliseconds()
+    val grouped = items.groupBy { item ->
+        DateTimeUtil.formatRelativeDate(item.createdAt)
+    }
 
-    return when {
-        elapsedMillis < 60 * 1000 -> "Just now"
-        elapsedMillis < 60 * 60 * 1000 -> "${elapsedMillis / (60 * 1000)}m ago"
-        elapsedMillis < 24 * 60 * 60 * 1000 -> "${elapsedMillis / (60 * 60 * 1000)}h ago"
-        elapsedMillis < 30 * 24 * 60 * 60 * 1000L -> "${elapsedMillis / (24 * 60 * 60 * 1000)}d ago"
-        elapsedMillis < 365 * 24 * 60 * 60 * 1000L -> {
-            val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            "${localDate.monthNumber}/${localDate.dayOfMonth}"
-        }
-        else -> {
-            val localDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            "${localDate.monthNumber}/${localDate.dayOfMonth}/${localDate.year}"
+    val order = listOf("Today", "Yesterday", "This Week", "This Month", "Earlier")
+
+    // Create a new linked map with the desired order
+    val result = linkedMapOf<String, List<Group>>()
+
+    // Add entries in the specific order (if they exist)
+    order.forEach { key ->
+        grouped[key]?.let { result[key] = it }
+    }
+
+    grouped.forEach { (key, value) ->
+        if (!result.containsKey(key)) {
+            result[key] = value
         }
     }
+
+    return result
 }
