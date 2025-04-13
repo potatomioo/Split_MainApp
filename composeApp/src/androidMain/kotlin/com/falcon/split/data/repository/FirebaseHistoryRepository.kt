@@ -40,7 +40,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 historyItems = historyItems.map { map ->
                     // Handle timestamp which can be Timestamp or Long
                     val timestamp = when (val ts = map["timestamp"]) {
-                        is Timestamp -> ts.seconds * 1000
+                        is Timestamp -> ts.seconds * 1000 + (ts.nanoseconds / 1000000)
                         is Long -> ts
                         else -> System.currentTimeMillis()
                     }
@@ -602,7 +602,7 @@ class FirebaseHistoryRepository : HistoryRepository {
             // Create a Firestore-friendly map of the history item
             val historyItemMap = mapOf(
                 "id" to itemWithId.id,
-                "timestamp" to Timestamp(itemWithId.timestamp / 1000, 0),
+                "timestamp" to Timestamp(itemWithId.timestamp / 1000, ((itemWithId.timestamp % 1000) * 1000000).toInt()),
                 "actionType" to itemWithId.actionType.name,
                 "actionByUserId" to itemWithId.actionByUserId,
                 "actionByUserName" to itemWithId.actionByUserName,

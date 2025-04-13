@@ -89,6 +89,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitColors
+import com.falcon.split.util.DateTimeUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -531,14 +532,26 @@ fun HistoryItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Time and group info (if applicable)
+                // Date and time info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
                 ) {
-                    // Time
+                    // Time and date
                     Text(
-                        text = formatTime(historyItem.timestamp),
+                        text = DateTimeUtil.formatTime(historyItem.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary
+                    )
+
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary
+                    )
+
+                    Text(
+                        text = DateTimeUtil.formatStandardDate(historyItem.timestamp),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.textSecondary
                     )
@@ -637,23 +650,11 @@ fun EmptyState(searchQuery: String) {
 
 // Group history items by date period (Today, Yesterday, This Week, etc.)
 private fun groupHistoryItemsByDate(items: List<HistoryItem>): Map<String, List<HistoryItem>> {
-    val now = kotlinx.datetime.Clock.System.now()
-    val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val yesterday = today.minus(kotlinx.datetime.DatePeriod(days = 1))
 
-    // Group by time period
     val grouped = items.groupBy { item ->
-        val instant = Instant.fromEpochMilliseconds(item.timestamp)
-        val itemDate = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-
-        when {
-            itemDate == today -> "Today"
-            itemDate == yesterday -> "Yesterday"
-            today.minus(kotlinx.datetime.DatePeriod(days = 7)) < itemDate -> "This Week"
-            today.minus(kotlinx.datetime.DatePeriod(days = 30)) < itemDate -> "This Month"
-            else -> "Earlier"
-        }
+        DateTimeUtil.formatRelativeDate(item.timestamp)
     }
+
 
     // Define the order we want
     val order = listOf("Today", "Yesterday", "This Week", "This Month", "Earlier")
@@ -666,15 +667,18 @@ private fun groupHistoryItemsByDate(items: List<HistoryItem>): Map<String, List<
         grouped[key]?.let { result[key] = it }
     }
 
+    grouped.forEach { (key, value) ->
+        if (!result.containsKey(key)) {
+            result[key] = value
+        }
+    }
+
     return result
 }
 
 // Format timestamp to human-readable time
 private fun formatTime(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    return "${localDateTime.hour}:${localDateTime.minute.toString().padStart(2, '0')}"
+    return DateTimeUtil.formatTime(timestamp)
 }
 
 // Get icon for history item based on action type
