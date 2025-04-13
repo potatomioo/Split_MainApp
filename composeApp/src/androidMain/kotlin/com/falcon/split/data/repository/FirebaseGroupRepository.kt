@@ -71,7 +71,6 @@ class FirebaseGroupRepository : GroupRepository {
                 .await()
 
             val currentUserName = currentUserDoc.getString("name") ?: currentUser.displayName
-            val currentTime = System.currentTimeMillis()
             val groupRef = db.collection("groups").document()
 
             val group = Group(
@@ -85,7 +84,6 @@ class FirebaseGroupRepository : GroupRepository {
                     balance = 0.0
                 ),
                 totalAmount = 0.0,
-                createdAt = currentTime,
                 updatedAt = null
             )
 

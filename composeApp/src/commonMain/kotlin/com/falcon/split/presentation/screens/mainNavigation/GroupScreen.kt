@@ -75,6 +75,7 @@ import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
+import com.falcon.split.util.DateTimeUtil
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -726,10 +727,10 @@ fun EnhancedGroupCard(
     val userBalance = userMember?.balance ?: 0.0
 
     // Check if there are pending settlements
-    val hasPendingSettlements = false // TODO: Add logic to check for pending settlements
+    val hasPendingSettlements = false
 
     // Format time since creation
-    val timeAgo = formatTimeAgo(group.createdAt)
+    val dateTime = DateTimeUtil.formatStandardDate(group.createdAt)
 
     SplitCard(
         modifier = modifier
@@ -775,7 +776,7 @@ fun EnhancedGroupCard(
                         )
 
                         Text(
-                            text = "${group.members.size} members • $timeAgo",
+                            text = "${group.members.size} members • $dateTime",
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.textSecondary
                         )

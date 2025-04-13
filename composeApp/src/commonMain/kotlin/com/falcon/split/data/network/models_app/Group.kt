@@ -11,7 +11,7 @@ data class Group(
     val name: String = "",
     val createdBy: String = "",
     val members: List<GroupMember> = emptyList(),
-    val createdAt: Long? = null,
+    val createdAt: Long = Clock.System.now().toEpochMilliseconds(),
     val updatedAt: Long? = null,
     val totalAmount: Double? = 0.0,
     val expenses : List<String> = emptyList()
