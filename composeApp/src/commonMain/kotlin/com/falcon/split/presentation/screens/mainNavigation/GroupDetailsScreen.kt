@@ -104,6 +104,7 @@ import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.userManager.UserManager
+import com.falcon.split.util.DateTimeUtil
 import com.falcon.split.utils.MemberNameResolver
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -819,10 +820,9 @@ fun ExpenseCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.textSecondary
             )
-
             // Show date if available
             Text(
-                formatDateTime(expense.expenseId.toLongOrNull() ?: 0L),
+                DateTimeUtil.formatDateTime(expense.createdAt),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.textSecondary
             )

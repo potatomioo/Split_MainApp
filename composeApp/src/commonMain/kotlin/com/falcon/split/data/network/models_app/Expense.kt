@@ -7,11 +7,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Expense(
     val expenseId: String = "",
-    val groupId: String = "",  // Which group this expense belongs to
+    val groupId: String = "",
     val description: String = "",
     val amount: Double = 0.0,
-    val paidByUserId: String = "",  // userId of person who paid
-    val paidByUserName: String? = "",  // userName of person who paid
+    val createdAt : Long = Clock.System.now().toEpochMilliseconds(),
+    val paidByUserId: String = "",
+    val paidByUserName: String? = "",
     val splits: List<ExpenseSplit> = emptyList(),
 )
 
