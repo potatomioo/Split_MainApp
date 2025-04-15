@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
     open val dp54 @Composable get() = 54.dp
     open val dp56 @Composable get() = 56.dp
     open val dp60 @Composable get() = 60.dp
+    open val dp64 @Composable get() = 64.dp
     open val dp68 @Composable get() = 68.dp
     open val dp78 @Composable get() = 78.dp
     open val dp80 @Composable get() = 80.dp

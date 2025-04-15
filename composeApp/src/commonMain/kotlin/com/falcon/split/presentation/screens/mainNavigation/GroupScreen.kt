@@ -3,7 +3,9 @@ package com.falcon.split.presentation.screens.mainNavigation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +62,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.falcon.split.data.network.models_app.Group
+import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.history.HistoryItem
@@ -727,22 +732,27 @@ fun EnhancedGroupCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Group icon with background
+                    val groupType = GroupType.fromString(group.groupType)
                     Surface(
-                        color = colors.primary.copy(alpha = 0.1f),
                         shape = CircleShape,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(lDimens.dp40),
+                        border = BorderStroke(
+                            lDimens.dp1,
+                            color = colors.primary
+                        )
                     ) {
-                        Icon(
-                            painter = painterResource(Res.drawable.group_icon_filled),
-                            contentDescription = null,
+                        Image(
+                            painter = painterResource(resource = groupType.iconRes),
+                            contentDescription = groupType.displayName,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .padding(8.dp)
-                                .size(24.dp),
-                            tint = colors.primary
+                                .padding(lDimens.dp1)
+                                .size(lDimens.dp24)
+                                .clip(CircleShape),
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(lDimens.dp12))
 
                     Column {
                         Text(
