@@ -117,10 +117,10 @@ import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.Res
 import split.composeapp.generated.resources.group_icon_filled
 
-enum class GroupDetailsTab(val icon: ImageVector, val title: String) {
-    EXPENSES(Icons.Default.ThumbUp, "Expenses"),
-    BALANCES(Icons.Default.ThumbUp, "Balances"),
-    SETTLEMENTS(Icons.Default.ThumbUp, "Settlements")
+enum class GroupDetailsTab(val title: String) {
+    EXPENSES("Expenses"),
+    BALANCES("Balances"),
+    SETTLEMENTS("Request")
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
@@ -311,7 +311,6 @@ fun GroupDetailsScreen(
                                             Text(tab.title,color = colors.textPrimary)
                                         }
                                     },
-                                    icon = { Icon(tab.icon, contentDescription = null) }
                                 )
                             }
                         }
@@ -325,7 +324,8 @@ fun GroupDetailsScreen(
                                 0 -> ExpensesTab(
                                     expenseState = expenseState,
                                     group = group,
-                                    nameResolver = nameResolver
+                                    nameResolver = nameResolver,
+                                    settlementHistory = settlements
                                 )
 
                                 1 -> BalancesTab(
@@ -338,9 +338,8 @@ fun GroupDetailsScreen(
                                     colors = colors
                                 )
 
-                                2 -> SettlementsTab(
+                                2 -> RequestsTab(
                                     pendingSettlements = pendingSettlements,
-                                    settlementHistory = settlements,
                                     currentUserId = viewModel.currentUserId ?: "",
                                     nameResolver = nameResolver,
                                     onApprove = { settlementId ->
@@ -349,7 +348,7 @@ fun GroupDetailsScreen(
                                     onDecline = { settlementId ->
                                         viewModel.declineSettlement(settlementId)
                                     },
-                                    processingSettlementIds
+                                    processingSettlementIds = processingSettlementIds
                                 )
                             }
                         }
@@ -702,7 +701,8 @@ fun ExpandableFloatingActionButton(
 fun ExpensesTab(
     expenseState: ExpenseState,
     group: Group,
-    nameResolver: MemberNameResolver
+    nameResolver: MemberNameResolver,
+    settlementHistory: List<Settlement> // Add settlement history parameter
 ) {
     Box(
         modifier = Modifier
@@ -729,23 +729,51 @@ fun ExpensesTab(
             is ExpenseState.Success -> {
                 val expenses = expenseState.expenses
 
-                if (expenses.isEmpty()) {
+                if (expenses.isEmpty() && settlementHistory.isEmpty()) {
                     EmptyState(
-                        title = "No expenses yet",
+                        title = "No transactions yet",
                         message = "Add an expense to get started",
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    // Group expenses by date
-                    val groupedExpenses = expenses.groupBy {
-                        formatDateHeader(it.expenseId.toLongOrNull() ?: 0L)
+                    // Create a combined list of expenses and settlements
+                    val combinedItems = mutableListOf<TransactionItem>()
+
+                    // Add expenses
+                    expenses.forEach { expense ->
+                        combinedItems.add(
+                            TransactionItem.ExpenseItem(
+                                expense = expense,
+                                timestamp = expense.createdAt
+                            )
+                        )
+                    }
+
+                    // Add settlements
+                    settlementHistory.forEach { settlement ->
+                        if (settlement.status != SettlementStatus.PENDING) {
+                            combinedItems.add(
+                                TransactionItem.SettlementItem(
+                                    settlement = settlement,
+                                    timestamp = settlement.timestamp
+                                )
+                            )
+                        }
+                    }
+
+                    // Sort combined items by timestamp (most recent first)
+                    combinedItems.sortByDescending { it.timestamp }
+
+                    // Group by date
+                    val groupedItems = combinedItems.groupBy {
+                        formatDateHeader(it.timestamp)
                     }
 
                     LazyColumn(
                         contentPadding = PaddingValues(bottom = lDimens.dp80), // Space for FAB
                         verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
                     ) {
-                        groupedExpenses.forEach { (date, expensesForDate) ->
+                        groupedItems.forEach { (date, itemsForDate) ->
                             item {
                                 Text(
                                     text = date,
@@ -755,12 +783,21 @@ fun ExpensesTab(
                                 )
                             }
 
-                            items(expensesForDate) { expense ->
-                                ExpenseCard(
-                                    expense = expense,
-                                    group = group,
-                                    nameResolver = nameResolver
-                                )
+                            items(itemsForDate) { item ->
+                                when (item) {
+                                    is TransactionItem.ExpenseItem -> {
+                                        ExpenseCard(
+                                            expense = item.expense,
+                                            group = group,
+                                            nameResolver = nameResolver
+                                        )
+                                    }
+                                    is TransactionItem.SettlementItem -> {
+                                        SettlementHistoryInExpensesCard(
+                                            settlement = item.settlement
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -771,6 +808,110 @@ fun ExpensesTab(
                     }
                 }
             }
+        }
+    }
+}
+
+sealed class TransactionItem {
+    abstract val timestamp: Long
+
+    data class ExpenseItem(
+        val expense: Expense,
+        override val timestamp: Long = expense.createdAt
+    ) : TransactionItem()
+
+    data class SettlementItem(
+        val settlement: Settlement,
+        override val timestamp: Long = settlement.timestamp
+    ) : TransactionItem()
+}
+
+@Composable
+fun SettlementHistoryInExpensesCard(
+    settlement: Settlement
+) {
+    val colors = LocalSplitColors.current
+
+    SplitCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(lDimens.dp16)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = when (settlement.status) {
+                        SettlementStatus.APPROVED -> "Settlement"
+                        SettlementStatus.DECLINED -> "Declined Settlement"
+                        else -> "Settlement"
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = colors.textPrimary
+                )
+
+                CurrencyDisplay(
+                    amount = settlement.amount,
+                    isIncome = false
+                )
+            }
+
+            Spacer(modifier = Modifier.height(lDimens.dp4))
+
+            // Transaction details
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text =
+                        when (settlement.status) {
+                            SettlementStatus.APPROVED -> "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}"
+                            SettlementStatus.DECLINED -> "${settlement.toUserName ?: "someone"} declined a settlement of ${settlement.fromUserName ?: "Someone"}"
+                            else -> "Unknown status"
+                        },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textSecondary
+                )
+
+                Spacer(modifier = Modifier.width(lDimens.dp8))
+
+                // Status indicator
+//                Surface(
+//                    color = when (settlement.status) {
+//                        SettlementStatus.APPROVED -> colors.success.copy(alpha = 0.1f)
+//                        SettlementStatus.DECLINED -> colors.error.copy(alpha = 0.1f)
+//                        else -> colors.textSecondary.copy(alpha = 0.1f)
+//                    },
+//                    shape = CircleShape,
+//                    modifier = Modifier.size(lDimens.dp16)
+//                ) {
+//                    Box(contentAlignment = Alignment.Center) {
+//                        Icon(
+//                            when (settlement.status) {
+//                                SettlementStatus.APPROVED -> Icons.Default.Check
+//                                SettlementStatus.DECLINED -> Icons.Default.Close
+//                                else -> Icons.Default.MoreVert
+//                            },
+//                            contentDescription = null,
+//                            tint = when (settlement.status) {
+//                                SettlementStatus.APPROVED -> colors.success
+//                                SettlementStatus.DECLINED -> colors.error
+//                                else -> colors.textSecondary
+//                            },
+//                            modifier = Modifier.size(lDimens.dp12)
+//                        )
+//                    }
+//                }
+            }
+
+            // Show date
+            Text(
+                formatDateTime(settlement.timestamp),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.textSecondary
+            )
         }
     }
 }
@@ -794,7 +935,7 @@ fun ExpenseCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    expense.description,
+                    "${expense.description}",
                     style = MaterialTheme.typography.titleMedium,
                     color = colors.textPrimary
                 )
@@ -816,13 +957,13 @@ fun ExpenseCard(
             }
 
             Text(
-                "Paid by $payerName",
+                "$payerName added a new expense",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.textSecondary
             )
             // Show date if available
             Text(
-                DateTimeUtil.formatDateTime(expense.createdAt),
+                DateTimeUtil.formatStandardDate(expense.createdAt),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.textSecondary
             )
@@ -1123,28 +1264,27 @@ fun MemberBalanceCard(
     }
 }
 
+
 @Composable
-fun SettlementsTab(
+fun RequestsTab(
     pendingSettlements: List<Settlement>,
-    settlementHistory: List<Settlement>,
     currentUserId: String,
     nameResolver: MemberNameResolver,
     onApprove: (String) -> Unit,
     onDecline: (String) -> Unit,
-    processingSettlementIds : Set<String> = emptySet(),
+    processingSettlementIds: Set<String> = emptySet(),
 ) {
     val colors = LocalSplitColors.current
 
-    // Filter settlements
+    // Filter settlements - only include pending ones
     val incomingRequests = pendingSettlements.filter { it.toUserId == currentUserId && it.status == SettlementStatus.PENDING }
     val outgoingRequests = pendingSettlements.filter { it.fromUserId == currentUserId && it.status == SettlementStatus.PENDING }
-    val completedSettlements = settlementHistory.filter { it.status != SettlementStatus.PENDING }
 
     LazyColumn(
         contentPadding = PaddingValues(horizontal = lDimens.dp16, vertical = lDimens.dp8),
         verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
     ) {
-        // Pending Requests Section (people requesting money from you)
+        // Incoming Requests Section (people requesting money from you)
         item {
             Text(
                 "Requests For You",
@@ -1174,7 +1314,7 @@ fun SettlementsTab(
             }
         }
 
-        // Your Pending Requests Section (your requests to others)
+        // Outgoing Requests Section (your requests to others)
         item {
             Text(
                 "Your Pending Requests",
@@ -1204,36 +1344,13 @@ fun SettlementsTab(
             }
         }
 
-        // Settlement History Section
-        item {
-            Text(
-                "Settlement History",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(top = lDimens.dp24, bottom = lDimens.dp4),
-                color = colors.textPrimary
-            )
-        }
-
-        if (completedSettlements.isEmpty()) {
-            item {
-                EmptyState(
-                    title = "No settlement history",
-                    message = "Past settlements will appear here",
-                    modifier = Modifier.padding(vertical = lDimens.dp16)
-                )
-            }
-        } else {
-            items(completedSettlements) { settlement ->
-                SettlementHistoryCard(settlement = settlement)
-            }
-        }
-
         // Bottom spacer
         item {
             Spacer(modifier = Modifier.height(lDimens.dp80))
         }
     }
 }
+
 
 @Composable
 fun SettlementHistoryCard(
