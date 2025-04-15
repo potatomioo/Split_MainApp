@@ -1,6 +1,11 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -53,8 +62,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -62,17 +73,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
+import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.presentation.expense.CreateExpenseState
 import com.falcon.split.presentation.expense.CreateExpenseViewModel
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.utils.MemberNameResolver
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.painterResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +122,8 @@ fun CreateExpense(
     // ViewModel state
     val state by viewModel.state.collectAsState()
     val selectedGroup by viewModel.selectedGroup.collectAsState()
+
+    val selectedExpenseType by viewModel.selectedType.collectAsState()
 
     // Set selected group if groupId is provided
     LaunchedEffect(groupId) {
@@ -292,6 +309,38 @@ fun CreateExpense(
                             ),
                             textStyle = TextStyle(color = colors.textPrimary)
                         )
+
+                        //This is for the expenseType
+                        OutlinedCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(lDimens.dp16)
+                                    .fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Select Expense Type",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.textPrimary
+                                )
+
+                                Spacer(modifier = Modifier.height(lDimens.dp16))
+
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp16),
+                                    contentPadding = PaddingValues(horizontal = lDimens.dp4)
+                                ) {
+                                    items(ExpenseType.values()) { expenseType ->
+                                        ExpenseTypeItem(
+                                            expenseType = expenseType,
+                                            isSelected = selectedExpenseType == expenseType,
+                                            onClick = { viewModel.setExpenseType(expenseType = expenseType) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
                         // Date Picker
                         OutlinedTextField(
@@ -561,4 +610,59 @@ private fun formatDate(date: LocalDate): String {
 
 private fun formatAmount(amount: Double): String {
     return ((amount * 100).toInt() / 100.0).toString()
+}
+
+@Composable
+fun ExpenseTypeItem(
+    expenseType: ExpenseType,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .width(lDimens.dp80)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .size(lDimens.dp64)
+                .background(
+                    color = colors.cardBackground,
+                    shape = CircleShape
+                )
+                .border(
+                    width = if (isSelected) lDimens.dp2 else lDimens.dp1,
+                    color = if (isSelected) colors.primary else colors.border,
+                    shape = CircleShape
+                )
+                .padding(lDimens.dp2),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(resource = expenseType.iconRes),
+                contentDescription = expenseType.displayName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(lDimens.dp56)
+                    .clip(CircleShape),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(lDimens.dp4))
+
+        Text(
+            text = expenseType.displayName,
+            style = getSplitTypography().titleSmall,
+            color = if (isSelected) colors.primary else colors.textSecondary,
+            textAlign = TextAlign.Center
+        )
+    }
 }

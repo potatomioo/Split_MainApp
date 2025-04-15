@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +22,15 @@ class CreateExpenseViewModel(
     private val _selectedGroup = MutableStateFlow<Group?>(null)
     val selectedGroup = _selectedGroup.asStateFlow()
 
+    private val _selectedType = MutableStateFlow<ExpenseType>(ExpenseType.OTHER)
+    val selectedType = _selectedType.asStateFlow()
+
     init {
         loadGroups()
+    }
+
+    fun setExpenseType(expenseType: ExpenseType){
+        _selectedType.value = expenseType
     }
 
     private fun loadGroups() {
@@ -62,7 +70,8 @@ class CreateExpenseViewModel(
                 expenseRepository.addExpense(
                     groupId = selectedGroupId,
                     description = description,
-                    amount = amount
+                    amount = amount,
+                    expenseType = _selectedType.value
                 ).onSuccess {
                     // Navigate back or show success message
                 }.onFailure { error ->
