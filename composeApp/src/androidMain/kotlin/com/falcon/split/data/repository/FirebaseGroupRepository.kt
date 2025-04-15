@@ -4,6 +4,7 @@ import com.falcon.split.contact.Contact
 import com.falcon.split.data.Repository.GroupRepository
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
+import com.falcon.split.data.network.models_app.GroupType
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -26,7 +27,7 @@ class FirebaseGroupRepository : GroupRepository {
         return querySnapshot.documents.firstOrNull()?.getString("phoneNumber")
     }
 
-    override suspend fun createGroup(name: String, members: List<Contact>): Result<Group> {
+    override suspend fun createGroup(name: String, members: List<Contact>,groupType: GroupType): Result<Group> {
         return try {
             val currentUser = FirebaseAuth.getInstance().currentUser
                 ?: return Result.failure(Exception("User not logged in"))
@@ -83,6 +84,7 @@ class FirebaseGroupRepository : GroupRepository {
                     name = currentUserName,
                     balance = 0.0
                 ),
+                groupType = groupType.name,
                 totalAmount = 0.0,
                 updatedAt = null
             )

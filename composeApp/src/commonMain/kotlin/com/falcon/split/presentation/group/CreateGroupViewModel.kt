@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.falcon.split.contact.Contact
 import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.network.models_app.GroupType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,6 +25,13 @@ class CreateGroupViewModel(
     private val _selectedContacts = MutableStateFlow<List<Contact>>(emptyList())
     val selectedContacts = _selectedContacts.asStateFlow()
 
+    private val _selectedGroupType = MutableStateFlow<GroupType>(GroupType.OTHER)
+    val selectedGroupType = _selectedGroupType.asStateFlow()
+
+    fun setGroupType(groupType: GroupType) {
+        _selectedGroupType.value = groupType
+    }
+
     fun addContact(contact: Contact) {
         val currentList = _selectedContacts.value.toMutableList()
         if (!currentList.any { it.contactNumber == contact.contactNumber }) {
@@ -43,7 +51,7 @@ class CreateGroupViewModel(
             _state.value = CreateGroupState.Loading
 
             try {
-                groupRepository.createGroup(name, _selectedContacts.value)
+                groupRepository.createGroup(name, _selectedContacts.value, _selectedGroupType.value)
                     .onSuccess { group ->
                         _state.value = CreateGroupState.Success(group.id)
                     }
