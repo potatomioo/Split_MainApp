@@ -2,6 +2,7 @@ package com.falcon.split.data.repository
 
 import com.falcon.split.data.Repository.ExpenseRepository
 import com.falcon.split.data.network.models_app.Expense
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
@@ -23,6 +24,7 @@ class FirebaseExpenseRepository : ExpenseRepository {
         groupId: String,
         description: String,
         amount: Double,
+        expenseType: ExpenseType
     ): Result<Unit> {
         val currentUser = FirebaseAuth.getInstance().currentUser
             ?: return Result.failure(Exception("User not logged in"))
@@ -59,6 +61,7 @@ class FirebaseExpenseRepository : ExpenseRepository {
                     groupId = groupId,
                     description = description,
                     amount = amount,
+                    type = expenseType.name,
                     paidByUserId = paidByUserId,
                     paidByUserName = paidByUserName,
                     splits = splits

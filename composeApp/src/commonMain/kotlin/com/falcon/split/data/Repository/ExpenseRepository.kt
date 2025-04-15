@@ -1,11 +1,12 @@
 package com.falcon.split.data.Repository
 
 import com.falcon.split.data.network.models_app.Expense
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Settlement
 import kotlinx.coroutines.flow.Flow
 
 interface ExpenseRepository {
-    suspend fun addExpense(groupId: String, description: String, amount: Double): Result<Unit>
+    suspend fun addExpense(groupId: String, description: String, amount: Double,expenseType: ExpenseType): Result<Unit>
     suspend fun getExpensesByGroup(groupId: String): Flow<List<Expense>>
     suspend fun getExpensesByUser(userId: String): Flow<List<Expense>>
 
