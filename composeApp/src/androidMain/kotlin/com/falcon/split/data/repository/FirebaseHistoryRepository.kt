@@ -327,7 +327,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         actionByUserName = createdByUserName,
                         groupId = groupId,
                         groupName = groupName,
-                        description = "$createdByUserName created the group \"$groupName\" and added you"
+                        description = "\"$createdByUserName created \\\"$groupName\\\" and added you\""
                     )
 
                     // Add to member's history
@@ -418,7 +418,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         groupName = groupName,
                         expenseId = expenseId,
                         expenseAmount = expenseAmount,
-                        description = "$paidByUserName added an expense \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
+                        description = "$paidByUserName added \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
                     )
 
                     // Add to member's history
@@ -436,7 +436,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 groupName = groupName,
                 expenseId = expenseId,
                 expenseAmount = expenseAmount,
-                description = "You added an expense \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
+                description = "You added \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
             )
 
             // Add to creator's history
@@ -475,7 +475,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 settlementAmount = settlementAmount,
                 targetUserId = toUserId,
                 targetUserName = toUserName,
-                description = "$fromUserName requested a settlement of ₹$settlementAmount from you in \"$groupName\""
+                description = "$fromUserName requested to settle ₹$settlementAmount from you in \"$groupName\""
             )
 
             // Add to recipient's history
@@ -528,9 +528,9 @@ class FirebaseHistoryRepository : HistoryRepository {
                 HistoryActionType.SETTLEMENT_DECLINED
 
             val description = if (approved)
-                "$toUserName approved your settlement of ₹$settlementAmount in \"$groupName\""
+                "$toUserName approved your ₹$settlementAmount request in \"$groupName\""
             else
-                "$toUserName declined your settlement of ₹$settlementAmount in \"$groupName\""
+                "$toUserName declined your ₹$settlementAmount request in \"$groupName\""
 
             // Create a history item for the initiator (fromUser)
             val historyItem = HistoryItem(
