@@ -11,7 +11,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -82,6 +84,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -90,6 +93,7 @@ import androidx.navigation.NavHostController
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.ExpenseSplit
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.Settlement
@@ -927,46 +931,89 @@ fun ExpenseCard(
     SplitCard(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(lDimens.dp16)
+        Row(
+            modifier = Modifier
+                .padding(lDimens.dp16)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            // Icon with proper sizing and alignment
+            val expenseType = ExpenseType.fromString(expense.type)
+            Box(
+                modifier = Modifier
+                    .size(lDimens.dp48)
+                    .background(
+                        color = colors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = lDimens.dp1,
+                        color = colors.primary.copy(alpha = 0.3f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
+                Image(
+                    painter = painterResource(resource = expenseType.iconRes),
+                    contentDescription = expenseType.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(lDimens.dp45)
+                        .clip(CircleShape),
+                )
+            }
+
+            // Content with proper spacing
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = lDimens.dp16)
+            ) {
+                // Title and amount row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        expense.description,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    CurrencyDisplay(
+                        amount = expense.amount,
+                        isIncome = true,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(lDimens.dp4))
+
+                // Payer info
+                val paidByMember = group.members.find { it.userId == expense.paidByUserId }
+                val payerName = if (paidByMember != null) {
+                    nameResolver.resolveDisplayName(paidByMember)
+                } else {
+                    expense.paidByUserName ?: "Unknown"
+                }
+
                 Text(
-                    "${expense.description}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colors.textPrimary
+                    "$payerName added a new expense",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textSecondary
                 )
 
-                CurrencyDisplay(
-                    amount = expense.amount,
-                    isIncome = true
+                Spacer(modifier = Modifier.height(lDimens.dp2))
+
+                // Date with proper styling
+                Text(
+                    DateTimeUtil.formatStandardDate(expense.createdAt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary.copy(alpha = 0.8f)
                 )
             }
-
-            Spacer(modifier = Modifier.height(lDimens.dp4))
-
-            // Find the member who paid
-            val paidByMember = group.members.find { it.userId == expense.paidByUserId }
-            val payerName = if (paidByMember != null) {
-                nameResolver.resolveDisplayName(paidByMember)
-            } else {
-                expense.paidByUserName ?: "Unknown"
-            }
-
-            Text(
-                "$payerName added a new expense",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.textSecondary
-            )
-            // Show date if available
-            Text(
-                DateTimeUtil.formatStandardDate(expense.createdAt),
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.textSecondary
-            )
         }
     }
 }
