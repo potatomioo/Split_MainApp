@@ -1,10 +1,12 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,6 +74,7 @@ import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
 import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.Group
+import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
 import com.falcon.split.presentation.expense.ExpenseState
@@ -85,6 +89,7 @@ import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.lDimens
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -107,7 +112,7 @@ fun HomeScreen(
     navControllerMain: NavHostController,
     topPadding : Dp,
     viewModel: GroupViewModel,
-    historyViewModel: HistoryViewModel,
+    historyViewModel: HistoryViewModel
     ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
@@ -371,7 +376,9 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(lDimens.dp200)
                         .padding(lDimens.dp20)
-                        .clickable {  },
+                        .clickable {
+
+                        },
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = lDimens.dp0
                     ),
@@ -391,7 +398,7 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Your Groups",
                     actionText = "See All",
-                    onActionClick = { /* Navigate to groups screen */ }
+                    onActionClick = {  }
                 )
 
                 when (groupState) {
@@ -407,17 +414,29 @@ fun HomeScreen(
                     }
                     is GroupState.Success -> {
                         val groups = (groupState as GroupState.Success).groups
+
                         if (groups.isEmpty()) {
                             EmptyStateMessage(
                                 message = "No groups yet",
                                 submessage = "Create a group to start tracking expenses with friends"
                             )
                         } else {
+                            // Show horizontal row of group cards, limited to 10 most recent ones
                             LazyRow(
                                 contentPadding = PaddingValues(horizontal = lDimens.dp16),
                                 horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
                             ) {
-                                items(groups) { group ->
+                                // Create new group card as first item
+                                item {
+                                    CreateGroupCard(
+                                        onClick = { navControllerMain.navigate("create_group") }
+                                    )
+                                }
+
+                                // Limit to 10 most recent groups
+                                val recentGroups = groups.sortedByDescending { it.createdAt }.take(10)
+
+                                items(recentGroups) { group ->
                                     GroupCard(
                                         group = group,
                                         onClick = {
@@ -684,6 +703,7 @@ fun SectionHeader(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
 fun GroupCard(
@@ -695,27 +715,52 @@ fun GroupCard(
     Card(
         onClick = onClick,
         modifier = Modifier
-            .width(lDimens.dp150),
+            .width(lDimens.dp130),
         colors = CardDefaults.cardColors(
             containerColor = colors.cardBackground
         ),
-        shape = RoundedCornerShape(lDimens.dp12)
+        shape = RoundedCornerShape(lDimens.dp12),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = lDimens.dp2
+        ),
+        border = BorderStroke(
+            lDimens.dp1,
+            colors.primary
+        )
     ) {
         Column(
-            modifier = Modifier.padding(lDimens.dp12),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(lDimens.dp12),  // Reduced padding
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Group icon
-            Icon(
-                painter = painterResource(Res.drawable.group_icon_outlined),
-                contentDescription = null,
-                tint = colors.primary,
+            val groupType = GroupType.fromString(group.groupType)
+            Box(
                 modifier = Modifier
-                    .size(lDimens.dp40)
-                    .padding(lDimens.dp4)
-            )
+                    .size(lDimens.dp48)  // Smaller icon
+                    .background(
+                        color = colors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = lDimens.dp1,
+                        color = colors.primary.copy(alpha = 0.3f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(resource = groupType.iconRes),
+                    contentDescription = groupType.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(lDimens.dp40)  // Smaller image
+                        .clip(CircleShape),
+                )
+            }
 
-            Spacer(modifier = Modifier.height(lDimens.dp8))
+            Spacer(modifier = Modifier.height(lDimens.dp8))  // Reduced spacing
 
             // Group name
             Text(
@@ -727,19 +772,86 @@ fun GroupCard(
                 textAlign = TextAlign.Center
             )
 
-            // Member count
-            Text(
-                text = "${group.members.size} members",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.textSecondary
-            )
+            Spacer(modifier = Modifier.height(lDimens.dp8))  // Reduced spacing
 
-            Spacer(modifier = Modifier.height(lDimens.dp8))
-
-            // Balance
+            // Balance (only showing balance, not member count)
             CurrencyDisplay(
                 amount = group.totalAmount ?: 0.0,
-                isIncome = (group.totalAmount ?: 0.0) >= 0
+                isIncome = (group.totalAmount ?: 0.0) >= 0,
+            )
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateGroupCard(
+    onClick: () -> Unit
+) {
+    val colors = LocalSplitColors.current
+
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .width(lDimens.dp130),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.cardBackground
+        ),
+        shape = RoundedCornerShape(lDimens.dp12),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = lDimens.dp2
+        ),
+        border = BorderStroke(
+            lDimens.dp1,
+            colors.primary
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(lDimens.dp12),  // Reduced padding
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Group icon
+            Box(
+                modifier = Modifier
+                    .size(lDimens.dp48)
+                    .background(
+                        color = colors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Create Group",
+                    tint = colors.primary,
+                    modifier = Modifier.size(lDimens.dp28)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(lDimens.dp8))  // Reduced spacing
+
+            // Group name
+            Text(
+                text = "Create New",
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(lDimens.dp8))  // Reduced spacing
+
+            // Balance (only showing balance, not member count)
+            Text(
+                text = "Group",
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
