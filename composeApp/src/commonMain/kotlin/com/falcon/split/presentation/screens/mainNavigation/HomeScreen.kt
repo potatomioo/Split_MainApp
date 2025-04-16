@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -112,7 +113,8 @@ fun HomeScreen(
     navControllerMain: NavHostController,
     topPadding : Dp,
     viewModel: GroupViewModel,
-    historyViewModel: HistoryViewModel
+    historyViewModel: HistoryViewModel,
+    pagerState: PagerState
     ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
@@ -326,7 +328,11 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Recent Activity",
                     actionText = "View All",
-                    onActionClick = { navControllerMain.navigate(Routes.MAIN_HISTORY.name) }
+                    onActionClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(1)
+                        }
+                    }
                 )
 
                 val recentHistoryItems by historyViewModel.recentHistoryItems.collectAsState()
@@ -398,7 +404,11 @@ fun HomeScreen(
                 SectionHeader(
                     title = "Your Groups",
                     actionText = "See All",
-                    onActionClick = {  }
+                    onActionClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(2)
+                        }
+                    }
                 )
 
                 when (groupState) {
@@ -852,6 +862,90 @@ fun CreateGroupCard(
                 color = colors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+
+@Composable
+fun PremiumCard(
+    navControllerMain: NavHostController
+){
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = lDimens.dp16)
+            .border(
+                width = lDimens.dp2,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFFD4AF37), // Gold start
+                        Color(0xFFF5F5DC), // Gold middle (lighter)
+                        Color(0xFFD4AF37)  // Gold end
+                    )
+                ),
+                shape = RoundedCornerShape(lDimens.dp12)
+            ),
+        shape = RoundedCornerShape(lDimens.dp12),
+        elevation = CardDefaults.cardElevation(defaultElevation = lDimens.dp4),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1E1E24) // Dark background that makes gold pop
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { navControllerMain.navigate("premium_subscription") }
+                .padding(lDimens.dp16),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left side - Icon/Image
+            Box(
+                modifier = Modifier
+                    .size(lDimens.dp60)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFD4AF37), Color(0xFFAA8C25)),
+                            radius = 40f
+                        ),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "Premium",
+                    tint = Color.White,
+                    modifier = Modifier.size(lDimens.dp36)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(lDimens.dp16))
+
+            // Right side - Text content
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Join Split Premium",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFFD4AF37), // Gold text
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(lDimens.dp4))
+
+                Text(
+                    text = "Unlock exclusive features and remove limits",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+            }
+
+            // Arrow icon
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "View Premium",
+                tint = Color(0xFFD4AF37) // Gold tint
             )
         }
     }
