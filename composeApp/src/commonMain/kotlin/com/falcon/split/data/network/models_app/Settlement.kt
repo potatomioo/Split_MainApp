@@ -29,3 +29,4 @@ sealed class SettlementState {
     object Success : SettlementState()
     data class Error(val message: String) : SettlementState()
 }
+
