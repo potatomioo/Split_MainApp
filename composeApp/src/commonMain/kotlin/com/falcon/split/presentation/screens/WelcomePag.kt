@@ -47,6 +47,7 @@ import com.falcon.split.LottieAnimationView
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitPrimaryButton
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -142,15 +143,15 @@ fun WelcomePage(navController: NavHostController) {
                     text = "WELCOME TO SPLIT!",
                     fontSize = 24.sp,
                     fontFamily = FontFamily(org.jetbrains.compose.resources.Font(Res.font.nunito_bold_1, weight = FontWeight.Bold)),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = getSplitTypography().titleMedium,
                     color = colors.textPrimary,
                     modifier = Modifier
                         .padding(lDimens.dp10, lDimens.dp0, lDimens.dp10, lDimens.dp0)
                 )
 
                 Text(
-                    text = "Split expenses, not friendships",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "Split Easy, Stay Friends!",
+                    style = getSplitTypography().bodyLarge,
                     color = colors.textSecondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = lDimens.dp24, vertical = lDimens.dp8)
@@ -159,47 +160,6 @@ fun WelcomePage(navController: NavHostController) {
         }
 
         Spacer(modifier = Modifier.height(lDimens.dp24))
-
-        // Feature highlights
-        AnimatedVisibility(
-            visible = showFeatures,
-            enter = fadeIn(animationSpec = tween(800)) +
-                    slideInVertically(
-                        initialOffsetY = { 100 },
-                        animationSpec = tween(800)
-                    )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = lDimens.dp32)
-            ) {
-                FeatureItem(
-                    icon = Icons.Default.Home,
-                    title = "Create groups with friends",
-                    description = "Easily manage expenses with roommates, trips, and events"
-                )
-
-                Spacer(modifier = Modifier.height(lDimens.dp16))
-
-                FeatureItem(
-                    icon = Icons.Default.Home,
-                    title = "Track shared expenses",
-                    description = "Keep a record of who paid for what and when"
-                )
-
-                Spacer(modifier = Modifier.height(lDimens.dp16))
-
-                FeatureItem(
-                    icon = Icons.Default.Home,
-                    title = "Settle debts easily",
-                    description = "See who owes what and settle up with a few taps"
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
 
         // Get Started Button
         AnimatedVisibility(
@@ -220,57 +180,6 @@ fun WelcomePage(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = lDimens.dp32, vertical = lDimens.dp16)
-            )
-        }
-    }
-}
-
-@Composable
-private fun FeatureItem(
-    icon: ImageVector,
-    title: String,
-    description: String
-) {
-    val colors = LocalSplitColors.current
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        // Icon with background
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(lDimens.dp48)
-                .clip(CircleShape)
-                .background(colors.primary.copy(alpha = 0.1f))
-                .padding(lDimens.dp8)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = colors.primary,
-                modifier = Modifier.size(lDimens.dp24)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(lDimens.dp16))
-
-        // Text content
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.textPrimary,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.textSecondary
             )
         }
     }
