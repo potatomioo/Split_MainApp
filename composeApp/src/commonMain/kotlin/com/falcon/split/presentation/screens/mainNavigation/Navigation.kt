@@ -123,6 +123,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import split.composeapp.generated.resources.Split
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
@@ -451,7 +452,32 @@ fun NavHostMain(
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(lDimens.dp16))
+                        Spacer(modifier = Modifier.width(lDimens.dp5))
+
+                        Box(
+                            modifier = Modifier
+                                .size(lDimens.dp30)
+                                .border(
+                                    BorderStroke(
+                                        lDimens.dp1,
+                                        colors.primary,
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .clickable {
+
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(Res.drawable.Split),
+                                contentDescription = "Split Logo",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(lDimens.dp10))
 
                         if (pagerState.currentPage == 0) {
                             // For Home screen, show greeting with colored firstName

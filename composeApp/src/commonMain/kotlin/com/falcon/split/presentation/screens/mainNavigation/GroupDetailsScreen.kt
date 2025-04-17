@@ -118,8 +118,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.group_icon_filled
+
 
 enum class GroupDetailsTab(val title: String) {
     EXPENSES("Expenses"),

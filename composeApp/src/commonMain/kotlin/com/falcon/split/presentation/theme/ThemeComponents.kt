@@ -149,7 +149,7 @@ fun SplitPrimaryButton(
             }
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                style = getSplitTypography().labelLarge.copy(fontWeight = FontWeight.SemiBold)
             )
         }
     }
