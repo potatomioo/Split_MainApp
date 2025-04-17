@@ -97,7 +97,8 @@ class FirebaseGroupRepository : GroupRepository {
                 groupName = name,
                 createdByUserId = currentUser.uid,
                 createdByUserName = currentUserName,
-                memberIds = memberIds
+                memberIds = memberIds,
+                groupType = groupType.name
             )
 
             Result.success(group)

@@ -117,6 +117,7 @@ class FirebaseExpenseRepository : ExpenseRepository {
                 groupId = groupId,
                 groupName = group.name,
                 expenseId = expenseId,
+                expenseType = expenseType.name,
                 expenseDescription = description,
                 expenseAmount = amount,
                 paidByUserId = paidByUserId,

@@ -53,8 +53,10 @@ class FirebaseHistoryRepository : HistoryRepository {
                         actionByUserName = map["actionByUserName"] as? String,
                         groupId = map["groupId"] as? String,
                         groupName = map["groupName"] as? String,
+                        groupType = map["groupType"] as? String,
                         expenseId = map["expenseId"] as? String,
                         expenseAmount = map["expenseAmount"] as? Double,
+                        expenseType = map["expenseType"] as? String,
                         settlementId = map["settlementId"] as? String,
                         settlementAmount = map["settlementAmount"] as? Double,
                         targetUserId = map["targetUserId"] as? String,
@@ -313,6 +315,7 @@ class FirebaseHistoryRepository : HistoryRepository {
         groupName: String,
         createdByUserId: String,
         createdByUserName: String?,
+        groupType : String?,
         memberIds: List<String>
     ): Result<Unit> {
         try {
@@ -326,6 +329,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         actionByUserId = createdByUserId,
                         actionByUserName = createdByUserName,
                         groupId = groupId,
+                        groupType = groupType,
                         groupName = groupName,
                         description = "\"$createdByUserName created \\\"$groupName\\\" and added you\""
                     )
@@ -398,6 +402,7 @@ class FirebaseHistoryRepository : HistoryRepository {
         groupId: String,
         groupName: String,
         expenseId: String,
+        expenseType: String,
         expenseDescription: String,
         expenseAmount: Double,
         paidByUserId: String,
@@ -417,6 +422,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         groupId = groupId,
                         groupName = groupName,
                         expenseId = expenseId,
+                        expenseType = expenseType,
                         expenseAmount = expenseAmount,
                         description = "$paidByUserName added \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
                     )
@@ -608,8 +614,10 @@ class FirebaseHistoryRepository : HistoryRepository {
                 "actionByUserName" to itemWithId.actionByUserName,
                 "groupId" to itemWithId.groupId,
                 "groupName" to itemWithId.groupName,
+                "groupType" to itemWithId.groupType,
                 "expenseId" to itemWithId.expenseId,
                 "expenseAmount" to itemWithId.expenseAmount,
+                "expenseType" to itemWithId.expenseType,
                 "settlementId" to itemWithId.settlementId,
                 "settlementAmount" to itemWithId.settlementAmount,
                 "targetUserId" to itemWithId.targetUserId,
