@@ -323,6 +323,10 @@ fun HomeScreen(
                 }
             }
 
+            item {
+                PremiumCard(navControllerMain)
+            }
+
             // Recent Activity section
             item {
                 SectionHeader(
@@ -903,7 +907,7 @@ fun PremiumCard(
             // Left side - Icon/Image
             Box(
                 modifier = Modifier
-                    .size(lDimens.dp60)
+                    .size(lDimens.dp45)
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(Color(0xFFD4AF37), Color(0xFFAA8C25)),
@@ -917,7 +921,7 @@ fun PremiumCard(
                     imageVector = Icons.Default.Star,
                     contentDescription = "Premium",
                     tint = Color.White,
-                    modifier = Modifier.size(lDimens.dp36)
+                    modifier = Modifier.size(lDimens.dp25)
                 )
             }
 
@@ -935,7 +939,7 @@ fun PremiumCard(
                 Spacer(modifier = Modifier.height(lDimens.dp4))
 
                 Text(
-                    text = "Unlock exclusive features and remove limits",
+                    text = "Split Premium is announcing soon.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White
                 )
