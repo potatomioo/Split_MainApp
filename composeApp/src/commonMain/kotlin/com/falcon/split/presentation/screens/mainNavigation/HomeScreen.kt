@@ -100,6 +100,8 @@ import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.ExclusiveFeature
 import split.composeapp.generated.resources.HomePic
 import split.composeapp.generated.resources.Res
+import split.composeapp.generated.resources.Split
+import split.composeapp.generated.resources.SplitGold
 import split.composeapp.generated.resources.group_icon_outlined
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
@@ -908,20 +910,20 @@ fun PremiumCard(
             Box(
                 modifier = Modifier
                     .size(lDimens.dp45)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(Color(0xFFD4AF37), Color(0xFFAA8C25)),
-                            radius = 40f
-                        ),
+                    .clip(CircleShape)
+                    .border(
+                        BorderStroke(
+                        lDimens.dp2,
+                            color = Color(0xFFD4AF37)
+                    ),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
+                Image(
+                    painter = painterResource(Res.drawable.SplitGold),
                     contentDescription = "Premium",
-                    tint = Color.White,
-                    modifier = Modifier.size(lDimens.dp25)
+                    modifier = Modifier.size(lDimens.dp35)
                 )
             }
 
