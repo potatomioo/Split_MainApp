@@ -3,6 +3,7 @@ package com.falcon.split.presentation.screens.mainNavigation.history
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,6 +60,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -71,6 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
 import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.models_app.SettlementStatus
 import com.falcon.split.presentation.PullToRefresh.PullRefreshIndicator
 import com.falcon.split.presentation.PullToRefresh.pullRefresh
 import com.falcon.split.presentation.PullToRefresh.rememberPullRefreshState
@@ -90,6 +94,14 @@ import kotlinx.datetime.toLocalDateTime
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.util.DateTimeUtil
+import getExpenseIconByType
+import getGroupIconByType
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import split.composeapp.generated.resources.ApproveSettlement
+import split.composeapp.generated.resources.DeclineSettlement
+import split.composeapp.generated.resources.Res
+import split.composeapp.generated.resources.Settlement
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -477,6 +489,8 @@ fun HistoryItemCard(
 ) {
     val colors = LocalSplitColors.current
 
+    val icon = getHistoryItemIcon(historyItem)
+
     // Mark unread items with a colored border
     val cardModifier = if (!historyItem.read) {
         Modifier
@@ -503,15 +517,15 @@ fun HistoryItemCard(
             Box(
                 modifier = Modifier
                     .size(lDimens.dp40)
-                    .clip(CircleShape)
-                    .background(getHistoryItemBackgroundColor(historyItem.actionType, colors)),
+                    .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = getHistoryItemIcon(historyItem.actionType),
-                    contentDescription = null,
-                    tint = getHistoryItemIconColor(historyItem.actionType, colors),
-                    modifier = Modifier.size(lDimens.dp24)
+                Image(
+                    painter = painterResource(resource = icon),
+                    contentDescription = "Icon",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(lDimens.dp56)
+                        .clip(CircleShape),
                 )
             }
 
@@ -681,35 +695,36 @@ private fun formatTime(timestamp: Long): String {
     return DateTimeUtil.formatTime(timestamp)
 }
 
-// Get icon for history item based on action type
-@Composable
-private fun getHistoryItemIcon(actionType: HistoryActionType): androidx.compose.ui.graphics.vector.ImageVector {
-    return when (actionType) {
-        HistoryActionType.GROUP_CREATED -> Icons.Default.Search // Replace with appropriate icons
-        HistoryActionType.GROUP_DELETED -> Icons.Default.Search
-        HistoryActionType.EXPENSE_ADDED -> Icons.Default.Search
-        HistoryActionType.SETTLEMENT_REQUESTED -> Icons.Default.Search
-        HistoryActionType.SETTLEMENT_APPROVED -> Icons.Default.Search
-        HistoryActionType.SETTLEMENT_DECLINED -> Icons.Default.Search
-        HistoryActionType.MEMBER_ADDED -> Icons.Default.Search
-    }
-}
 
-// Get background color for history item based on action type
-private fun getHistoryItemBackgroundColor(actionType: HistoryActionType, colors: SplitColors): Color {
-    return when (actionType) {
+private fun getHistoryItemIcon(historyItem: HistoryItem): DrawableResource {
+    return when (historyItem.actionType) {
         HistoryActionType.GROUP_CREATED,
-        HistoryActionType.MEMBER_ADDED -> colors.primary.copy(alpha = 0.1f)
+        HistoryActionType.GROUP_DELETED -> {
+            // Use the group icon based on group type
+            getGroupIconByType(historyItem.groupType)
+        }
 
-        HistoryActionType.GROUP_DELETED -> colors.error.copy(alpha = 0.1f)
+        HistoryActionType.EXPENSE_ADDED -> {
+            // Use the expense icon based on expense type
+            getExpenseIconByType(historyItem.expenseType)
+        }
 
-        HistoryActionType.EXPENSE_ADDED -> colors.info.copy(alpha = 0.1f)
+        HistoryActionType.SETTLEMENT_REQUESTED -> {
+            Res.drawable.Settlement
+        }
 
-        HistoryActionType.SETTLEMENT_REQUESTED -> colors.warning.copy(alpha = 0.1f)
+        HistoryActionType.SETTLEMENT_APPROVED -> {
+            Res.drawable.ApproveSettlement
+        }
 
-        HistoryActionType.SETTLEMENT_APPROVED -> colors.success.copy(alpha = 0.1f)
+        HistoryActionType.SETTLEMENT_DECLINED -> {
+            Res.drawable.DeclineSettlement
+        }
 
-        HistoryActionType.SETTLEMENT_DECLINED -> colors.error.copy(alpha = 0.1f)
+        HistoryActionType.MEMBER_ADDED -> {
+            // Default to a generic member icon
+            Res.drawable.Settlement // Or whatever icon you want to use for member added
+        }
     }
 }
 
@@ -731,5 +746,14 @@ private fun getHistoryItemIconColor(actionType: HistoryActionType, colors: Split
     }
 }
 
+
+@Composable
+fun getSettlementIcon(status: SettlementStatus): Painter {
+    return when (status) {
+        SettlementStatus.PENDING -> painterResource(Res.drawable.Settlement)
+        SettlementStatus.APPROVED -> painterResource(Res.drawable.ApproveSettlement)
+        SettlementStatus.DECLINED -> painterResource(Res.drawable.DeclineSettlement)
+    }
+}
 
 //For time setup, converting milliseconds in timestamp and back to milliseconds while reading data.

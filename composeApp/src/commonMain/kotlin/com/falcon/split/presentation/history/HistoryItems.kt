@@ -1,5 +1,6 @@
 package com.falcon.split.presentation.history
 
+import com.falcon.split.data.network.models_app.GroupType
 import kotlinx.datetime.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -18,21 +19,23 @@ enum class HistoryActionType {
 
 @Serializable
 data class HistoryItem(
-    val id: String = "",  // Unique ID for the history item (will be auto-generated)
+    val id: String = "",
     val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
     val actionType: HistoryActionType,
-    val actionByUserId: String, // User ID who performed the action
-    val actionByUserName: String? = null, // Name of the user who performed the action
-    val groupId: String? = null, // Related group ID (if applicable)
-    val groupName: String? = null, // Group name (if applicable)
-    val expenseId: String? = null, // Related expense ID (if applicable)
-    val expenseAmount: Double? = null, // Expense amount (if applicable)
-    val settlementId: String? = null, // Related settlement ID (if applicable)
-    val settlementAmount: Double? = null, // Settlement amount (if applicable)
-    val targetUserId: String? = null, // Target user ID (for settlements, member additions)
-    val targetUserName: String? = null, // Name of the target user
-    val description: String = "", // Description of the action
-    val read: Boolean = false // Whether the user has read this history item
+    val actionByUserId: String,
+    val actionByUserName: String? = null,
+    val groupId: String? = null,
+    val groupName: String? = null,
+    val groupType: String? = null,
+    val expenseId: String? = null,
+    val expenseAmount: Double? = null,
+    val expenseType: String? = null,
+    val settlementId: String? = null,
+    val settlementAmount: Double? = null,
+    val targetUserId: String? = null,
+    val targetUserName: String? = null,
+    val description: String = "",
+    val read: Boolean = false
 )
 
 // In common main
