@@ -488,25 +488,22 @@ fun NavHostMain(
                                 // Regular greeting text
                                 Text(
                                     text = greeting,
-                                    fontSize = 20.sp,
                                     color = colors.textPrimary,
-                                    style = getSplitTypography().headlineMedium
+                                    style = getSplitTypography().headlineLarge
                                 )
 
                                 Text(
                                     text = firstName,
-                                    fontSize = 20.sp,
                                     color = colors.primary,
-                                    style = getSplitTypography().headlineMedium
+                                    style = getSplitTypography().headlineLarge
                                 )
                             }
                         } else {
                             // For other screens, show title
                             Text(
                                 text = getTitle(pagerState.currentPage),
-                                fontSize = 20.sp,
                                 color = colors.textPrimary,
-                                style = getSplitTypography().headlineMedium
+                                style = getSplitTypography().headlineLarge
                             )
                         }
                     }

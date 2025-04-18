@@ -131,9 +131,7 @@ class MainActivity : ComponentActivity() {
             }
             val darkTheme = remember {
                 mutableStateOf(
-                    runBlocking {
-                        isDarkThemeEnabled(prefs)
-                    }
+                    true
                 )
             }
             val scope = rememberCoroutineScope()
