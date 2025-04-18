@@ -131,9 +131,8 @@ fun darkSplitColors() = SplitColors(
     info = DarkInfo
 )
 
-
 @Composable
-fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography {
+fun getSplitTypography(): Typography {
     val colors = LocalSplitColors.current
 
     return Typography(
@@ -141,24 +140,24 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         displayLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Bold,
-            fontSize = 32.sp,
-            lineHeight = 40.sp,
+            fontSize = 26.sp,
+            lineHeight = 32.sp,
             letterSpacing = (-0.5).sp,
             color = colors.textPrimary
         ),
         displayMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Bold,
-            fontSize = 28.sp,
-            lineHeight = 36.sp,
+            fontSize = 22.sp,
+            lineHeight = 28.sp,
             letterSpacing = (-0.5).sp,
             color = colors.textPrimary
         ),
         displaySmall = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            lineHeight = 32.sp,
+            fontSize = 20.sp,
+            lineHeight = 26.sp,
             color = colors.textPrimary
         ),
 
@@ -166,22 +165,22 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         headlineLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
-            lineHeight = 28.sp,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
             color = colors.textPrimary
         ),
         headlineMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 20.sp,
-            lineHeight = 26.sp,
+            fontSize = 16.sp,
+            lineHeight = 22.sp,
             color = colors.textPrimary
         ),
         headlineSmall = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
+            fontSize = 15.sp,
+            lineHeight = 20.sp,
             color = colors.textPrimary
         ),
 
@@ -189,23 +188,23 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         titleLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
+            fontSize = 15.sp,
+            lineHeight = 20.sp,
             color = colors.textPrimary
         ),
         titleMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp,
-            lineHeight = 22.sp,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
             letterSpacing = 0.1.sp,
             color = colors.textPrimary
         ),
         titleSmall = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
             letterSpacing = 0.1.sp,
             color = colors.textPrimary
         ),
@@ -214,23 +213,23 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         bodyLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
             letterSpacing = 0.15.sp,
             color = colors.textPrimary
         ),
         bodyMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
             letterSpacing = 0.25.sp,
             color = colors.textPrimary
         ),
         bodySmall = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Normal,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.4.sp,
             color = colors.textSecondary
@@ -240,15 +239,15 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         labelLarge = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
             letterSpacing = 0.1.sp,
             color = colors.textPrimary
         ),
         labelMedium = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.5.sp,
             color = colors.textPrimary
@@ -256,7 +255,7 @@ fun getSplitTypography(isDarkTheme: Boolean = isSystemInDarkTheme()): Typography
         labelSmall = TextStyle(
             fontFamily = AppFontFamily.nunitoFamily(),
             fontWeight = FontWeight.Medium,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
             lineHeight = 14.sp,
             letterSpacing = 0.5.sp,
             color = colors.textSecondary
@@ -274,7 +273,7 @@ val SplitShapes = Shapes(
 
 @Composable
 fun SplitTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     onThemeUpdated: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -323,7 +322,7 @@ fun SplitTheme(
     }
 
     // Typography system
-    val typography = getSplitTypography(darkTheme)
+    val typography = getSplitTypography()
 
     // Provide theme via CompositionLocal
     CompositionLocalProvider(

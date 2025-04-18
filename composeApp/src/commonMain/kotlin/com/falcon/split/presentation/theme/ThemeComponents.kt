@@ -38,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -301,7 +303,7 @@ fun CurrencyDisplay(
     amount: Double,
     isIncome: Boolean = true,
     large: Boolean = false,
-    currencySymbol: String = "₹"
+    currencySymbol: String = "₹",
 ) {
     val colors = LocalSplitColors.current
 
@@ -323,6 +325,6 @@ fun CurrencyDisplay(
     Text(
         text = "$prefix$currencySymbol$displayValue",
         style = style,
-        color = textColor
+        color = textColor,
     )
 }
