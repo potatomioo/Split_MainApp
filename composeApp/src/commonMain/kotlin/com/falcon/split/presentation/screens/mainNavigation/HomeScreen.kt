@@ -89,6 +89,7 @@ import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.SplitColors
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -240,17 +241,25 @@ fun HomeScreen(
                         SplitCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = lDimens.dp100) // Positioned below the header image
+                                .padding(top = lDimens.dp100)
                         ) {
                             Column(
                                 modifier = Modifier
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                colors.backgroundPrimary,
+                                                colors.cardBackground
+                                            )
+                                        )
+                                    )
                                     .padding(lDimens.dp16)
                                     .fillMaxWidth()
                             ) {
                                 Text(
-                                    "Your balance",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = colors.textSecondary
+                                    "Your Balance",
+                                    style = getSplitTypography().titleLarge,
+                                    color = colors.textPrimary
                                 )
 
                                 Row(
@@ -265,14 +274,14 @@ fun HomeScreen(
                                     ) {
                                         Text(
                                             "You'll get",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            style = getSplitTypography().bodyMedium,
                                             color = colors.textSecondary
                                         )
                                         Spacer(modifier = Modifier.height(lDimens.dp4))
                                         CurrencyDisplay(
                                             amount = totalToReceive,
                                             isIncome = true,
-                                            large = true
+                                            large = true,
                                         )
                                     }
 
@@ -327,6 +336,75 @@ fun HomeScreen(
 
             item {
                 PremiumCard(navControllerMain)
+            }
+
+
+            // Your Groups section
+            item {
+                SectionHeader(
+                    title = "Your Groups",
+                    actionText = "See All",
+                    onActionClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(2)
+                        }
+                    }
+                )
+
+                when (groupState) {
+                    is GroupState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(lDimens.dp100),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colors.primary)
+                        }
+                    }
+                    is GroupState.Success -> {
+                        val groups = (groupState as GroupState.Success).groups
+
+                        if (groups.isEmpty()) {
+                            EmptyStateMessage(
+                                message = "No groups yet",
+                                submessage = "Create a group to start tracking expenses with friends"
+                            )
+                        } else {
+                            // Show horizontal row of group cards, limited to 10 most recent ones
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = lDimens.dp16),
+                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
+                            ) {
+                                // Create new group card as first item
+                                item {
+                                    CreateGroupCard(
+                                        onClick = { navControllerMain.navigate("create_group") }
+                                    )
+                                }
+
+                                // Limit to 10 most recent groups
+                                val recentGroups = groups.sortedByDescending { it.createdAt }.take(10)
+
+                                items(recentGroups) { group ->
+                                    GroupCard(
+                                        group = group,
+                                        onClick = {
+                                            navControllerMain.navigate("group_details/${group.id}")
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    is GroupState.Error -> {
+                        EmptyStateMessage(
+                            message = "Couldn't load groups",
+                            submessage = "There was an error loading your groups"
+                        )
+                    }
+                    else -> {}
+                }
             }
 
             // Recent Activity section
@@ -405,75 +483,6 @@ fun HomeScreen(
                 }
             }
 
-            // Your Groups section
-            item {
-                SectionHeader(
-                    title = "Your Groups",
-                    actionText = "See All",
-                    onActionClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(2)
-                        }
-                    }
-                )
-
-                when (groupState) {
-                    is GroupState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(lDimens.dp100),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = colors.primary)
-                        }
-                    }
-                    is GroupState.Success -> {
-                        val groups = (groupState as GroupState.Success).groups
-
-                        if (groups.isEmpty()) {
-                            EmptyStateMessage(
-                                message = "No groups yet",
-                                submessage = "Create a group to start tracking expenses with friends"
-                            )
-                        } else {
-                            // Show horizontal row of group cards, limited to 10 most recent ones
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = lDimens.dp16),
-                                horizontalArrangement = Arrangement.spacedBy(lDimens.dp12)
-                            ) {
-                                // Create new group card as first item
-                                item {
-                                    CreateGroupCard(
-                                        onClick = { navControllerMain.navigate("create_group") }
-                                    )
-                                }
-
-                                // Limit to 10 most recent groups
-                                val recentGroups = groups.sortedByDescending { it.createdAt }.take(10)
-
-                                items(recentGroups) { group ->
-                                    GroupCard(
-                                        group = group,
-                                        onClick = {
-                                            navControllerMain.navigate("group_details/${group.id}")
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is GroupState.Error -> {
-                        EmptyStateMessage(
-                            message = "Couldn't load groups",
-                            submessage = "There was an error loading your groups"
-                        )
-                    }
-                    else -> {}
-                }
-            }
-
-            // Pending Settlements section
             // Pending Settlements section
             item {
                 SectionHeader(
@@ -674,7 +683,7 @@ fun QuickActionButton(
         Spacer(modifier = Modifier.width(lDimens.dp4))
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
+            style = getSplitTypography().labelLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = colors.textPrimary
@@ -700,14 +709,14 @@ fun SectionHeader(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            style = getSplitTypography().headlineSmall,
             color = colors.textPrimary
         )
 
         if (actionText != null && onActionClick != null) {
             Text(
                 text = actionText,
-                style = MaterialTheme.typography.labelMedium,
+                style = getSplitTypography().labelMedium,
                 color = colors.primary,
                 modifier = Modifier.clickable(
                     interactionSource = interactionSource,
@@ -781,7 +790,7 @@ fun GroupCard(
             // Group name
             Text(
                 text = group.name,
-                style = MaterialTheme.typography.titleMedium,
+                style = getSplitTypography().bodyLarge,
                 color = colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -793,7 +802,7 @@ fun GroupCard(
             // Balance (only showing balance, not member count)
             CurrencyDisplay(
                 amount = group.totalAmount ?: 0.0,
-                isIncome = (group.totalAmount ?: 0.0) >= 0,
+                isIncome = (group.totalAmount ?: 0.0) >= 0
             )
         }
     }
@@ -852,7 +861,7 @@ fun CreateGroupCard(
             // Group name
             Text(
                 text = "Create New",
-                style = MaterialTheme.typography.titleMedium,
+                style = getSplitTypography().labelLarge,
                 color = colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -933,7 +942,7 @@ fun PremiumCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Join Split Premium",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = getSplitTypography().titleMedium,
                     color = Color(0xFFD4AF37), // Gold text
                     fontWeight = FontWeight.Bold
                 )
@@ -942,7 +951,7 @@ fun PremiumCard(
 
                 Text(
                     text = "Split Premium is announcing soon.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = getSplitTypography().bodySmall,
                     color = Color.White
                 )
             }

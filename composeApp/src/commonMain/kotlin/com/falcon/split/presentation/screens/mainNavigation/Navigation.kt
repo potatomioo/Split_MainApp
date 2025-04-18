@@ -947,7 +947,7 @@ fun AppBottomNavigationBarItem(
 
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = getSplitTypography().labelLarge,
                 color = colors.textPrimary,
                 fontWeight = if (selected.value) {
                     FontWeight.SemiBold
