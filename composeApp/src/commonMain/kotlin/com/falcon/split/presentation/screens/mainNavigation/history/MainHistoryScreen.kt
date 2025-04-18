@@ -3,8 +3,10 @@ package com.falcon.split.presentation.screens.mainNavigation.history
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,6 +95,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitColors
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.util.DateTimeUtil
 import getExpenseIconByType
 import getGroupIconByType
@@ -124,10 +127,9 @@ fun HistoryScreen(
     val filterType by historyViewModel.filterType.collectAsState()
     val searchQuery by historyViewModel.searchQuery.collectAsState()
     val isRefreshing by historyViewModel.isRefreshing.collectAsState()
-    val unreadCount by historyViewModel.unreadCount.collectAsState()
 
     // UI state
-    var showFilterOptions by remember { mutableStateOf(false) }
+    var showFilterOptions by remember { mutableStateOf(true) }
     val lazyListState = rememberLazyListState()
 
 //    val pullRefreshState = rememberPullRefreshState(
@@ -163,7 +165,7 @@ fun HistoryScreen(
                 placeholder = {
                     Text(
                         text = "Search your activity",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = getSplitTypography().bodyLarge,
                         color = colors.textSecondary
                     )
                 },
@@ -213,54 +215,10 @@ fun HistoryScreen(
                     .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
                 horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
             ) {
-                // Filter Button
-                Surface(
-                    modifier = Modifier.height(lDimens.dp36),
-                    shape = RoundedCornerShape(lDimens.dp18),
-                    color = if (showFilterOptions) colors.primary else colors.cardBackground,
-                    onClick = { showFilterOptions = !showFilterOptions }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = lDimens.dp12),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = if (showFilterOptions) Color.White else colors.textPrimary,
-                            modifier = Modifier.size(lDimens.dp16)
-                        )
-                        Text(
-                            text = "Filter",
-                            color = if (showFilterOptions) Color.White else colors.textPrimary,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                if (unreadCount > 0) {
-                    Button(
-                        onClick = { historyViewModel.markAllAsRead() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.primary,
-                            contentColor = colors.primary
-                        ),
-                        contentPadding = PaddingValues(horizontal = lDimens.dp12, lDimens.dp8)
-                    ) {
-                        Text(
-                            "Mark All Read",
-                            color = colors.textPrimary
-                        )
-                    }
-                }
-
             }
 
             // Filter Options Row (when expanded)
-            AnimatedVisibility(visible = showFilterOptions) {
+            if(showFilterOptions == true){
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -270,48 +228,55 @@ fun HistoryScreen(
                     // Filter Options
                     Surface(
                         modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                        color = if (filterType == HistoryFilterType.ALL) colors.primary else colors.cardBackground,
-                        onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) }
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.ALL) },
+                        border = BorderStroke(
+                            lDimens.dp2,
+                            if (filterType == HistoryFilterType.ALL) colors.primary else colors.cardBackground
+                        ),
+                        shape = RoundedCornerShape(lDimens.dp16)
                     ) {
                         Text(
                             text = "All",
                             modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                            color = if (filterType == HistoryFilterType.ALL) Color.White else colors.textPrimary,
-                            style = MaterialTheme.typography.labelMedium
+                            color = colors.textPrimary,
+                            style = getSplitTypography().labelLarge
                         )
                     }
 
                     Surface(
                         modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                        color = if (filterType == HistoryFilterType.EXPENSES) colors.primary else colors.cardBackground,
-                        onClick = { historyViewModel.setFilterType(HistoryFilterType.EXPENSES) }
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.EXPENSES) },
+                        border = BorderStroke(
+                            lDimens.dp2,
+                            if (filterType == HistoryFilterType.EXPENSES) colors.primary else colors.cardBackground
+                        ),
+                        shape = RoundedCornerShape(lDimens.dp16)
                     ) {
                         Text(
                             text = "Expenses",
                             modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                            color = if (filterType == HistoryFilterType.EXPENSES) Color.White else colors.textPrimary,
-                            style = MaterialTheme.typography.labelMedium
+                            color = colors.textPrimary,
+                            style = getSplitTypography().labelLarge
                         )
                     }
 
                     Surface(
                         modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-                        color = if (filterType == HistoryFilterType.SETTLEMENTS) colors.primary else colors.cardBackground,
-                        onClick = { historyViewModel.setFilterType(HistoryFilterType.SETTLEMENTS) }
+                        onClick = { historyViewModel.setFilterType(HistoryFilterType.SETTLEMENTS) },
+                        border = BorderStroke(
+                            lDimens.dp2,
+                            if (filterType == HistoryFilterType.SETTLEMENTS) colors.primary else colors.cardBackground
+                        ),
+                        shape = RoundedCornerShape(lDimens.dp16)
                     ) {
                         Text(
                             text = "Settlements",
                             modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
-                            color = if (filterType == HistoryFilterType.SETTLEMENTS) Color.White else colors.textPrimary,
-                            style = MaterialTheme.typography.labelMedium
+                            color = colors.textPrimary,
+                            style = getSplitTypography().labelLarge
                         )
                     }
                 }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = lDimens.dp8, horizontal = lDimens.dp16),
-                    color = colors.divider
-                )
             }
 
             // History Content
@@ -492,19 +457,10 @@ fun HistoryItemCard(
     val icon = getHistoryItemIcon(historyItem)
 
     // Mark unread items with a colored border
-    val cardModifier = if (!historyItem.read) {
-        Modifier
-            .fillMaxWidth()
-            .shadow(elevation = lDimens.dp1, shape = RoundedCornerShape(lDimens.dp12))
-            .clip(RoundedCornerShape(lDimens.dp12))
-            .background(colors.cardBackground)
-            .clickable { onMarkAsRead(historyItem.id) }
-    } else {
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(lDimens.dp12))
-            .background(colors.cardBackground)
-    }
+    val cardModifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(lDimens.dp12))
+        .background(colors.cardBackground)
 
     SplitCard(
         modifier = Modifier.fillMaxWidth()
@@ -601,16 +557,6 @@ fun HistoryItemCard(
                 CurrencyDisplay(
                     amount = amount,
                     isIncome = isIncome
-                )
-            }
-
-            // Unread indicator
-            if (!historyItem.read) {
-                Box(
-                    modifier = Modifier
-                        .padding(start = lDimens.dp8)
-                        .size(lDimens.dp8)
-                        .background(colors.primary, CircleShape)
                 )
             }
         }
