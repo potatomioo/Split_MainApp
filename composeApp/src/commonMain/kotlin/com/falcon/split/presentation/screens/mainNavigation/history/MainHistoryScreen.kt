@@ -527,21 +527,21 @@ fun HistoryItemCard(
                     )
 
                     // Group name if available
-                    historyItem.groupName?.let {
-                        Text(
-                            text = "•",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary
-                        )
-
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+//                    historyItem.groupName?.let {
+//                        Text(
+//                            text = "•",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = colors.textSecondary
+//                        )
+//
+//                        Text(
+//                            text = it,
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = colors.textSecondary,
+//                            maxLines = 1,
+//                            overflow = TextOverflow.Ellipsis
+//                        )
+//                    }
                 }
             }
 
