@@ -49,6 +49,8 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -97,6 +99,7 @@ import com.falcon.split.data.network.models_app.ExpenseSplit
 import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
+import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
 import com.falcon.split.data.network.models_app.SettlementStatus
@@ -107,6 +110,7 @@ import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.SplitColors
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.userManager.UserManager
 import com.falcon.split.util.DateTimeUtil
@@ -119,6 +123,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import split.composeapp.generated.resources.ApproveSettlement
+import split.composeapp.generated.resources.DeclineSettlement
+import split.composeapp.generated.resources.Res
+import split.composeapp.generated.resources.Settlement
 
 
 enum class GroupDetailsTab(val title: String) {
@@ -279,7 +287,7 @@ fun GroupDetailsScreen(
                         // Group summary card
                         GroupSummaryCard(
                             group = group,
-                            modifier = Modifier.padding(horizontal = lDimens.dp16, vertical = lDimens.dp8)
+                            modifier = Modifier.padding(horizontal = lDimens.dp0, vertical = lDimens.dp0)
                         )
 
                         // Tab row
@@ -470,7 +478,8 @@ fun GroupDetailsTopBar(
         title = {
             Text(
                 when (groupState) {
-                    is GroupState.GroupDetailSuccess -> (groupState as GroupState.GroupDetailSuccess).group.name
+//                    is GroupState.GroupDetailSuccess -> (groupState as GroupState.GroupDetailSuccess).group.name
+                    is GroupState.GroupDetailSuccess -> ""
                     else -> "Group Details"
                 },
                 maxLines = 1,
@@ -556,33 +565,80 @@ fun GroupSummaryCard(
 ) {
     val colors = LocalSplitColors.current
 
-    SplitCard(modifier = modifier) {
-        Column(
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.cardBackground
+        ),
+        shape = RoundedCornerShape(lDimens.dp0)
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(lDimens.dp16)
+                .padding(lDimens.dp25)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Total Expenses",
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.textPrimary
-            )
-
-            Text(
-                "₹${group.totalAmount ?: 0.0}",
-                style = MaterialTheme.typography.headlineMedium,
-                color = colors.primary,
-                fontWeight = FontWeight.Bold
-            )
-
-            Row(
+            // Icon with proper sizing and alignment
+            val groupType = GroupType.fromString(group.groupType)
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = lDimens.dp8),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .size(lDimens.dp60)
+                    .background(
+                        color = colors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = lDimens.dp1,
+                        color = colors.primary.copy(alpha = 0.3f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Text("${group.expenses.size} expenses", color = colors.textSecondary)
-                Text("${group.members.size} members", color = colors.textSecondary)
+                Image(
+                    painter = painterResource(resource = groupType.iconRes),
+                    contentDescription = groupType.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(lDimens.dp58)
+                        .clip(CircleShape),
+                )
+            }
+
+            // Content with proper spacing
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = lDimens.dp16)
+            ) {
+                // Title and amount row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        group.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(lDimens.dp4))
+
+                Row {
+                    Text(
+                        "Total Expenses : ",
+                        style = getSplitTypography().titleMedium,
+                        color = colors.textSecondary
+                    )
+                    CurrencyDisplay(
+                        amount = group.totalAmount ?: 0.0,
+                        isIncome = true,
+                    )
+                }
+                Spacer(modifier = Modifier.height(lDimens.dp2))
             }
         }
     }
@@ -830,6 +886,7 @@ sealed class TransactionItem {
     ) : TransactionItem()
 }
 
+
 @Composable
 fun SettlementHistoryInExpensesCard(
     settlement: Settlement
@@ -839,86 +896,98 @@ fun SettlementHistoryInExpensesCard(
     SplitCard(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(lDimens.dp16)
+        Row(
+            modifier = Modifier
+                .padding(lDimens.dp16)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            // Icon with proper sizing and alignment
+            val settlementIcon = when (settlement.status){
+                SettlementStatus.PENDING -> Res.drawable.Settlement
+                SettlementStatus.APPROVED -> Res.drawable.ApproveSettlement
+                SettlementStatus.DECLINED -> Res.drawable.DeclineSettlement
+            }
+            Box(
+                modifier = Modifier
+                    .size(lDimens.dp48)
+                    .background(
+                        color = colors.primary.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    )
+                    .border(
+                        width = lDimens.dp1,
+                        color = colors.primary.copy(alpha = 0.3f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = when (settlement.status) {
-                        SettlementStatus.APPROVED -> "Settlement"
-                        SettlementStatus.DECLINED -> "Declined Settlement"
-                        else -> "Settlement"
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colors.textPrimary
-                )
-
-                CurrencyDisplay(
-                    amount = settlement.amount,
-                    isIncome = false
+                Image(
+                    painter = painterResource(resource = settlementIcon),
+                    contentDescription = "",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(lDimens.dp45)
+                        .clip(CircleShape),
                 )
             }
 
-            Spacer(modifier = Modifier.height(lDimens.dp4))
-
-            // Transaction details
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            // Content with proper spacing
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = lDimens.dp16)
             ) {
-                Text(
-                    text =
-                        when (settlement.status) {
-                            SettlementStatus.APPROVED -> "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}"
-                            SettlementStatus.DECLINED -> "${settlement.toUserName ?: "someone"} declined a settlement of ${settlement.fromUserName ?: "Someone"}"
-                            else -> "Unknown status"
+                // Title and amount row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (settlement.status) {
+                            SettlementStatus.APPROVED -> "Settlement"
+                            SettlementStatus.DECLINED -> "Declined Settlement"
+                            else -> "Settlement"
                         },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    CurrencyDisplay(
+                        amount = settlement.amount,
+                        isIncome = true,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(lDimens.dp4))
+
+                Text(
+                    when (settlement.status) {
+                        SettlementStatus.APPROVED -> "${settlement.fromUserName ?: "Someone"} paid ${settlement.toUserName ?: "someone"}"
+                        SettlementStatus.DECLINED -> "${settlement.toUserName ?: "someone"} declined a settlement of ${settlement.fromUserName ?: "Someone"}"
+                        else -> "Unknown status"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.textSecondary
                 )
 
-                Spacer(modifier = Modifier.width(lDimens.dp8))
+                Spacer(modifier = Modifier.height(lDimens.dp2))
 
-                // Status indicator
-//                Surface(
-//                    color = when (settlement.status) {
-//                        SettlementStatus.APPROVED -> colors.success.copy(alpha = 0.1f)
-//                        SettlementStatus.DECLINED -> colors.error.copy(alpha = 0.1f)
-//                        else -> colors.textSecondary.copy(alpha = 0.1f)
-//                    },
-//                    shape = CircleShape,
-//                    modifier = Modifier.size(lDimens.dp16)
-//                ) {
-//                    Box(contentAlignment = Alignment.Center) {
-//                        Icon(
-//                            when (settlement.status) {
-//                                SettlementStatus.APPROVED -> Icons.Default.Check
-//                                SettlementStatus.DECLINED -> Icons.Default.Close
-//                                else -> Icons.Default.MoreVert
-//                            },
-//                            contentDescription = null,
-//                            tint = when (settlement.status) {
-//                                SettlementStatus.APPROVED -> colors.success
-//                                SettlementStatus.DECLINED -> colors.error
-//                                else -> colors.textSecondary
-//                            },
-//                            modifier = Modifier.size(lDimens.dp12)
-//                        )
-//                    }
-//                }
+                // Date with proper styling
+                Text(
+                    DateTimeUtil.formatDateTime(settlement.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textSecondary.copy(alpha = 0.8f)
+                )
             }
-
-            // Show date
-            Text(
-                formatDateTime(settlement.timestamp),
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.textSecondary
-            )
         }
     }
 }
+
+
 
 @Composable
 fun ExpenseCard(
