@@ -79,12 +79,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
@@ -100,6 +103,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -124,6 +128,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import split.composeapp.generated.resources.Split
+import split.composeapp.generated.resources.SplitGold
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
@@ -367,37 +372,80 @@ fun NavHostMain(
                         Spacer(modifier = Modifier.weight(1f))
 
                         // App version at bottom
-                        SplitCard(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp16)
+                                .padding(horizontal = lDimens.dp16, vertical = lDimens.dp12)
+                                .border(
+                                    width = lDimens.dp1,
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            colors.primary,
+                                            colors.textPrimary, // Gold middle (lighter)
+                                            colors.primary
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(lDimens.dp12)
+                                ),
+                            shape = RoundedCornerShape(lDimens.dp12),
+                            elevation = CardDefaults.cardElevation(defaultElevation = lDimens.dp4),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF1E1E24)
+                            )
                         ) {
-                            Column(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable {  }
                                     .padding(lDimens.dp16),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "Split",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = colors.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                // Left side - Icon/Image
+                                Box(
+                                    modifier = Modifier
+                                        .size(lDimens.dp45)
+                                        .clip(CircleShape)
+                                        .border(
+                                            BorderStroke(
+                                                lDimens.dp2,
+                                                color = colors.primary
+                                            ),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(Res.drawable.Split),
+                                        contentDescription = "split",
+                                        modifier = Modifier.size(lDimens.dp35)
+                                    )
+                                }
 
-                                Text(
-                                    "V - 2025",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = colors.textSecondary
-                                )
+                                Spacer(modifier = Modifier.width(lDimens.dp16))
 
-                                Spacer(modifier = Modifier.height(lDimens.dp8))
+                                // Right side - Text content
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Split",
+                                        style = getSplitTypography().titleMedium,
+                                        color = colors.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
 
-                                Text(
-                                    "Split Easy. Stay Friends.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = colors.textSecondary
-                                )
+                                    Spacer(modifier = Modifier.height(lDimens.dp4))
+                                    Text(
+                                        text = "Split Easy. Stay Friends.",
+                                        style = getSplitTypography().bodyMedium,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.height(lDimens.dp3))
+                                    Text(
+                                        text = "Version - 2025",
+                                        style = getSplitTypography().bodySmall,
+                                        color = colors.textSecondary
+                                    )
+
+                                }
                             }
                         }
                     }
@@ -680,14 +728,14 @@ private fun ThemeOptionButton(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = name,
-                tint = if (isSelected) Color.White else colors.textPrimary,
-                modifier = Modifier.size(lDimens.dp20)
-            )
+//            Icon(
+//                imageVector = icon,
+//                contentDescription = name,
+//                tint = if (isSelected) Color.White else colors.textPrimary,
+//                modifier = Modifier.size(lDimens.dp20)
+//            )
 
-            Spacer(modifier = Modifier.width(lDimens.dp4))
+//            Spacer(modifier = Modifier.width(lDimens.dp4))
 
             Text(
                 text = name,
