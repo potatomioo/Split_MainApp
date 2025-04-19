@@ -331,7 +331,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         groupId = groupId,
                         groupType = groupType,
                         groupName = groupName,
-                        description = "\"$createdByUserName created \\\"$groupName\\\" and added you\""
+                        description = "$createdByUserName created $groupName and added you"
                     )
 
                     // Add to member's history
@@ -347,7 +347,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 actionByUserName = createdByUserName,
                 groupId = groupId,
                 groupName = groupName,
-                description = "You created the group \"$groupName\""
+                description = "You created the group $groupName"
             )
 
             // Add to creator's history
@@ -424,7 +424,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                         expenseId = expenseId,
                         expenseType = expenseType,
                         expenseAmount = expenseAmount,
-                        description = "$paidByUserName added \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
+                        description = "$paidByUserName added an expense $expenseDescription in $groupName"
                     )
 
                     // Add to member's history
@@ -442,7 +442,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 groupName = groupName,
                 expenseId = expenseId,
                 expenseAmount = expenseAmount,
-                description = "You added \"$expenseDescription\" of ₹$expenseAmount in \"$groupName\""
+                description = "You added an expense $expenseDescription in \"$groupName\""
             )
 
             // Add to creator's history
@@ -481,7 +481,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 settlementAmount = settlementAmount,
                 targetUserId = toUserId,
                 targetUserName = toUserName,
-                description = "$fromUserName requested to settle ₹$settlementAmount from you in \"$groupName\""
+                description = "$fromUserName requested to settle ₹$settlementAmount from you in $groupName"
             )
 
             // Add to recipient's history
@@ -499,7 +499,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 settlementAmount = settlementAmount,
                 targetUserId = toUserId,
                 targetUserName = toUserName,
-                description = "You requested a settlement of ₹$settlementAmount from $toUserName in \"$groupName\""
+                description = "You requested a settlement of ₹$settlementAmount from $toUserName in $groupName"
             )
 
             // Add to requester's history
@@ -534,9 +534,9 @@ class FirebaseHistoryRepository : HistoryRepository {
                 HistoryActionType.SETTLEMENT_DECLINED
 
             val description = if (approved)
-                "$toUserName approved your ₹$settlementAmount request in \"$groupName\""
+                "$toUserName approved your ₹$settlementAmount request in $groupName"
             else
-                "$toUserName declined your ₹$settlementAmount request in \"$groupName\""
+                "$toUserName declined your ₹$settlementAmount request in $groupName"
 
             // Create a history item for the initiator (fromUser)
             val historyItem = HistoryItem(
@@ -584,7 +584,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 groupName = groupName,
                 targetUserId = newMemberId,
                 targetUserName = newMemberName,
-                description = "$addedByUserName added you to the group \"$groupName\""
+                description = "$addedByUserName added you to the group $groupName"
             )
 
             // Add to new member's history
