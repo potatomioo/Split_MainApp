@@ -89,6 +89,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.network.models_app.Expense
@@ -1227,83 +1228,114 @@ fun MemberBalanceCard(
 ) {
     val colors = LocalSplitColors.current
 
+
     SplitCard(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(lDimens.dp16),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(lDimens.dp16)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = nameResolver.resolveDisplayName(member),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colors.textPrimary
-                )
-
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Member info
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp4)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (amount > 0) {
-                        Text(
-                            text = if (isIncoming) "Owes you" else "You owe",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (isIncoming) colors.success else colors.error
-                        )
-
-                        CurrencyDisplay(
-                            amount = amount,
-                            isIncome = isIncoming
-                        )
-                    } else {
-                        Text(
-                            text = "Settled up",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.textSecondary
+                    // Avatar/icon
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = colors.primary.copy(alpha = 0.1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = colors.primary,
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(lDimens.dp12))
+
+                    Column {
+                        Text(
+                            text = nameResolver.resolveDisplayName(member),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.textPrimary
+                        )
+
+                        if (amount > 0) {
+                            Text(
+                                text = if (isIncoming) "owes you" else "you owe",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if(isIncoming) colors.success else colors.error
+                            )
+                        } else {
+                            Text(
+                                text = "all settled up",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.success
+                            )
+                        }
+                    }
                 }
+
+                // Amount
+                CurrencyDisplay(
+                    amount = amount,
+                    isIncome = isIncoming,
+                    large = false
+                )
             }
 
-            // Action button (Settle Up or Remind)
+            // Action buttons for users who owe money
             if (actionButtonText != null && onAction != null && amount > 0) {
-                val buttonColors = if (isIncoming) {
-                    // Remind button (green)
-                    ButtonDefaults.buttonColors(
-                        containerColor = colors.success,
-                        contentColor = Color.White
-                    )
-                } else {
-                    // Settle Up button (primary color)
-                    ButtonDefaults.buttonColors(
-                        containerColor = colors.primary,
-                        contentColor = Color.White
-                    )
-                }
+                Spacer(modifier = Modifier.height(lDimens.dp12))
 
-                val icon = if (isIncoming) {
-                    Icons.Default.ThumbUp
-                } else {
-                    Icons.Default.ThumbUp
-                }
-
-                Button(
-                    onClick = onAction,
-                    colors = buttonColors,
-                    contentPadding = PaddingValues(horizontal = lDimens.dp12),
-                    modifier = Modifier.height(lDimens.dp36)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(lDimens.dp16)
-                    )
-                    Spacer(modifier = Modifier.width(lDimens.dp4))
-                    Text(actionButtonText)
+                    // Remind button (for incoming debts)
+                    if (isIncoming) {
+                        Button(
+                            onClick = onAction,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.primary
+                            ),
+                            modifier = Modifier.padding(end = lDimens.dp8)
+                        ) {
+                            Text("Remind")
+                        }
+                    }
+
+                    // Pay button (for outgoing debts)
+                    else{
+                        OutlinedButton(
+                            onClick = {  },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = colors.success
+                            ),
+                            modifier = Modifier.padding(end = lDimens.dp8)
+                        ) {
+                            Text(
+                                "Pay",
+                                color = colors.textPrimary
+                            )
+                        }
+                        Button(
+                            onClick = onAction,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.success
+                            )
+                        ) {
+                            Text("Settle Up")
+                        }
+                    }
                 }
             }
         }
