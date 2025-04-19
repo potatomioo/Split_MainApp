@@ -122,14 +122,20 @@ fun CreateGroupScreen(
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Image(
-                        painter = painterResource(Res.drawable.group_icon_filled),
-                        contentDescription = null,
+                    Text(
+                        text = "Enter Group Name",
+                        style = getSplitTypography().titleLarge,
                         modifier = Modifier
-                            .size(lDimens.dp48)
-                            .padding(horizontal = lDimens.dp12),
-                        contentScale = ContentScale.Fit
+                            .padding(horizontal = lDimens.dp12)
                     )
+//                    Image(
+//                        painter = painterResource(Res.drawable.group_icon_filled),
+//                        contentDescription = null,
+//                        modifier = Modifier
+//                            .size(lDimens.dp48)
+//                            .padding(horizontal = lDimens.dp12),
+//                        contentScale = ContentScale.Fit
+//                    )
                     Spacer(modifier = Modifier.height(lDimens.dp16))
                     OutlinedTextField(
                         value = groupName,
