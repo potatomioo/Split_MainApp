@@ -205,7 +205,7 @@ fun HistoryScreen(
                     focusedTextColor = colors.textPrimary,
                     unfocusedTextColor = colors.textPrimary
                 ),
-                textStyle = TextStyle(color = colors.textPrimary)
+                textStyle = getSplitTypography().bodyLarge
             )
 
             // Filter Options

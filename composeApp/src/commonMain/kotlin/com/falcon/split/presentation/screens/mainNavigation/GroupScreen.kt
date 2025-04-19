@@ -75,11 +75,13 @@ import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
+import com.falcon.split.presentation.history.HistoryFilterType
 import com.falcon.split.presentation.history.HistoryItem
 import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.theme.CurrencyDisplay
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
+import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.util.DateTimeUtil
 import kotlinx.coroutines.launch
@@ -219,7 +221,6 @@ fun GroupsScreen(
                         onFilterChange = { selectedFilter = it },
                         onSortOptionChange = { selectedSortOption = it },
                         onToggleFilterOptions = { showFilterOptions = !showFilterOptions },
-                        onToggleSortOptions = { showSortOptions = !showSortOptions },
                         onGroupClick = onGroupClick
                     )
                 }
@@ -373,7 +374,6 @@ fun GroupsContent(
     onFilterChange: (GroupFilter) -> Unit,
     onSortOptionChange: (GroupSortOption) -> Unit,
     onToggleFilterOptions: () -> Unit,
-    onToggleSortOptions: () -> Unit,
     onGroupClick: (Group) -> Unit
 ) {
     val colors = LocalSplitColors.current
@@ -401,7 +401,7 @@ fun GroupsContent(
                 placeholder = {
                     Text(
                         "Search groups",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = getSplitTypography().bodyLarge,
                         color = colors.textSecondary
                     )
                 },
@@ -434,116 +434,33 @@ fun GroupsContent(
                     unfocusedTextColor = colors.textPrimary
                 ),
                 shape = RoundedCornerShape(lDimens.dp28),
-                textStyle = TextStyle(color = colors.textPrimary)
+                textStyle = getSplitTypography().bodyLarge
             )
         }
 
-        // Filter and Sort options
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp8),
+                    .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Filter button
-                FilterButton(
-                    text = "Filter",
-                    icon = Icons.Default.Home,
-                    selected = showFilterOptions,
-                    onClick = onToggleFilterOptions
+                FilterOption(
+                    text = "All",
+                    selected = selectedFilter == GroupFilter.ALL,
+                    onClick = { onFilterChange(GroupFilter.ALL) }
                 )
 
-                // Sort button
-                FilterButton(
-                    text = "Sort",
-                    icon = Icons.Default.Home,
-                    selected = showSortOptions,
-                    onClick = onToggleSortOptions
+                FilterOption(
+                    text = "Active",
+                    selected = selectedFilter == GroupFilter.ACTIVE,
+                    onClick = { onFilterChange(GroupFilter.ACTIVE) }
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Active filter indicator
-                if (selectedFilter != GroupFilter.ALL) {
-                    ActiveFilterChip(
-                        text = when (selectedFilter) {
-                            GroupFilter.ACTIVE -> "Active"
-                            GroupFilter.ARCHIVED -> "Archived"
-                            else -> ""
-                        },
-                        onClear = { onFilterChange(GroupFilter.ALL) }
-                    )
-                }
-            }
-        }
-
-        // Filter options
-        if (showFilterOptions) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterOption(
-                        text = "All",
-                        selected = selectedFilter == GroupFilter.ALL,
-                        onClick = { onFilterChange(GroupFilter.ALL) }
-                    )
-
-                    FilterOption(
-                        text = "Active",
-                        selected = selectedFilter == GroupFilter.ACTIVE,
-                        onClick = { onFilterChange(GroupFilter.ACTIVE) }
-                    )
-
-                    FilterOption(
-                        text = "Archived",
-                        selected = selectedFilter == GroupFilter.ARCHIVED,
-                        onClick = { onFilterChange(GroupFilter.ARCHIVED) }
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = lDimens.dp16),
-                    color = colors.divider
-                )
-            }
-        }
-
-        // Sort options
-        if (showSortOptions) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = lDimens.dp16, vertical = lDimens.dp4),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterOption(
-                        text = "Newest",
-                        selected = selectedSortOption == GroupSortOption.NEWEST,
-                        onClick = { onSortOptionChange(GroupSortOption.NEWEST) }
-                    )
-
-                    FilterOption(
-                        text = "Balance",
-                        selected = selectedSortOption == GroupSortOption.BALANCE,
-                        onClick = { onSortOptionChange(GroupSortOption.BALANCE) }
-                    )
-
-                    FilterOption(
-                        text = "Recent Activity",
-                        selected = selectedSortOption == GroupSortOption.ACTIVITY,
-                        onClick = { onSortOptionChange(GroupSortOption.ACTIVITY) }
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = lDimens.dp16),
-                    color = colors.divider
+                FilterOption(
+                    text = "Archived",
+                    selected = selectedFilter == GroupFilter.ARCHIVED,
+                    onClick = { onFilterChange(GroupFilter.ARCHIVED) }
                 )
             }
         }
@@ -610,10 +527,13 @@ fun FilterButton(
     val colors = LocalSplitColors.current
 
     Surface(
-        modifier = Modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = if (selected) colors.primary else colors.cardBackground,
-        onClick = onClick
+        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
+        onClick = onClick,
+        border = BorderStroke(
+            lDimens.dp2,
+            if (selected) colors.primary else colors.cardBackground
+        ),
+        shape = RoundedCornerShape(lDimens.dp16)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -623,52 +543,14 @@ fun FilterButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Color.White else colors.textPrimary,
+                tint = colors.textPrimary,
                 modifier = Modifier.size(16.dp)
             )
             Text(
                 text = text,
-                color = if (selected) Color.White else colors.textPrimary,
-                style = MaterialTheme.typography.labelMedium
+                color = colors.textPrimary,
+                style = getSplitTypography().labelLarge
             )
-        }
-    }
-}
-
-@Composable
-fun ActiveFilterChip(
-    text: String,
-    onClear: () -> Unit
-) {
-    val colors = LocalSplitColors.current
-
-    Surface(
-        modifier = Modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = colors.primary.copy(alpha = 0.1f)
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = text,
-                color = colors.primary,
-                style = MaterialTheme.typography.labelMedium
-            )
-
-            IconButton(
-                onClick = onClear,
-                modifier = Modifier.size(16.dp)
-            ) {
-                Icon(
-                    Icons.Default.Clear,
-                    contentDescription = "Clear filter",
-                    tint = colors.primary,
-                    modifier = Modifier.size(12.dp)
-                )
-            }
         }
     }
 }
@@ -682,15 +564,19 @@ fun FilterOption(
     val colors = LocalSplitColors.current
 
     Surface(
-        modifier = Modifier.clip(RoundedCornerShape(16.dp)),
-        color = if (selected) colors.primary else colors.cardBackground,
-        onClick = onClick
+        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
+        onClick = onClick,
+        border = BorderStroke(
+            lDimens.dp2,
+            if (selected) colors.primary else colors.cardBackground
+        ),
+        shape = RoundedCornerShape(lDimens.dp16)
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            color = if (selected) Color.White else colors.textPrimary,
-            style = MaterialTheme.typography.labelMedium
+            modifier = Modifier.padding(horizontal = lDimens.dp12, vertical = lDimens.dp8),
+            color = colors.textPrimary,
+            style = getSplitTypography().labelLarge
         )
     }
 }
