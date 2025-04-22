@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -295,9 +297,41 @@ fun SplitSurface(
     }
 }
 
-/**
- * Currency Display component for showing amount values consistently
- */
+
+//Currency Display component for showing amount values consistently
+
+//@Composable
+//fun CurrencyDisplay(
+//    amount: Double,
+//    isIncome: Boolean = true,
+//    large: Boolean = false,
+//    currencySymbol: String = "₹",
+//) {
+//    val colors = LocalSplitColors.current
+//
+//    val textColor = when {
+//        amount == 0.0 -> colors.textSecondary
+//        isIncome -> colors.success
+//        else -> colors.error
+//    }
+//
+//    val style = if (large) {
+//        MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+//    } else {
+//        MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+//    }
+//
+//    val prefix = if (!isIncome && amount != 0.0) "-" else ""
+//    val absAmount = kotlin.math.abs(amount)
+//    val displayValue = (absAmount * 100).toInt() / 100.0
+//    Text(
+//        text = "$prefix$currencySymbol$displayValue",
+//        style = style,
+//        color = textColor,
+//    )
+//}
+
+
 @Composable
 fun CurrencyDisplay(
     amount: Double,
@@ -321,10 +355,19 @@ fun CurrencyDisplay(
 
     val prefix = if (!isIncome && amount != 0.0) "-" else ""
     val absAmount = kotlin.math.abs(amount)
-    val displayValue = (absAmount * 100).toInt() / 100.0
+
+    // Round to 2 decimal places and format manually
+    val roundedAmount = (kotlin.math.round(absAmount * 100) / 100)
+    val intPart = roundedAmount.toInt()
+    val decimalPart = ((roundedAmount - intPart) * 100).toInt()
+    val formattedAmount = "$intPart.${decimalPart.toString().padStart(2, '0')}"
+
     Text(
-        text = "$prefix$currencySymbol$displayValue",
+        text = "$prefix$currencySymbol$formattedAmount",
         style = style,
         color = textColor,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.widthIn(min = 50.dp)
     )
 }

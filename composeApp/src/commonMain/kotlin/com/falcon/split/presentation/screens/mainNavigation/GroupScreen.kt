@@ -517,43 +517,6 @@ fun GroupsContent(
     }
 }
 
-@Composable
-fun FilterButton(
-    text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val colors = LocalSplitColors.current
-
-    Surface(
-        modifier = Modifier.clip(RoundedCornerShape(lDimens.dp16)),
-        onClick = onClick,
-        border = BorderStroke(
-            lDimens.dp2,
-            if (selected) colors.primary else colors.cardBackground
-        ),
-        shape = RoundedCornerShape(lDimens.dp16)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = colors.textPrimary,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = text,
-                color = colors.textPrimary,
-                style = getSplitTypography().labelLarge
-            )
-        }
-    }
-}
 
 @Composable
 fun FilterOption(

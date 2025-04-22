@@ -580,7 +580,9 @@ fun PendingSettlementItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = if (isIncoming) "Payment Request" else "Your Request",
                         style = MaterialTheme.typography.titleMedium,
@@ -593,9 +595,13 @@ fun PendingSettlementItem(
                         else
                             "Requested from ${settlement.toUserName ?: "someone"}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary
+                        color = colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(lDimens.dp8))
 
                 CurrencyDisplay(
                     amount = settlement.amount,
