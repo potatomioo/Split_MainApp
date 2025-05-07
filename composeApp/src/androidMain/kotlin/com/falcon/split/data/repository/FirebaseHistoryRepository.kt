@@ -346,6 +346,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 actionByUserId = createdByUserId,
                 actionByUserName = createdByUserName,
                 groupId = groupId,
+                groupType = groupType,
                 groupName = groupName,
                 description = "You created the group $groupName"
             )
@@ -441,6 +442,7 @@ class FirebaseHistoryRepository : HistoryRepository {
                 groupId = groupId,
                 groupName = groupName,
                 expenseId = expenseId,
+                expenseType = expenseType,
                 expenseAmount = expenseAmount,
                 description = "You added an expense $expenseDescription in \"$groupName\""
             )

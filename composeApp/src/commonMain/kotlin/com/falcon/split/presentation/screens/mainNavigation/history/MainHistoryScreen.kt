@@ -77,9 +77,6 @@ import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models_app.SettlementStatus
-import com.falcon.split.presentation.PullToRefresh.PullRefreshIndicator
-import com.falcon.split.presentation.PullToRefresh.pullRefresh
-import com.falcon.split.presentation.PullToRefresh.rememberPullRefreshState
 import com.falcon.split.presentation.history.HistoryActionType
 import com.falcon.split.presentation.history.HistoryFilterType
 import com.falcon.split.presentation.history.HistoryItem
