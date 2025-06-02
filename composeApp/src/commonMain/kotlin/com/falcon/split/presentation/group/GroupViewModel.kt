@@ -107,7 +107,7 @@ class GroupViewModel(
             try {
                 groupRepository.getGroupDetails(groupId)
                     .collect { group ->
-                        group?.let {
+                        group.let {
                             _groupState.value = GroupState.GroupDetailSuccess(it)
                         }
                     }
@@ -150,7 +150,7 @@ class GroupViewModel(
             try {
                 expenseRepository.settleBalance(
                     groupId = groupId,
-                    fromUserId = currentUserId ?: "",
+                    fromUserId = currentUserId,
                     toUserId = toUserId,
                     amount = amount
                 ).onSuccess {
@@ -172,7 +172,7 @@ class GroupViewModel(
     fun loadPendingSettlements() {
         viewModelScope.launch {
             try {
-                expenseRepository.getPendingSettlementsForUser(currentUserId?:"")
+                expenseRepository.getPendingSettlementsForUser(currentUserId)
                     .collect { settlements ->
                         _pendingSettlements.value = settlements
                     }
