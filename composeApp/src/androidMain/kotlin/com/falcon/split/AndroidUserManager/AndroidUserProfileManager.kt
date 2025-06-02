@@ -1,7 +1,6 @@
 package com.falcon.split.AndroidUserManager
 
 import android.util.Log
-import com.falcon.split.data.FirestoreManager
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore

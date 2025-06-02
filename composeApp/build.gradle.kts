@@ -8,12 +8,10 @@ plugins {
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
-//    alias(libs.plugins.google.playServices)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
-    id("com.google.gms.google-services")
 }
 
 kotlin {
@@ -97,8 +95,6 @@ kotlin {
             implementation(libs.androidx.paging.compose.v330)
 
             // Firebase Based Google Sign-In
-            implementation(libs.firebase.auth.ktx)
-            implementation(libs.play.services.auth)
 //            implementation(libs.androidx.material.icons.extended)
         }
         commonMain.dependencies {

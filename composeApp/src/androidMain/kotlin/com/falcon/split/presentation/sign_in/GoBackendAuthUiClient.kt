@@ -6,53 +6,39 @@ import android.content.IntentSender
 import com.falcon.split.SignInResult
 import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.data.auth.GoBackendManager
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
-import com.google.android.gms.auth.api.identity.SignInClient
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.tasks.await
 
 class GoBackendAuthUiClient(
     private val context: Context,
-    private val oneTapClient: SignInClient,
     private val goBackendManager: GoBackendManager
 ) : AuthUiClient {
 
     override suspend fun signIn(): IntentSender? {
-        val result = try {
-            oneTapClient.beginSignIn(
-                buildSignInRequest()
-            ).await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            if (e is CancellationException) throw e
-            null
-        }
-        return result?.pendingIntent?.intentSender
+        // Return null for now - we'll handle Google sign-in differently
+        // The actual sign-in will be triggered by the GoogleSignInButton
+        return null
     }
 
     override suspend fun signInWithIntent(intent: Intent): SignInResult {
-        val credential = oneTapClient.getSignInCredentialFromIntent(intent)
-        val googleIdToken = credential.googleIdToken
+        // This method won't be used with normal Google Cloud sign-in
+        return SignInResult(
+            data = null,
+            errorMessage = "Use authenticateWithGoogleToken instead"
+        )
+    }
 
+    suspend fun authenticateWithGoogleToken(googleIdToken: String): SignInResult {
         return try {
-            if (googleIdToken != null) {
-                val result = goBackendManager.authenticateWithGoogle(googleIdToken)
-                if (result.isSuccess) {
-                    SignInResult(
-                        data = result.getOrNull(),
-                        errorMessage = null
-                    )
-                } else {
-                    SignInResult(
-                        data = null,
-                        errorMessage = result.exceptionOrNull()?.message ?: "Authentication failed"
-                    )
-                }
+            val result = goBackendManager.authenticateWithGoogle(googleIdToken)
+            if (result.isSuccess) {
+                SignInResult(
+                    data = result.getOrNull(),
+                    errorMessage = null
+                )
             } else {
                 SignInResult(
                     data = null,
-                    errorMessage = "Failed to get Google ID token"
+                    errorMessage = result.exceptionOrNull()?.message ?: "Authentication failed"
                 )
             }
         } catch (e: Exception) {
@@ -67,7 +53,6 @@ class GoBackendAuthUiClient(
 
     override suspend fun signOut() {
         try {
-            oneTapClient.signOut().await()
             goBackendManager.signOut()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -77,19 +62,6 @@ class GoBackendAuthUiClient(
 
     override fun getSignedInUser(): UserModelGoogleFirebaseBased? {
         return goBackendManager.getCurrentUser()
-    }
-
-    private fun buildSignInRequest(): BeginSignInRequest {
-        return BeginSignInRequest.Builder()
-            .setGoogleIdTokenRequestOptions(
-                GoogleIdTokenRequestOptions.builder()
-                    .setSupported(true)
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId("256895007811-hhkr06uk0k3q4sr78bj77cmql0j95918.apps.googleusercontent.com")
-                    .build()
-            )
-            .setAutoSelectEnabled(true)
-            .build()
     }
 
     override suspend fun updateUserWithPhoneNumber(phoneNumber: String): Result<Unit> {

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.IntentSender
 import com.falcon.split.SignInResult
 import com.falcon.split.UserModelGoogleFirebaseBased
-import com.falcon.split.data.FirestoreManager
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
 import com.google.android.gms.auth.api.identity.SignInClient

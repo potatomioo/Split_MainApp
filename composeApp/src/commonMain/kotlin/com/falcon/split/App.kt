@@ -66,7 +66,6 @@ import com.falcon.split.presentation.expense.CreateExpenseViewModel
 import com.falcon.split.presentation.group.CreateGroupViewModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.contact.ContactManager
-import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models.UserState
 import com.falcon.split.presentation.screens.WelcomePage
@@ -77,15 +76,12 @@ import com.falcon.split.presentation.screens.mainNavigation.NavHostMain
 import com.falcon.split.presentation.screens.mainNavigation.ProfileScreen
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.screens.mainNavigation.navigateTo
-import com.falcon.split.data.repository.ExpenseRepository
-import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
 import com.falcon.split.presentation.screens.mainNavigation.SettleUpScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
-import com.falcon.split.userManager.UserManager
 import com.falcon.split.utils.rememberEmailUtils
 import com.mmk.kmpauth.google.GoogleAuthCredentials
 import com.mmk.kmpauth.google.GoogleAuthProvider
@@ -132,14 +128,8 @@ fun App(
     prefs: DataStore<Preferences>,
     contactManager: ContactManager? = null,
     onSignOut: (() -> Unit)? = null,
-    AndroidProfileScreenComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
-    AndroidSignInComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
-    groupRepository: GroupRepository? = null,
-    expenseRepository: ExpenseRepository? = null,
-    historyRepository: HistoryRepository? = null,
     darkTheme: MutableState<Boolean>?,
-    userManager: UserManager,
-    userProfileManager : UserProfileManager
+    goBackendManager: com.falcon.split.data.auth.GoBackendManager,
 ) {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -147,6 +137,11 @@ fun App(
     val controller = remember(factory) {
         factory.createPermissionsController()
     }
+    private val groupRepository by lazy { goBackendManager.groupRepository }
+    private val expenseRepository by lazy { goBackendManager.expenseRepository }
+    private val historyRepository by lazy { goBackendManager.historyRepository }
+    private val userManager by lazy { goBackendManager.userManager }
+    private val userProfileManager by lazy { goBackendManager.userProfileManager }
 
     // Create a shared BackHandler instance
     val appBackHandler = remember { AppBackHandler() }
