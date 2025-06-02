@@ -7,7 +7,7 @@ import com.falcon.split.AndroidUserManager.GoBackendUserProfileManager
 import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.data.repository.ExpenseRepository
 import com.falcon.split.data.repository.GroupRepository
-import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.repository.GoBackendExpenseRepository
 import com.falcon.split.data.repository.GoBackendGroupRepository
 import com.falcon.split.data.repository.GoBackendHistoryRepository
@@ -24,13 +24,13 @@ class GoBackendManager(context: Context) {
 
     private val tokenManager = TokenManager(sharedPreferences)
 
-    private val apiClient = ApiClient { tokenManager.getToken() }
+    private val ktorApiClient = KtorApiClient { tokenManager.getToken() }
 
     // Repository instances
-    private val userRepository = GoBackendUserRepository(apiClient)
-    val groupRepository: GroupRepository = GoBackendGroupRepository(apiClient)
-    val expenseRepository: ExpenseRepository = GoBackendExpenseRepository(apiClient)
-    val historyRepository: HistoryRepository = GoBackendHistoryRepository(apiClient)
+    private val userRepository = GoBackendUserRepository(ktorApiClient)
+    val groupRepository: GroupRepository = GoBackendGroupRepository(ktorApiClient)
+    val expenseRepository: ExpenseRepository = GoBackendExpenseRepository(ktorApiClient)
+    val historyRepository: HistoryRepository = GoBackendHistoryRepository(ktorApiClient)
 
     // Manager instances
     val userManager: UserManager = GoBackendUserManager(tokenManager)
@@ -89,6 +89,6 @@ class GoBackendManager(context: Context) {
 
     fun signOut() {
         tokenManager.clearToken()
-        apiClient.close()
+        ktorApiClient.close()
     }
 }

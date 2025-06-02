@@ -23,10 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,15 +53,15 @@ import com.falcon.split.data.FirestoreManager
 import com.falcon.split.data.config.BackendConfig
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
-import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.sign_in.AuthUiClient
-import com.falcon.split.presentation.sign_in.GoogleAuthUiClient
 import com.falcon.split.presentation.sign_in.GoBackendAuthUiClient
+import com.falcon.split.presentation.sign_in.GoogleAuthUiClient
 import com.falcon.split.presentation.sign_in.PhoneNumberViewModel
 import com.falcon.split.presentation.sign_in.PhoneNumberViewModelFactory
 import com.falcon.split.presentation.sign_in.SignInViewModel
 import com.falcon.split.presentation.sign_in.UserState
+import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.Intents
 import com.falcon.split.utils.OpenLink
@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
     // Use BackendConfig instead of hardcoded repositories
     private val groupRepository: com.falcon.split.data.repository.GroupRepository by lazy { backendConfig.groupRepository }
     private val expenseRepository: com.falcon.split.data.repository.ExpenseRepository by lazy { backendConfig.expenseRepository }
-    private val historyRepository: com.falcon.split.HistoryRepository by lazy { backendConfig.historyRepository }
+    private val historyRepository: HistoryRepository by lazy { backendConfig.historyRepository }
     private val userManager: com.falcon.split.userManager.UserManager by lazy { backendConfig.userManager }
     private val userProfileManager: com.falcon.split.data.ProfileManager.UserProfileManager by lazy { backendConfig.userProfileManager }
 

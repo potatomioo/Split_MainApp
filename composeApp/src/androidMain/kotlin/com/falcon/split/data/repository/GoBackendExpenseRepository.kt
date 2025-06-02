@@ -1,6 +1,6 @@
 package com.falcon.split.data.repository
 
-import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.ExpenseSplit
@@ -58,7 +58,7 @@ data class SettlementResponse(
     val timestamp: Long
 )
 
-class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepository {
+class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : ExpenseRepository {
 
     override suspend fun addExpense(
         groupId: String,
@@ -73,7 +73,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
                 amount = amount,
                 expenseType = expenseType.name
             )
-            apiClient.post<ExpenseResponse>("api/expenses", request)
+            ktorApiClient.post<ExpenseResponse>("api/expenses", request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -82,7 +82,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
 
     override suspend fun getExpensesByGroup(groupId: String): Flow<List<Expense>> = flow {
         try {
-            val response: List<ExpenseResponse> = apiClient.get("api/expenses/group/$groupId")
+            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/group/$groupId")
             val expenses = response.map { mapResponseToExpense(it) }
             emit(expenses)
         } catch (e: Exception) {
@@ -92,7 +92,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
 
     override suspend fun getExpensesByUser(userId: String): Flow<List<Expense>> = flow {
         try {
-            val response: List<ExpenseResponse> = apiClient.get("api/expenses/user")
+            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/user")
             val expenses = response.map { mapResponseToExpense(it) }
             emit(expenses)
         } catch (e: Exception) {
@@ -112,7 +112,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
                 toUserId = toUserId,
                 amount = amount
             )
-            apiClient.post<SettlementResponse>("api/settlements", request)
+            ktorApiClient.post<SettlementResponse>("api/settlements", request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -121,7 +121,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
 
     override suspend fun approveSettlement(settlementId: String): Result<Unit> {
         return try {
-            apiClient.patch<SettlementResponse>("api/settlements/$settlementId/approve")
+            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/approve")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -130,7 +130,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
 
     override suspend fun declineSettlement(settlementId: String): Result<Unit> {
         return try {
-            apiClient.patch<SettlementResponse>("api/settlements/$settlementId/decline")
+            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/decline")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -140,7 +140,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
     override suspend fun getPendingSettlementsForUser(userId: String): Flow<List<Settlement>> =
         flow {
             try {
-                val response: List<SettlementResponse> = apiClient.get("api/settlements/pending")
+                val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/pending")
                 val settlements = response.map { mapResponseToSettlement(it) }
                 emit(settlements)
             } catch (e: Exception) {
@@ -150,7 +150,7 @@ class GoBackendExpenseRepository(private val apiClient: ApiClient) : ExpenseRepo
 
     override suspend fun getSettlementHistory(groupId: String): Flow<List<Settlement>> = flow {
         try {
-            val response: List<SettlementResponse> = apiClient.get("api/settlements/group/$groupId")
+            val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/group/$groupId")
             val settlements = response.map { mapResponseToSettlement(it) }
             emit(settlements)
         } catch (e: Exception) {

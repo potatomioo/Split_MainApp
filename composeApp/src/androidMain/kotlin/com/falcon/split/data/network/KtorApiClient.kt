@@ -13,7 +13,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class ApiClient(private val tokenProvider: () -> String?) {
+class KtorApiClient(private val tokenProvider: () -> String?) {
 
     @PublishedApi
     internal val httpClient = HttpClient(OkHttp) {

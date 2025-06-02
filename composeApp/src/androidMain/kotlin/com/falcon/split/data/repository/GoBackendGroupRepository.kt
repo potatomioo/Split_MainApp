@@ -1,7 +1,7 @@
 package com.falcon.split.data.repository
 
 import com.falcon.split.contact.Contact
-import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.GroupType
@@ -43,7 +43,7 @@ data class GroupMemberResponse(
     val individualBalances: Map<String, Double> = emptyMap()
 )
 
-class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupRepository {
+class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : GroupRepository {
 
     override suspend fun createGroup(
         name: String,
@@ -62,7 +62,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
                 groupType = groupType.name
             )
 
-            val response: GroupResponse = apiClient.post("api/groups", request)
+            val response: GroupResponse = ktorApiClient.post("api/groups", request)
             val group = mapResponseToGroup(response)
             Result.success(group)
         } catch (e: Exception) {
@@ -78,7 +78,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
 
     override suspend fun getCurrentUserGroups(): Flow<List<Group>> = flow {
         try {
-            val response: List<GroupResponse> = apiClient.get("api/groups/user")
+            val response: List<GroupResponse> = ktorApiClient.get("api/groups/user")
             val groups = response.map { mapResponseToGroup(it) }
             emit(groups)
         } catch (e: Exception) {
@@ -93,7 +93,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
         return try {
             val normalizedNumbers = memberPhoneNumbers.map { extractLast10Digits(it) }
             val request = AddMembersRequest(normalizedNumbers)
-            apiClient.patch<GroupResponse>("api/groups/$groupId/members", request)
+            ktorApiClient.patch<GroupResponse>("api/groups/$groupId/members", request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -102,7 +102,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
 
     override suspend fun getGroupDetails(groupId: String): Flow<Group> = flow {
         try {
-            val response: GroupResponse = apiClient.get("api/groups/$groupId")
+            val response: GroupResponse = ktorApiClient.get("api/groups/$groupId")
             val group = mapResponseToGroup(response)
             emit(group)
         } catch (e: Exception) {
@@ -112,7 +112,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
 
     override suspend fun getPhoneNumberFromId(userId: String): String? {
         return try {
-            val response: Map<String, String> = apiClient.get("api/user/$userId/phone")
+            val response: Map<String, String> = ktorApiClient.get("api/user/$userId/phone")
             response["phoneNumber"]
         } catch (e: Exception) {
             null
@@ -121,7 +121,7 @@ class GoBackendGroupRepository(private val apiClient: ApiClient) : GroupReposito
 
     override suspend fun deleteGroup(groupId: String): Result<Unit> {
         return try {
-            apiClient.delete<Unit>("api/groups/$groupId")
+            ktorApiClient.delete<Unit>("api/groups/$groupId")
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

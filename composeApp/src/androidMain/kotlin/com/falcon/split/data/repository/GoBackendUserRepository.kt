@@ -1,7 +1,6 @@
 package com.falcon.split.data.repository
 
-import com.falcon.split.UserModelGoogleFirebaseBased
-import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.KtorApiClient
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -33,12 +32,12 @@ data class UserModelGoogleCloudBased(
     val photoUrl: String
 )
 
-class GoBackendUserRepository(private val apiClient: ApiClient) {
+class GoBackendUserRepository(private val ktorApiClient: KtorApiClient) {
 
     suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleCloudBased> {
         return try {
             val request = GoogleAuthRequest(googleToken)
-            val response: UserModelGoogleCloudBased = apiClient.post("api/auth/google", request)
+            val response: UserModelGoogleCloudBased = ktorApiClient.post("api/auth/google", request)
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
@@ -47,7 +46,7 @@ class GoBackendUserRepository(private val apiClient: ApiClient) {
 
     suspend fun getCurrentUser(): Result<UserResponse> {
         return try {
-            val response: UserResponse = apiClient.get("api/user")
+            val response: UserResponse = ktorApiClient.get("api/user")
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
@@ -57,7 +56,7 @@ class GoBackendUserRepository(private val apiClient: ApiClient) {
     suspend fun updatePhoneNumber(phoneNumber: String): Result<UserResponse> {
         return try {
             val request = UpdatePhoneRequest(phoneNumber)
-            val response: UserResponse = apiClient.patch("api/user/phone", request)
+            val response: UserResponse = ktorApiClient.patch("api/user/phone", request)
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
@@ -66,7 +65,7 @@ class GoBackendUserRepository(private val apiClient: ApiClient) {
 
     suspend fun getUserPhoneNumber(userId: String): Result<String> {
         return try {
-            val response: Map<String, String> = apiClient.get("api/user/$userId/phone")
+            val response: Map<String, String> = ktorApiClient.get("api/user/$userId/phone")
             Result.success(response["phoneNumber"] ?: "")
         } catch (e: Exception) {
             Result.failure(e)
