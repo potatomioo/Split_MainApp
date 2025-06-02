@@ -1,8 +1,5 @@
 package com.falcon.split.domain.useCase.expense
 
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.network.models_app.Expense
-
 //class AddExpenseUseCase(
 //    private val expenseRepository: ExpenseRepository
 //) {

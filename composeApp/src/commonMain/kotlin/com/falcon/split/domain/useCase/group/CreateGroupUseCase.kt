@@ -1,7 +1,7 @@
 package com.falcon.split.domain.useCase.group
 
 import com.falcon.split.contact.Contact
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.Group
 
 class CreateGroupUseCase(

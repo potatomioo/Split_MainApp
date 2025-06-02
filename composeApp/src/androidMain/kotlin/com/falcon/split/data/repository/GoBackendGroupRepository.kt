@@ -1,7 +1,6 @@
 package com.falcon.split.data.repository
 
 import com.falcon.split.contact.Contact
-import com.falcon.split.data.Repository.GroupRepository
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember

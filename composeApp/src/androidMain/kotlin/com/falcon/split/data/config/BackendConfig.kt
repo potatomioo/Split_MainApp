@@ -5,8 +5,8 @@ import com.falcon.split.AndroidUserManager.AndroidUserProfileManager
 import com.falcon.split.AndroidUserManager.FirebaseUserManager
 import com.falcon.split.data.FirestoreManager
 import com.falcon.split.data.ProfileManager.UserProfileManager
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.auth.GoBackendManager
 import com.falcon.split.data.repository.FirebaseExpenseRepository
 import com.falcon.split.data.repository.FirebaseGroupRepository

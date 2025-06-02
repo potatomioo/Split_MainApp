@@ -2,8 +2,8 @@ package com.falcon.split.presentation.group
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
 import com.falcon.split.presentation.expense.ExpenseState

@@ -77,8 +77,8 @@ import com.falcon.split.presentation.screens.mainNavigation.NavHostMain
 import com.falcon.split.presentation.screens.mainNavigation.ProfileScreen
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.screens.mainNavigation.navigateTo
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
 import com.falcon.split.presentation.screens.mainNavigation.SettleUpScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen

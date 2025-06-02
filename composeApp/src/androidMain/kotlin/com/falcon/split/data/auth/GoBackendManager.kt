@@ -5,14 +5,13 @@ import android.content.SharedPreferences
 import com.falcon.split.AndroidUserManager.GoBackendUserManager
 import com.falcon.split.AndroidUserManager.GoBackendUserProfileManager
 import com.falcon.split.UserModelGoogleFirebaseBased
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.repository.GoBackendExpenseRepository
 import com.falcon.split.data.repository.GoBackendGroupRepository
 import com.falcon.split.data.repository.GoBackendHistoryRepository
 import com.falcon.split.data.repository.GoBackendUserRepository
-import com.falcon.split.data.repository.UserModelGoogleCloudBased
 import com.falcon.split.HistoryRepository
 import com.falcon.split.userManager.UserManager
 import com.falcon.split.data.ProfileManager.UserProfileManager

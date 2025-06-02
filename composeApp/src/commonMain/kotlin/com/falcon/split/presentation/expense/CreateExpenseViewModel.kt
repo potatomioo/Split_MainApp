@@ -2,8 +2,8 @@ package com.falcon.split.presentation.expense
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.falcon.split.data.Repository.ExpenseRepository
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import kotlinx.coroutines.flow.MutableStateFlow

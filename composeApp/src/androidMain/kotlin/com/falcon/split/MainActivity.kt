@@ -23,10 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,7 +37,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.core.DataStore
@@ -48,17 +47,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.falcon.split.AndroidUserManager.AndroidUserProfileManager
-import com.falcon.split.AndroidUserManager.FirebaseUserManager
 import com.falcon.split.SpecificScreens.PhoneNumberBottomSheet
 import com.falcon.split.contact.AndroidContactManager
 import com.falcon.split.data.FirestoreManager
-import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.config.BackendConfig
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
-import com.falcon.split.data.repository.FirebaseExpenseRepository
-import com.falcon.split.data.repository.FirebaseGroupRepository
-import com.falcon.split.data.repository.FirebaseHistoryRepository
 import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.presentation.screens.mainNavigation.Routes
 import com.falcon.split.presentation.sign_in.AuthUiClient
@@ -81,24 +75,24 @@ import kotlinx.coroutines.runBlocking
 class MainActivity : ComponentActivity() {
 
     // Backend configuration - centralized management
-    private val backendConfig by lazy { BackendConfig(applicationContext) }
+    private val backendConfig: BackendConfig by lazy { BackendConfig(applicationContext) }
 
     // Use BackendConfig instead of hardcoded repositories
-    private val groupRepository by lazy { backendConfig.groupRepository }
-    private val expenseRepository by lazy { backendConfig.expenseRepository }
-    private val historyRepository by lazy { backendConfig.historyRepository }
-    private val userManager by lazy { backendConfig.userManager }
-    private val userProfileManager by lazy { backendConfig.userProfileManager }
+    private val groupRepository: com.falcon.split.data.repository.GroupRepository by lazy { backendConfig.groupRepository }
+    private val expenseRepository: com.falcon.split.data.repository.ExpenseRepository by lazy { backendConfig.expenseRepository }
+    private val historyRepository: com.falcon.split.HistoryRepository by lazy { backendConfig.historyRepository }
+    private val userManager: com.falcon.split.userManager.UserManager by lazy { backendConfig.userManager }
+    private val userProfileManager: com.falcon.split.data.ProfileManager.UserProfileManager by lazy { backendConfig.userProfileManager }
 
     // Authentication clients - choose based on backend configuration
-    private val googleAuthUiClient by lazy {
+    private val googleAuthUiClient: GoogleAuthUiClient by lazy {
         GoogleAuthUiClient(
             context = applicationContext,
             oneTapClient = Identity.getSignInClient(applicationContext)
         )
     }
 
-    private val goBackendAuthUiClient by lazy {
+    private val goBackendAuthUiClient: GoBackendAuthUiClient by lazy {
         GoBackendAuthUiClient(
             context = applicationContext,
             oneTapClient = Identity.getSignInClient(applicationContext),
@@ -172,9 +166,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 App(
                     client = remember {
-                        // Create a dummy ApiClient for backward compatibility
-                        // The actual API calls now go through BackendConfig repositories
-                        ApiClient { null }
+                        ApiClient(createHttpClient(OkHttp.create()))
                     },
                     prefs = prefs,
                     onSignOut = onSignOutFunction,
@@ -206,13 +198,13 @@ class MainActivity : ComponentActivity() {
         requestSendForGetUserData: MutableState<Boolean>,
         prefs: DataStore<Preferences>
     ) {
-        val viewModel = viewModel<SignInViewModel>()
+        val viewModel: SignInViewModel = viewModel()
 
         // Choose the appropriate auth client based on backend configuration
-        val authClient =
+        val authClient: AuthUiClient =
             if (backendConfig.useGoBackend) goBackendAuthUiClient else googleAuthUiClient
 
-        val phoneViewModel = viewModel<PhoneNumberViewModel>(
+        val phoneViewModel: PhoneNumberViewModel = viewModel(
             factory = PhoneNumberViewModelFactory(authClient)
         )
         val state by viewModel.userDetails.collectAsStateWithLifecycle()
@@ -274,7 +266,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun CallProfileScreenInAndroid(navControllerCommon: NavHostController) {
         // Use the appropriate auth client based on backend configuration
-        val authClient =
+        val authClient: AuthUiClient =
             if (backendConfig.useGoBackend) goBackendAuthUiClient else googleAuthUiClient
         val userData = authClient.getSignedInUser()
 

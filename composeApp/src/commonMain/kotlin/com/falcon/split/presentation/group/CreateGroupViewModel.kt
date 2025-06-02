@@ -3,7 +3,7 @@ package com.falcon.split.presentation.group
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.falcon.split.contact.Contact
-import com.falcon.split.data.Repository.GroupRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.GroupType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

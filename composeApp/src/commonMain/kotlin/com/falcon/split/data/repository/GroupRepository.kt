@@ -1,4 +1,4 @@
-package com.falcon.split.data.Repository
+package com.falcon.split.data.repository
 
 import com.falcon.split.contact.Contact
 import com.falcon.split.data.network.models_app.Group
