@@ -1,28 +1,22 @@
 package com.falcon.split.data.auth
 
-import android.content.Context
-import android.content.SharedPreferences
-import com.falcon.split.AndroidUserManager.GoBackendUserManager
-import com.falcon.split.AndroidUserManager.GoBackendUserProfileManager
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.falcon.split.HistoryRepository
 import com.falcon.split.UserModelGoogleFirebaseBased
-import com.falcon.split.data.repository.ExpenseRepository
-import com.falcon.split.data.repository.GroupRepository
+import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.KtorApiClient
+import com.falcon.split.data.repository.ExpenseRepository
 import com.falcon.split.data.repository.GoBackendExpenseRepository
 import com.falcon.split.data.repository.GoBackendGroupRepository
 import com.falcon.split.data.repository.GoBackendHistoryRepository
 import com.falcon.split.data.repository.GoBackendUserRepository
-import com.falcon.split.HistoryRepository
+import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.userManager.UserManager
-import com.falcon.split.data.ProfileManager.UserProfileManager
 
-class GoBackendManager(context: Context) {
+class GoBackendManager(dataStore: DataStore<Preferences>) {
 
-    private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
-        "splitor_prefs", Context.MODE_PRIVATE
-    )
-
-    private val tokenManager = TokenManager(sharedPreferences)
+    private val tokenManager = TokenManager(dataStore)
 
     private val ktorApiClient = KtorApiClient { tokenManager.getToken() }
 
@@ -69,11 +63,11 @@ class GoBackendManager(context: Context) {
         }
     }
 
-    fun isLoggedIn(): Boolean {
+    suspend fun isLoggedIn(): Boolean {
         return tokenManager.isLoggedIn()
     }
 
-    fun getCurrentUser(): UserModelGoogleFirebaseBased? {
+    suspend fun getCurrentUser(): UserModelGoogleFirebaseBased? {
         return if (tokenManager.isLoggedIn()) {
             UserModelGoogleFirebaseBased(
                 userId = tokenManager.getUserId(),
@@ -87,7 +81,7 @@ class GoBackendManager(context: Context) {
         }
     }
 
-    fun signOut() {
+    suspend fun signOut() {
         tokenManager.clearToken()
         ktorApiClient.close()
     }

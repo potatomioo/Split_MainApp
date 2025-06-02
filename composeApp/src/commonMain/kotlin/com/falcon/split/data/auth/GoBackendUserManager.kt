@@ -1,10 +1,9 @@
-package com.falcon.split.AndroidUserManager
+package com.falcon.split.data.auth
 
 import com.falcon.split.userManager.UserManager
-import com.falcon.split.data.auth.TokenManager
 
 class GoBackendUserManager(private val tokenManager: TokenManager) : UserManager {
-    override fun getCurrentUserId(): String? {
+    override suspend fun getCurrentUserId(): String? {
         return tokenManager.getUserId()
     }
 }

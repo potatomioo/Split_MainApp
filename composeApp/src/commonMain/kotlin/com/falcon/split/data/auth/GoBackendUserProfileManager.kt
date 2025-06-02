@@ -1,7 +1,6 @@
-package com.falcon.split.AndroidUserManager
+package com.falcon.split.data.auth
 
 import com.falcon.split.data.ProfileManager.UserProfileManager
-import com.falcon.split.data.auth.TokenManager
 import com.falcon.split.data.repository.GoBackendUserRepository
 
 class GoBackendUserProfileManager(

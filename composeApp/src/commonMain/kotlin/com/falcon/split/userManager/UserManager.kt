@@ -1,5 +1,5 @@
 package com.falcon.split.userManager
 
 interface UserManager {
-    fun getCurrentUserId(): String?
+    suspend fun getCurrentUserId(): String?
 }

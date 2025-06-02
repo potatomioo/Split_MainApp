@@ -1,4 +1,5 @@
 package com.falcon.split
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,10 +9,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.falcon.split.contact.AndroidContactManager
-import com.falcon.split.data.auth.GoBackendManager
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
-import com.falcon.split.presentation.sign_in.GoBackendAuthUiClient
 import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.screens.mainNavigation.Intents
 import com.falcon.split.utils.OpenLink
@@ -21,14 +20,7 @@ import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
 
-    private val goBackendManager =  GoBackendManager(applicationContext)
 
-    private val goBackendAuthUiClient by lazy {
-        GoBackendAuthUiClient(
-            context = applicationContext,
-            goBackendManager = goBackendManager
-        )
-    }
 
     private lateinit var contactManager: AndroidContactManager
 
@@ -44,17 +36,7 @@ class MainActivity : ComponentActivity() {
             // Perform Some Code During Splash Screen
         }
 
-        try {
-
-        }
-        catch (e: Exception) {
-            println("ERROR_TAG: $e")
-            // GEMINI API CALL FOR ("FIX FOR: $e")
-            // LOG THAT
-            // throw e
-        }
         setContent {
-            val requestSendForGetUserData = remember { mutableStateOf(false) }
             val prefs = remember {
                 createDataStore(context = applicationContext)
             }
@@ -80,8 +62,7 @@ class MainActivity : ComponentActivity() {
                     },
                     prefs = prefs,
                     contactManager = contactManager,
-                    darkTheme = darkTheme,
-                    goBackendManager = goBackendManager
+                    darkTheme = darkTheme
                 )
             }
         }

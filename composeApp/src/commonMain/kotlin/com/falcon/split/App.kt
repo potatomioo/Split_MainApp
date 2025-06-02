@@ -66,6 +66,7 @@ import com.falcon.split.presentation.expense.CreateExpenseViewModel
 import com.falcon.split.presentation.group.CreateGroupViewModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.contact.ContactManager
+import com.falcon.split.data.auth.GoBackendManager
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models.UserState
 import com.falcon.split.presentation.screens.WelcomePage
@@ -128,20 +129,21 @@ fun App(
     prefs: DataStore<Preferences>,
     contactManager: ContactManager? = null,
     onSignOut: (() -> Unit)? = null,
-    darkTheme: MutableState<Boolean>?,
-    goBackendManager: com.falcon.split.data.auth.GoBackendManager,
+    darkTheme: MutableState<Boolean>?
 ) {
+
+    val goBackendManager = GoBackendManager(prefs)
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
     val factory = rememberPermissionsControllerFactory()
     val controller = remember(factory) {
         factory.createPermissionsController()
     }
-    private val groupRepository by lazy { goBackendManager.groupRepository }
-    private val expenseRepository by lazy { goBackendManager.expenseRepository }
-    private val historyRepository by lazy { goBackendManager.historyRepository }
-    private val userManager by lazy { goBackendManager.userManager }
-    private val userProfileManager by lazy { goBackendManager.userProfileManager }
+    val groupRepository by lazy { goBackendManager.groupRepository }
+    val expenseRepository by lazy { goBackendManager.expenseRepository }
+    val historyRepository by lazy { goBackendManager.historyRepository }
+    val userManager by lazy { goBackendManager.userManager }
+    val userProfileManager by lazy { goBackendManager.userProfileManager }
 
     // Create a shared BackHandler instance
     val appBackHandler = remember { AppBackHandler() }
@@ -275,19 +277,18 @@ fun App(
                 WelcomePage(navControllerMain)
             }
             composable(Routes.SIGN_IN.name) {
-                AndroidSignInComposable?.invoke(navControllerMain) // Firebase Based Google Sign-In Android Specific Only
-//                GoogleCloudBasedGoogleSignInForKMM(prefs, navControllerMain, authReady, newsViewModel, scope) // Google Cloud Based Google Sign In For KMM, Works In KMM but need to setup separate server for JWT Token Conversion As Google Auth Id Provided By It is Temporary.
+                GoogleCloudBasedGoogleSignInForKMM(prefs, navControllerMain, authReady, mainViewModel, scope) // Google Cloud Based Google Sign In For KMM, Works In KMM but need to setup separate server for JWT Token Conversion As Google Auth Id Provided By It is Temporary.
             }
             composable(Routes.APP_CONTENT.name) {
                 val openUserOptionsMenu = remember { mutableStateOf(false) } // In Future Replace It With Bottom - Sheet
                 val groupViewModel = remember { GroupViewModel(
-                    groupRepository!!,
-                    expenseRepository!!,
+                    groupRepository,
+                    expenseRepository,
                     userManager
                 ) }
                 val historyViewModel = remember {
                     HistoryViewModel(
-                        historyRepository = historyRepository!!
+                        historyRepository = historyRepository
                     )
                 }
                 NavHostMain(
@@ -431,9 +432,8 @@ fun App(
 
 }
 
-@Deprecated("This method has been deprecated in favor of using Firebase Based Google-SignIn")
 @Composable
-private fun GoogleCloudBasedGoogleSignInForKMM( // Don't Remove This, More Mentioned At Line 184
+private fun GoogleCloudBasedGoogleSignInForKMM(
     prefs: DataStore<Preferences>,
     navControllerMain: NavHostController,
     authReady: Boolean,

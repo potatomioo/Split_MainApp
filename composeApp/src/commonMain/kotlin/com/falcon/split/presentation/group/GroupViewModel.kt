@@ -32,7 +32,7 @@ class GroupViewModel(
     private val _settlements = MutableStateFlow<List<Settlement>>(emptyList())
     val settlements = _settlements.asStateFlow()
 
-    val currentUserId = userManager.getCurrentUserId()
+    val currentUserId = "384394834938489"// userManager.getCurrentUserId() // TODO: FIX THIS
 
     private val _pendingSettlements = MutableStateFlow<List<Settlement>>(emptyList())
     val pendingSettlements = _pendingSettlements.asStateFlow()
