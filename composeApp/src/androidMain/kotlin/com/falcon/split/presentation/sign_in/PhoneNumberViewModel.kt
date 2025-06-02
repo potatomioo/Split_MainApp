@@ -3,14 +3,12 @@ package com.falcon.split.presentation.sign_in
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.falcon.split.data.FirestoreManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PhoneNumberViewModel(
-    private val googleAuthUiClient: GoogleAuthUiClient,
-    private val firestoreManager: FirestoreManager = FirestoreManager()
+    private val authUiClient: AuthUiClient
 ) : ViewModel() {
     private val _showPhoneDialog = MutableStateFlow(false)
     val showPhoneDialog = _showPhoneDialog.asStateFlow()
@@ -33,7 +31,7 @@ class PhoneNumberViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val user = googleAuthUiClient.getSignedInUser()
+                val user = authUiClient.getSignedInUser()
                 Log.d("PhoneNumberViewModel", "Current user: $user")
 
                 if (user == null) {
@@ -43,7 +41,7 @@ class PhoneNumberViewModel(
                     return@launch
                 }
 
-                firestoreManager.createOrUpdateUser(user, phoneNumber)
+                authUiClient.updateUserWithPhoneNumber(phoneNumber)
                     .onSuccess {
                         Log.d("PhoneNumberViewModel", "Successfully saved phone number")
                         _error.value = null

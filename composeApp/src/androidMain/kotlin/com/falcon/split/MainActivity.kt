@@ -53,6 +53,7 @@ import com.falcon.split.SpecificScreens.PhoneNumberBottomSheet
 import com.falcon.split.contact.AndroidContactManager
 import com.falcon.split.data.FirestoreManager
 import com.falcon.split.data.ProfileManager.UserProfileManager
+import com.falcon.split.data.config.BackendConfig
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.createHttpClient
 import com.falcon.split.data.repository.FirebaseExpenseRepository
@@ -60,7 +61,9 @@ import com.falcon.split.data.repository.FirebaseGroupRepository
 import com.falcon.split.data.repository.FirebaseHistoryRepository
 import com.falcon.split.presentation.theme.SplitTheme
 import com.falcon.split.presentation.screens.mainNavigation.Routes
+import com.falcon.split.presentation.sign_in.AuthUiClient
 import com.falcon.split.presentation.sign_in.GoogleAuthUiClient
+import com.falcon.split.presentation.sign_in.GoBackendAuthUiClient
 import com.falcon.split.presentation.sign_in.PhoneNumberViewModel
 import com.falcon.split.presentation.sign_in.PhoneNumberViewModelFactory
 import com.falcon.split.presentation.sign_in.SignInViewModel
@@ -76,21 +79,38 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
+
+    // Backend configuration - centralized management
+    private val backendConfig by lazy { BackendConfig(applicationContext) }
+
+    // Use BackendConfig instead of hardcoded repositories
+    private val groupRepository by lazy { backendConfig.groupRepository }
+    private val expenseRepository by lazy { backendConfig.expenseRepository }
+    private val historyRepository by lazy { backendConfig.historyRepository }
+    private val userManager by lazy { backendConfig.userManager }
+    private val userProfileManager by lazy { backendConfig.userProfileManager }
+
+    // Authentication clients - choose based on backend configuration
     private val googleAuthUiClient by lazy {
         GoogleAuthUiClient(
             context = applicationContext,
             oneTapClient = Identity.getSignInClient(applicationContext)
         )
     }
+
+    private val goBackendAuthUiClient by lazy {
+        GoBackendAuthUiClient(
+            context = applicationContext,
+            oneTapClient = Identity.getSignInClient(applicationContext),
+            goBackendManager = backendConfig.goBackendManager
+        )
+    }
+
     private lateinit var contactManager: AndroidContactManager
-    private val groupRepository by lazy { FirebaseGroupRepository() }
-    private val expenseRepository by lazy { FirebaseExpenseRepository() }
-    private val historyRepository by lazy { FirebaseHistoryRepository() }
 
-    val userManager = FirebaseUserManager()
-
+    // Keep Firebase managers for backward compatibility during transition
     val firestoreManager = FirestoreManager()
-    val userProfileManager = AndroidUserProfileManager(firestoreManager = firestoreManager)
+    val androidUserProfileManager = AndroidUserProfileManager(firestoreManager = firestoreManager)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,10 +124,14 @@ class MainActivity : ComponentActivity() {
             // Perform Some Code During Splash Screen
         }
 
-        // Explicitly type the function as () -> Unit
+        // Sign out function - uses BackendConfig
         val onSignOutFunction: () -> Unit = {
             lifecycleScope.launch {
-                googleAuthUiClient.signOut()
+                if (backendConfig.useGoBackend) {
+                    goBackendAuthUiClient.signOut()
+                } else {
+                    googleAuthUiClient.signOut()
+                }
                 Toast.makeText(
                     applicationContext,
                     "Signed out",
@@ -115,6 +139,7 @@ class MainActivity : ComponentActivity() {
                 ).show()
             }
         }
+
         try {
 
         }
@@ -147,7 +172,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 App(
                     client = remember {
-                        ApiClient(createHttpClient(OkHttp.create()))
+                        // Create a dummy ApiClient for backward compatibility
+                        // The actual API calls now go through BackendConfig repositories
+                        ApiClient { null }
                     },
                     prefs = prefs,
                     onSignOut = onSignOutFunction,
@@ -172,6 +199,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     @Composable
     fun CallGoogleSignInAndroid(
         navControllerCommon: NavHostController,
@@ -179,13 +207,18 @@ class MainActivity : ComponentActivity() {
         prefs: DataStore<Preferences>
     ) {
         val viewModel = viewModel<SignInViewModel>()
+
+        // Choose the appropriate auth client based on backend configuration
+        val authClient =
+            if (backendConfig.useGoBackend) goBackendAuthUiClient else googleAuthUiClient
+
         val phoneViewModel = viewModel<PhoneNumberViewModel>(
-            factory = PhoneNumberViewModelFactory(googleAuthUiClient)
+            factory = PhoneNumberViewModelFactory(authClient)
         )
         val state by viewModel.userDetails.collectAsStateWithLifecycle()
 
         LaunchedEffect(key1 = Unit) {
-            if (googleAuthUiClient.getSignedInUser() != null) {
+            if (authClient.getSignedInUser() != null) {
                 phoneViewModel.showPhoneNumberDialog()
             }
         }
@@ -196,7 +229,7 @@ class MainActivity : ComponentActivity() {
                 requestSendForGetUserData.value = true
                 if (result.resultCode == RESULT_OK) {
                     lifecycleScope.launch {
-                        val signInResult = googleAuthUiClient.signInWithIntent(
+                        val signInResult = authClient.signInWithIntent(
                             intent = result.data ?: return@launch
                         )
                         viewModel.onSignInResult(signInResult)
@@ -211,7 +244,7 @@ class MainActivity : ComponentActivity() {
                 phoneViewModel.showPhoneNumberDialog()
                 Toast.makeText(
                     applicationContext,
-                    "FireBase Sign in Success",
+                    "Sign in Success",
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -226,7 +259,7 @@ class MainActivity : ComponentActivity() {
             onSignInClick = {
                 viewModel.makeStateLoading()
                 lifecycleScope.launch {
-                    val signInIntentSender = googleAuthUiClient.signIn()
+                    val signInIntentSender = authClient.signIn()
                     launcher.launch(
                         IntentSenderRequest.Builder(
                             signInIntentSender ?: return@launch
@@ -234,16 +267,20 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             },
-            googleAuthUiClient = googleAuthUiClient
+            authClient = authClient
         )
     }
 
     @Composable
     fun CallProfileScreenInAndroid(navControllerCommon: NavHostController) {
-        val userData = googleAuthUiClient.getSignedInUser()
+        // Use the appropriate auth client based on backend configuration
+        val authClient =
+            if (backendConfig.useGoBackend) goBackendAuthUiClient else googleAuthUiClient
+        val userData = authClient.getSignedInUser()
+
         val onSignOut = {
             lifecycleScope.launch {
-                googleAuthUiClient.signOut()
+                authClient.signOut()
                 Toast.makeText(
                     applicationContext,
                     "Signed out",
@@ -286,6 +323,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -295,11 +333,13 @@ class MainActivity : ComponentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         contactManager.handlePermissionResult(requestCode, grantResults)
     }
+
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         contactManager.handleActivityResult(requestCode, resultCode, data)
     }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.let {
@@ -308,6 +348,7 @@ class MainActivity : ComponentActivity() {
             // Update your newsId state
         }
     }
+
     // Handle the deep link intent and extract the newsId
     private fun handleDeepLink(intent: Intent?): String {
         intent?.data?.let { uri ->
@@ -327,7 +368,7 @@ fun SignInScreen(
     navControllerCommon: NavHostController,
     requestSendForGetUserData: MutableState<Boolean>,
     onSignInClick: () -> Unit,
-    googleAuthUiClient: GoogleAuthUiClient
+    authClient: AuthUiClient
 ) {
     val showPhoneDialog by phoneViewModel.showPhoneDialog.collectAsState()
     val isLoading by phoneViewModel.isLoading.collectAsState()
@@ -442,57 +483,3 @@ fun PhoneNumberScreen() {
         }
     )
 }
-//Contact Handling
-//class MainActivity : ComponentActivity() {
-//    private lateinit var contactManager: AndroidContactManager
-//
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        contactManager = AndroidContactManager(this)
-//
-//        setContent {
-//            // Your app content
-//            YourScreen(contactManager)
-//        }
-//    }
-//
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array< String>,
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        contactManager.handlePermissionResult(requestCode, grantResults)
-//    }
-//
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//        contactManager.handleActivityResult(requestCode, resultCode, data)
-//    }
-//}
-//
-//@Composable
-//fun YourScreen(contactManager: ContactManager) {
-//    var showContactPicker by remember { mutableStateOf(false) }
-//    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
-//
-//    Column {
-//        Button(onClick = { showContactPicker = true }) {
-//            Text("Select Contact")
-//        }
-//
-//        selectedContact?.let { contact ->
-//            Text("Selected: ${contact.name}")
-//            Text("Number: ${contact.phoneNumber}")
-//        }
-//
-//        if (showContactPicker) {
-//            ContactPicker(
-//                contactManager = contactManager
-//            ) { contact ->
-//                selectedContact = contact
-//                showContactPicker = false
-//            }
-//        }
-//    }
-//}

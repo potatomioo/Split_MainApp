@@ -1,0 +1,130 @@
+package com.falcon.split.data.repository
+
+import com.falcon.split.HistoryRepository
+import com.falcon.split.data.network.ApiClient
+import com.falcon.split.presentation.history.HistoryActionType
+import com.falcon.split.presentation.history.HistoryItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class HistoryItemResponse(
+    val id: String,
+    val timestamp: Long,
+    val actionType: String,
+    val actionByUserId: String,
+    val actionByUserName: String? = null,
+    val groupId: String? = null,
+    val groupName: String? = null,
+    val groupType: String? = null,
+    val expenseId: String? = null,
+    val expenseAmount: Double? = null,
+    val expenseType: String? = null,
+    val settlementId: String? = null,
+    val settlementAmount: Double? = null,
+    val targetUserId: String? = null,
+    val targetUserName: String? = null,
+    val description: String,
+    val read: Boolean
+)
+
+@Serializable
+data class HasMoreResponse(
+    val hasMore: Boolean
+)
+
+class GoBackendHistoryRepository(private val apiClient: ApiClient) : HistoryRepository {
+
+    override suspend fun getUserHistory(page: Int, itemsPerPage: Int): Flow<List<HistoryItem>> =
+        flow {
+            try {
+                val parameters = mapOf(
+                    "page" to page,
+                    "itemsPerPage" to itemsPerPage
+                )
+                val response: List<HistoryItemResponse> = apiClient.get("api/history", parameters)
+                val historyItems = response.map { mapResponseToHistoryItem(it) }
+                emit(historyItems)
+            } catch (e: Exception) {
+                emit(emptyList())
+            }
+        }
+
+    override suspend fun hasMoreHistory(page: Int, itemsPerPage: Int): Boolean {
+        return try {
+            val parameters = mapOf(
+                "page" to page,
+                "itemsPerPage" to itemsPerPage
+            )
+            val response: HasMoreResponse = apiClient.get("api/history/hasMore", parameters)
+            response.hasMore
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun markHistoryItemAsRead(historyId: String): Result<Unit> {
+        return try {
+            apiClient.patch<Unit>("api/history/$historyId/read")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addHistoryItem(historyItem: HistoryItem): Result<Unit> {
+        // This method is typically used internally by the backend
+        // For client-side, we don't usually need to add history items directly
+        return Result.success(Unit)
+    }
+
+    override suspend fun markAllHistoryAsRead(): Result<Unit> {
+        return try {
+            apiClient.patch<Unit>("api/history/markAllRead")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getRecentHistory(limit: Int): Flow<List<HistoryItem>> = flow {
+        try {
+            val parameters = mapOf("limit" to limit)
+            val response: List<HistoryItemResponse> =
+                apiClient.get("api/history/recent", parameters)
+            val historyItems = response.map { mapResponseToHistoryItem(it) }
+            emit(historyItems)
+        } catch (e: Exception) {
+            emit(emptyList())
+        }
+    }
+
+    private fun mapResponseToHistoryItem(response: HistoryItemResponse): HistoryItem {
+        val actionType = try {
+            HistoryActionType.valueOf(response.actionType)
+        } catch (e: Exception) {
+            HistoryActionType.GROUP_CREATED // Default fallback
+        }
+
+        return HistoryItem(
+            id = response.id,
+            timestamp = response.timestamp,
+            actionType = actionType,
+            actionByUserId = response.actionByUserId,
+            actionByUserName = response.actionByUserName,
+            groupId = response.groupId,
+            groupName = response.groupName,
+            groupType = response.groupType,
+            expenseId = response.expenseId,
+            expenseAmount = response.expenseAmount,
+            expenseType = response.expenseType,
+            settlementId = response.settlementId,
+            settlementAmount = response.settlementAmount,
+            targetUserId = response.targetUserId,
+            targetUserName = response.targetUserName,
+            description = response.description,
+            read = response.read
+        )
+    }
+}

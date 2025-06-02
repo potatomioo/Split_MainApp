@@ -5,31 +5,27 @@ import android.content.Intent
 import android.content.IntentSender
 import com.falcon.split.SignInResult
 import com.falcon.split.UserModelGoogleFirebaseBased
-import com.falcon.split.data.FirestoreManager
+import com.falcon.split.data.auth.GoBackendManager
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
 import com.google.android.gms.auth.api.identity.SignInClient
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
-class GoogleAuthUiClient(
+class GoBackendAuthUiClient(
     private val context: Context,
     private val oneTapClient: SignInClient,
-    private val firestoreManager: FirestoreManager = FirestoreManager()
+    private val goBackendManager: GoBackendManager
 ) : AuthUiClient {
-    private val auth = Firebase.auth
 
     override suspend fun signIn(): IntentSender? {
         val result = try {
             oneTapClient.beginSignIn(
                 buildSignInRequest()
             ).await()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
-            if(e is CancellationException) throw e
+            if (e is CancellationException) throw e
             null
         }
         return result?.pendingIntent?.intentSender
@@ -38,24 +34,30 @@ class GoogleAuthUiClient(
     override suspend fun signInWithIntent(intent: Intent): SignInResult {
         val credential = oneTapClient.getSignInCredentialFromIntent(intent)
         val googleIdToken = credential.googleIdToken
-        val googleCredentials = GoogleAuthProvider.getCredential(googleIdToken, null)
 
         return try {
-            val firebaseUser = auth.signInWithCredential(googleCredentials).await().user
-            SignInResult(
-                data = firebaseUser?.run {
-                    UserModelGoogleFirebaseBased(
-                        userId = uid,
-                        username = displayName,
-                        profilePictureUrl = photoUrl?.toString(),
-                        email = email
+            if (googleIdToken != null) {
+                val result = goBackendManager.authenticateWithGoogle(googleIdToken)
+                if (result.isSuccess) {
+                    SignInResult(
+                        data = result.getOrNull(),
+                        errorMessage = null
                     )
-                },
-                errorMessage = null
-            )
-        } catch(e: Exception) {
+                } else {
+                    SignInResult(
+                        data = null,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Authentication failed"
+                    )
+                }
+            } else {
+                SignInResult(
+                    data = null,
+                    errorMessage = "Failed to get Google ID token"
+                )
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
-            if(e is CancellationException) throw e
+            if (e is CancellationException) throw e
             SignInResult(
                 data = null,
                 errorMessage = e.message
@@ -66,20 +68,15 @@ class GoogleAuthUiClient(
     override suspend fun signOut() {
         try {
             oneTapClient.signOut().await()
-            auth.signOut()
-        } catch(e: Exception) {
+            goBackendManager.signOut()
+        } catch (e: Exception) {
             e.printStackTrace()
-            if(e is CancellationException) throw e
+            if (e is CancellationException) throw e
         }
     }
 
-    override fun getSignedInUser(): UserModelGoogleFirebaseBased? = auth.currentUser?.run {
-        UserModelGoogleFirebaseBased(
-            userId = uid,  // Use Firebase UID
-            username = displayName,
-            profilePictureUrl = photoUrl?.toString(),
-            email = email
-        )
+    override fun getSignedInUser(): UserModelGoogleFirebaseBased? {
+        return goBackendManager.getCurrentUser()
     }
 
     private fun buildSignInRequest(): BeginSignInRequest {
@@ -96,9 +93,13 @@ class GoogleAuthUiClient(
     }
 
     override suspend fun updateUserWithPhoneNumber(phoneNumber: String): Result<Unit> {
-        val currentUser = getSignedInUser() ?: return Result.failure(
-            IllegalStateException("No signed in user found")
-        )
-        return firestoreManager.createOrUpdateUser(currentUser, phoneNumber)
+        return try {
+            val profileManager =
+                goBackendManager.userProfileManager as? com.falcon.split.AndroidUserManager.GoBackendUserProfileManager
+            profileManager?.updatePhoneNumber(phoneNumber)
+                ?: Result.failure(Exception("Profile manager not available"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
