@@ -20,8 +20,77 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.falcon.split.data.network.models.UserModelGoogleCloudBased
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+
+private val TOKEN_KEY = stringPreferencesKey("auth_token")
+private val USER_ID_KEY = stringPreferencesKey("user_id")
+private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
+private val USER_NAME_KEY = stringPreferencesKey("user_name")
+private val USER_PHONE_KEY = stringPreferencesKey("user_phone")
+
+
+suspend fun saveToken(token: String, dataStore: DataStore<Preferences>) {
+    dataStore.edit { preferences ->
+        preferences[TOKEN_KEY] = token
+    }
+}
+suspend fun getToken(dataStore: DataStore<Preferences>): String? {
+    return dataStore.data.map { preferences ->
+        preferences[TOKEN_KEY]
+    }.first()
+}
+
+suspend fun saveUserInfo(dataStore: DataStore<Preferences>, userId: String, email: String, name: String, phone: String = "") {
+    dataStore.edit { preferences ->
+        preferences[USER_ID_KEY] = userId
+        preferences[USER_EMAIL_KEY] = email
+        preferences[USER_NAME_KEY] = name
+        preferences[USER_PHONE_KEY] = phone
+    }
+}
+
+suspend fun getUserId(dataStore: DataStore<Preferences>): String? {
+    return dataStore.data.map { preferences ->
+        preferences[USER_ID_KEY]
+    }.first()
+}
+
+suspend fun getUserEmail(dataStore: DataStore<Preferences>): String? {
+    return dataStore.data.map { preferences ->
+        preferences[USER_EMAIL_KEY]
+    }.first()
+}
+
+suspend fun getUserName(dataStore: DataStore<Preferences>): String? {
+    return dataStore.data.map { preferences ->
+        preferences[USER_NAME_KEY]
+    }.first()
+}
+
+suspend fun getUserPhone(dataStore: DataStore<Preferences>): String? {
+    return dataStore.data.map { preferences ->
+        preferences[USER_PHONE_KEY]
+    }.first()
+}
+
+suspend fun clearToken(dataStore: DataStore<Preferences>) {
+    dataStore.edit { preferences ->
+        preferences.remove(TOKEN_KEY)
+        preferences.remove(USER_ID_KEY)
+        preferences.remove(USER_EMAIL_KEY)
+        preferences.remove(USER_NAME_KEY)
+        preferences.remove(USER_PHONE_KEY)
+    }
+}
+
+suspend fun isLoggedIn(dataStore: DataStore<Preferences>): Boolean {
+    val token = getToken(dataStore)
+    val userId = getUserId(dataStore)
+    return !token.isNullOrEmpty() && !userId.isNullOrEmpty()
+}
 
 suspend fun isDarkThemeEnabled(prefs: DataStore<Preferences>): Boolean {
     val darkThemeKey = booleanPreferencesKey("is_dark_theme_enabled")

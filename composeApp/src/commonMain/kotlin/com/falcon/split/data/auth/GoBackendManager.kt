@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.HistoryRepository
 import com.falcon.split.UserModelGoogleFirebaseBased
+import com.falcon.split.clearToken
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.repository.ExpenseRepository
@@ -12,12 +13,18 @@ import com.falcon.split.data.repository.GoBackendGroupRepository
 import com.falcon.split.data.repository.GoBackendHistoryRepository
 import com.falcon.split.data.repository.GoBackendUserRepository
 import com.falcon.split.data.repository.GroupRepository
+import com.falcon.split.getToken
+import com.falcon.split.getUserEmail
+import com.falcon.split.getUserId
+import com.falcon.split.getUserName
+import com.falcon.split.getUserPhone
+import com.falcon.split.isLoggedIn
+import com.falcon.split.saveToken
+import com.falcon.split.saveUserInfo
 
-class GoBackendManager(dataStore: DataStore<Preferences>) {
+class GoBackendManager(private val dataStore: DataStore<Preferences>) {
 
-    private val tokenManager = TokenManager(dataStore)
-
-    private val ktorApiClient = KtorApiClient { tokenManager.getToken() }
+    private val ktorApiClient = KtorApiClient { getToken(dataStore) }
 
     // Repository instances
     private val userRepository = GoBackendUserRepository(ktorApiClient)
@@ -27,7 +34,7 @@ class GoBackendManager(dataStore: DataStore<Preferences>) {
 
     // Manager instances
     val userProfileManager: UserProfileManager =
-        GoBackendUserProfileManager(tokenManager, userRepository)
+        GoBackendUserProfileManager(userRepository, dataStore)
 
     // Authentication methods
     suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleFirebaseBased> {
@@ -36,12 +43,13 @@ class GoBackendManager(dataStore: DataStore<Preferences>) {
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
                 // Save authentication data
-                tokenManager.saveToken(user.token)
-                tokenManager.saveUserInfo(
+                saveToken(user.token, dataStore)
+                saveUserInfo(
                     userId = user.uid,
                     email = user.email,
                     name = user.displayName,
-                    phone = user.phoneNumber
+                    phone = user.phoneNumber,
+                    dataStore = dataStore
                 )
 
                 // Return user model in expected format
@@ -61,17 +69,17 @@ class GoBackendManager(dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun isLoggedIn(): Boolean {
-        return tokenManager.isLoggedIn()
+    suspend fun isLogedIn(): Boolean {
+        return isLoggedIn(dataStore)
     }
 
     suspend fun getCurrentUser(): UserModelGoogleFirebaseBased? {
-        return if (tokenManager.isLoggedIn()) {
+        return if (isLoggedIn(dataStore)) {
             UserModelGoogleFirebaseBased(
-                userId = tokenManager.getUserId(),
-                username = tokenManager.getUserName(),
-                email = tokenManager.getUserEmail(),
-                phoneNumber = tokenManager.getUserPhone(),
+                userId = getUserId(dataStore),
+                username = getUserName(dataStore),
+                email = getUserEmail(dataStore),
+                phoneNumber = getUserPhone(dataStore),
                 profilePictureUrl = null // Not stored currently
             )
         } else {
@@ -80,7 +88,7 @@ class GoBackendManager(dataStore: DataStore<Preferences>) {
     }
 
     suspend fun signOut() {
-        tokenManager.clearToken()
+        clearToken(dataStore)
         ktorApiClient.close()
     }
 }

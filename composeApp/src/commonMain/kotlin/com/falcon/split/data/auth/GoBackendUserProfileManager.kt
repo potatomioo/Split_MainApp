@@ -1,11 +1,17 @@
 package com.falcon.split.data.auth
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.repository.GoBackendUserRepository
+import com.falcon.split.getUserEmail
+import com.falcon.split.getUserId
+import com.falcon.split.getUserName
+import com.falcon.split.saveUserInfo
 
 class GoBackendUserProfileManager(
-    private val tokenManager: TokenManager,
-    private val userRepository: GoBackendUserRepository
+    private val userRepository: GoBackendUserRepository,
+    private val dataStore: DataStore<Preferences>
 ) : UserProfileManager {
 
     override suspend fun updateUserUpiId(upiId: String): Result<Unit> {
@@ -20,10 +26,10 @@ class GoBackendUserProfileManager(
             val result = userRepository.updatePhoneNumber(phoneNumber)
             if (result.isSuccess) {
                 // Update local storage with new phone number
-                val userId = tokenManager.getUserId() ?: ""
-                val email = tokenManager.getUserEmail() ?: ""
-                val name = tokenManager.getUserName() ?: ""
-                tokenManager.saveUserInfo(userId, email, name, phoneNumber)
+                val userId = getUserId(dataStore) ?: ""
+                val email = getUserEmail(dataStore) ?: ""
+                val name = getUserName(dataStore) ?: ""
+                saveUserInfo(dataStore, userId, email, name, phoneNumber)
             }
             result.map { }
         } catch (e: Exception) {
