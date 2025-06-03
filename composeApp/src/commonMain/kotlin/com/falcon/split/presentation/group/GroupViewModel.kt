@@ -1,5 +1,7 @@
 package com.falcon.split.presentation.group
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.falcon.split.data.repository.ExpenseRepository
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 class GroupViewModel(
     private val groupRepository: GroupRepository,
     private val expenseRepository: ExpenseRepository,
+    private val prefs: DataStore<Preferences>,
 ) : ViewModel() {
     private val _groupState = MutableStateFlow<GroupState>(GroupState.Loading)
     val groupState = _groupState.asStateFlow()
@@ -30,7 +33,7 @@ class GroupViewModel(
     private val _settlements = MutableStateFlow<List<Settlement>>(emptyList())
     val settlements = _settlements.asStateFlow()
 
-    val currentUserId = "384394834938489"// userManager.getCurrentUserId() // TODO: FIX THIS
+    val currentUserId = "384394834938489"// getCurrentUserId(prefs) // TODO: FIX THIS
 
     private val _pendingSettlements = MutableStateFlow<List<Settlement>>(emptyList())
     val pendingSettlements = _pendingSettlements.asStateFlow()

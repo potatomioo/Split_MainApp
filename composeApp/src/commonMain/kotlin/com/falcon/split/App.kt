@@ -156,6 +156,7 @@ fun App(
     val groupViewModelForPayment = GroupViewModel(
         groupRepository,
         expenseRepository,
+        prefs,
     )
 
     when(viewModel.notificationPermissionState) {
@@ -281,7 +282,8 @@ fun App(
                 val openUserOptionsMenu = remember { mutableStateOf(false) } // In Future Replace It With Bottom - Sheet
                 val groupViewModel = remember { GroupViewModel(
                     groupRepository,
-                    expenseRepository
+                    expenseRepository,
+                    prefs
                 ) }
                 val historyViewModel = remember {
                     HistoryViewModel(
@@ -385,6 +387,7 @@ fun App(
                 val groupViewModel = remember { GroupViewModel(
                     groupRepository,
                     expenseRepository,
+                    prefs,
                 ) }
                 GroupDetailsScreen(
                     groupId = groupId,
@@ -403,7 +406,8 @@ fun App(
             ){
                 val viewModel = remember { GroupViewModel(
                     groupRepository,
-                    expenseRepository = expenseRepository
+                    expenseRepository = expenseRepository,
+                    prefs
                 )}
                 SettleUpScreen(
                     navController = navControllerMain,
