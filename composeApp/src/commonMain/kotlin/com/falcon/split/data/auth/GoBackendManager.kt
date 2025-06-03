@@ -12,7 +12,6 @@ import com.falcon.split.data.repository.GoBackendGroupRepository
 import com.falcon.split.data.repository.GoBackendHistoryRepository
 import com.falcon.split.data.repository.GoBackendUserRepository
 import com.falcon.split.data.repository.GroupRepository
-import com.falcon.split.userManager.UserManager
 
 class GoBackendManager(dataStore: DataStore<Preferences>) {
 
@@ -27,7 +26,6 @@ class GoBackendManager(dataStore: DataStore<Preferences>) {
     val historyRepository: HistoryRepository = GoBackendHistoryRepository(ktorApiClient)
 
     // Manager instances
-    val userManager: UserManager = GoBackendUserManager(tokenManager)
     val userProfileManager: UserProfileManager =
         GoBackendUserProfileManager(tokenManager, userRepository)
 

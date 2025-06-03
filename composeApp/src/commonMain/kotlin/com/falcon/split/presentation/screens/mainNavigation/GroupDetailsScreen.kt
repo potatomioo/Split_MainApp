@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,10 +52,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -85,17 +81,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.network.models_app.Expense
-import com.falcon.split.data.network.models_app.ExpenseSplit
 import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
@@ -112,7 +105,6 @@ import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
-import com.falcon.split.userManager.UserManager
 import com.falcon.split.util.DateTimeUtil
 import com.falcon.split.utils.MemberNameResolver
 import kotlinx.coroutines.launch
@@ -143,7 +135,6 @@ fun GroupDetailsScreen(
     navControllerMain: NavHostController,
     contactManager: ContactManager?,
     viewModel: GroupViewModel,
-    userManager: UserManager,
     snackbarHostState: SnackbarHostState
 ) {
     val colors = LocalSplitColors.current

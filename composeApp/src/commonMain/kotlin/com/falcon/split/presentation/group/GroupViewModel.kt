@@ -7,7 +7,6 @@ import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
 import com.falcon.split.presentation.expense.ExpenseState
-import com.falcon.split.userManager.UserManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -18,7 +17,6 @@ import kotlinx.coroutines.launch
 class GroupViewModel(
     private val groupRepository: GroupRepository,
     private val expenseRepository: ExpenseRepository,
-    userManager: UserManager
 ) : ViewModel() {
     private val _groupState = MutableStateFlow<GroupState>(GroupState.Loading)
     val groupState = _groupState.asStateFlow()

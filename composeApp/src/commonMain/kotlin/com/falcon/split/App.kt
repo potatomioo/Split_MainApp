@@ -142,7 +142,6 @@ fun App(
     val groupRepository by lazy { goBackendManager.groupRepository }
     val expenseRepository by lazy { goBackendManager.expenseRepository }
     val historyRepository by lazy { goBackendManager.historyRepository }
-    val userManager by lazy { goBackendManager.userManager }
     val userProfileManager by lazy { goBackendManager.userProfileManager }
 
     // Create a shared BackHandler instance
@@ -155,9 +154,8 @@ fun App(
     }
 
     val groupViewModelForPayment = GroupViewModel(
-        groupRepository!!,
-        expenseRepository!!,
-        userManager
+        groupRepository,
+        expenseRepository,
     )
 
     when(viewModel.notificationPermissionState) {
@@ -247,7 +245,7 @@ fun App(
             SnackbarHost(hostState = snackBarHostState)
         }
     ) {
-        var startDestination = runBlocking {
+        val startDestination = runBlocking {
             if (getFirebaseUserAsUserModel(prefs) != null) Routes.APP_CONTENT.name else Routes.WELCOME_PAGE.name
         }
         NavHost(navController = navControllerMain, startDestination = startDestination) {
@@ -283,8 +281,7 @@ fun App(
                 val openUserOptionsMenu = remember { mutableStateOf(false) } // In Future Replace It With Bottom - Sheet
                 val groupViewModel = remember { GroupViewModel(
                     groupRepository,
-                    expenseRepository,
-                    userManager
+                    expenseRepository
                 ) }
                 val historyViewModel = remember {
                     HistoryViewModel(
@@ -311,7 +308,7 @@ fun App(
                 }
             }
             composable(Routes.CREATE_GROUP.name) {
-                val createGroupViewModel = remember { CreateGroupViewModel(groupRepository!!) }
+                val createGroupViewModel = remember { CreateGroupViewModel(groupRepository) }
                 CreateGroupScreen(
                     onGroupCreated = { groupId ->
                         scope.launch {
@@ -346,7 +343,9 @@ fun App(
                 })
             ) { backStackEntry ->
                 val groupId = backStackEntry.arguments?.getString("groupId")
-                val createExpenseViewModel = remember{ CreateExpenseViewModel(groupRepository!!,expenseRepository!!) }
+                val createExpenseViewModel = remember{ CreateExpenseViewModel(groupRepository,
+                    expenseRepository
+                ) }
                 CreateExpense(
                     navControllerMain = navControllerMain,
                     onNavigateBack = { navControllerMain.popBackStack() },
@@ -384,9 +383,8 @@ fun App(
             ) { backStackEntry ->
                 val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
                 val groupViewModel = remember { GroupViewModel(
-                    groupRepository!!,
-                    expenseRepository!!,
-                    userManager
+                    groupRepository,
+                    expenseRepository,
                 ) }
                 GroupDetailsScreen(
                     groupId = groupId,
@@ -397,7 +395,6 @@ fun App(
                     navControllerMain = navControllerMain,
                     contactManager = contactManager,
                     viewModel = groupViewModel,
-                    userManager = userManager,
                     snackBarHostState
                 )
             }
@@ -405,9 +402,8 @@ fun App(
                 route = Routes.SETTLE_UP.name
             ){
                 val viewModel = remember { GroupViewModel(
-                    groupRepository!!,
-                    expenseRepository = expenseRepository!!,
-                    userManager = userManager
+                    groupRepository,
+                    expenseRepository = expenseRepository
                 )}
                 SettleUpScreen(
                     navController = navControllerMain,
@@ -420,7 +416,7 @@ fun App(
                 route = Routes.MAIN_HISTORY.name
             ){
                 HistoryScreen(
-                    historyViewModel = HistoryViewModel(historyRepository!!),
+                    historyViewModel = HistoryViewModel(historyRepository),
                     prefs = prefs,
                     newsViewModel = mainViewModel,
                     snackBarHostState = snackBarHostState,
