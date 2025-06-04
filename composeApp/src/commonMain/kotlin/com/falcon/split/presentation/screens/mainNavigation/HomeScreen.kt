@@ -117,7 +117,7 @@ fun HomeScreen(
     topPadding : Dp,
     viewModel: GroupViewModel,
     historyViewModel: HistoryViewModel,
-    pagerState: PagerState
+    onSwitchToTab: (Int) -> Unit
     ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
@@ -346,7 +346,7 @@ fun HomeScreen(
                     actionText = "See All",
                     onActionClick = {
                         scope.launch {
-                            pagerState.animateScrollToPage(2)
+                            onSwitchToTab(3)
                         }
                     }
                 )
@@ -414,7 +414,7 @@ fun HomeScreen(
                     actionText = "View All",
                     onActionClick = {
                         scope.launch {
-                            pagerState.animateScrollToPage(1)
+                            onSwitchToTab(1)
                         }
                     }
                 )
