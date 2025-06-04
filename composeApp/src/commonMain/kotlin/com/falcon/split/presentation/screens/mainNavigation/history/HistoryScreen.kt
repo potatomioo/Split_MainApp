@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
-import com.falcon.split.MainViewModel
 
 
 //@Composable

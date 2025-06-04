@@ -29,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,14 +60,12 @@ import coil3.request.crossfade
 import coil3.util.DebugLogger
 import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.backhandler.BackHandler
-import com.falcon.split.presentation.theme.LocalSplitColors
-import com.falcon.split.presentation.expense.CreateExpenseViewModel
-import com.falcon.split.presentation.group.CreateGroupViewModel
-import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.auth.GoBackendManager
 import com.falcon.split.data.network.ApiClient
-import com.falcon.split.data.network.models.UserState
+import com.falcon.split.presentation.expense.CreateExpenseViewModel
+import com.falcon.split.presentation.group.CreateGroupViewModel
+import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.WelcomePage
 import com.falcon.split.presentation.screens.mainNavigation.CreateExpense
 import com.falcon.split.presentation.screens.mainNavigation.CreateGroupScreen
@@ -76,11 +73,12 @@ import com.falcon.split.presentation.screens.mainNavigation.GroupDetailsScreen
 import com.falcon.split.presentation.screens.mainNavigation.NavHostMain
 import com.falcon.split.presentation.screens.mainNavigation.ProfileScreen
 import com.falcon.split.presentation.screens.mainNavigation.Routes
-import com.falcon.split.presentation.screens.mainNavigation.navigateTo
 import com.falcon.split.presentation.screens.mainNavigation.SettingScreen
 import com.falcon.split.presentation.screens.mainNavigation.SettleUpScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
+import com.falcon.split.presentation.screens.mainNavigation.navigateTo
+import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.screens.mainNavigation.PaymentScreen
 import com.falcon.split.utils.rememberEmailUtils
@@ -228,9 +226,6 @@ fun App(
         authReady = true
     }
     val navControllerMain = rememberNavController()
-    val mainViewModel: MainViewModel = viewModel(
-        factory = MainViewModelFactory(client, prefs)
-    )
 
     // Handle system back button for the appBackHandler
     DisposableEffect(Unit) {
@@ -276,7 +271,7 @@ fun App(
                 WelcomePage(navControllerMain)
             }
             composable(Routes.SIGN_IN.name) {
-                GoogleCloudBasedGoogleSignInForKMM(prefs, navControllerMain, authReady, mainViewModel, scope) // Google Cloud Based Google Sign In For KMM, Works In KMM but need to setup separate server for JWT Token Conversion As Google Auth Id Provided By It is Temporary.
+                GoogleCloudBasedGoogleSignInForKMM(prefs, navControllerMain, authReady,  scope, goBackendManager) // Google Cloud Based Google Sign In For KMM, Works In KMM but need to setup separate server for JWT Token Conversion As Google Auth Id Provided By It is Temporary.
             }
             composable(Routes.APP_CONTENT.name) {
                 val openUserOptionsMenu = remember { mutableStateOf(false) } // In Future Replace It With Bottom - Sheet
@@ -392,9 +387,6 @@ fun App(
                 GroupDetailsScreen(
                     groupId = groupId,
                     onNavigateBack = { navControllerMain.popBackStack() },
-//                    onAddExpense = { groupId ->
-//                        navControllerMain.navigate("add_expense/$groupId")
-//                    },
                     navControllerMain = navControllerMain,
                     contactManager = contactManager,
                     viewModel = groupViewModel,
@@ -422,7 +414,6 @@ fun App(
                 HistoryScreen(
                     historyViewModel = HistoryViewModel(historyRepository),
                     prefs = prefs,
-                    newsViewModel = mainViewModel,
                     snackBarHostState = snackBarHostState,
                     navControllerMain = navControllerMain
                 )
@@ -437,8 +428,8 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
     prefs: DataStore<Preferences>,
     navControllerMain: NavHostController,
     authReady: Boolean,
-    newsViewModel: MainViewModel,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    goBackendManager: GoBackendManager
 ) {
     LaunchedEffect(Unit) {
         val user = getUserAsUserModel(prefs)
@@ -459,10 +450,12 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
             )
             GoogleButtonUiContainer(
                 onGoogleSignInResult = { googleUser ->
-                    newsViewModel.getUserDetailsFromGoogleAuthToken(googleUser?.idToken.toString())
-                    println("Google Token:")
-                    println(googleUser?.idToken)
-                    requestSendForGetUserData.value = true
+                    scope.launch {
+                        goBackendManager.authenticateWithGoogle(googleUser?.idToken.toString())
+                        println("Google Token:")
+                        println(googleUser?.idToken)
+                        requestSendForGetUserData.value = true
+                    }
                 }
             ) {
                 GoogleSignInButton(
@@ -476,38 +469,38 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
             )
         }
     }
-    if (requestSendForGetUserData.value) {
-        val userState by newsViewModel.userDetails.collectAsState()
-        when (userState) {
-            is UserState.Error -> {
-                val error = (userState as UserState.Error).error
-                println("ERROR_TAG" + error.name)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                ) {
-                    Text(
-                        text = "Error loading user: ${error.name}",
-                        modifier = Modifier.padding(lDimens.dp16)
-                    )
-                }
-            }
-
-            is UserState.Loading -> {
-                SignInProgressPopup()
-            }
-
-            is UserState.Success -> {
-                // Saving the User Details and navigate further
-                val user = (userState as UserState.Success).user
-                scope.launch {
-                    saveUser(prefs, user)
-                    navControllerMain.navigate(Routes.APP_CONTENT.name)
-                }
-            }
-        }
-    }
+//    if (requestSendForGetUserData.value) { // TODO: HANDLE THIS SHIT
+//        val userState by newsViewModel.userDetails.collectAsState()
+//        when (userState) {
+//            is UserState.Error -> {
+//                val error = (userState as UserState.Error).error
+//                println("ERROR_TAG" + error.name)
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(Color.White)
+//                ) {
+//                    Text(
+//                        text = "Error loading user: ${error.name}",
+//                        modifier = Modifier.padding(lDimens.dp16)
+//                    )
+//                }
+//            }
+//
+//            is UserState.Loading -> {
+//                SignInProgressPopup()
+//            }
+//
+//            is UserState.Success -> {
+//                // Saving the User Details and navigate further
+//                val user = (userState as UserState.Success).user
+//                scope.launch {
+//                    saveUser(prefs, user)
+//                    navControllerMain.navigate(Routes.APP_CONTENT.name)
+//                }
+//            }
+//        }
+//    }
 }
 @Composable
 fun OptionMenuPopup(

@@ -2,7 +2,6 @@ package com.falcon.split.presentation.screens.mainNavigation
 
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,7 +64,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
-import com.falcon.split.MainViewModel
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.data.network.models_app.Settlement
@@ -92,14 +90,12 @@ import split.composeapp.generated.resources.HomePic
 import split.composeapp.generated.resources.Res
 import split.composeapp.generated.resources.SplitGold
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
 fun HomeScreen(
     onNavigate: (rootName: String) -> Unit,
     prefs: DataStore<Preferences>,
     snackBarHostState: SnackbarHostState,
     navControllerBottomNav: NavHostController,
-    mainViewModel: MainViewModel,
     navControllerMain: NavHostController,
     topPadding : Dp,
     viewModel: GroupViewModel,

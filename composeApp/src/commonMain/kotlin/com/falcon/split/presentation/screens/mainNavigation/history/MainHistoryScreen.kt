@@ -74,7 +74,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.falcon.split.MainViewModel
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models_app.SettlementStatus
 import com.falcon.split.presentation.history.HistoryActionType
@@ -103,12 +102,10 @@ import split.composeapp.generated.resources.DeclineSettlement
 import split.composeapp.generated.resources.Res
 import split.composeapp.generated.resources.Settlement
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     historyViewModel: HistoryViewModel,
     prefs: DataStore<Preferences>,
-    newsViewModel: MainViewModel,
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController
 ) {

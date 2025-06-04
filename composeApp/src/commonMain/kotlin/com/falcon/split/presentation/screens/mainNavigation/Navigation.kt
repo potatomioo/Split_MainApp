@@ -48,8 +48,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.falcon.split.MainViewModel
-import com.falcon.split.MainViewModelFactory
 import com.falcon.split.presentation.theme.LocalSplitColors
 //import com.falcon.split.presentation.theme.getAppTypography
 import com.falcon.split.data.network.ApiClient
@@ -117,7 +115,6 @@ import kotlinx.datetime.toLocalDateTime
 import split.composeapp.generated.resources.Split
 
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun NavHostMain(
     client: ApiClient,
     navControllerBottomNav: NavHostController = rememberNavController(),
@@ -163,10 +160,6 @@ fun NavHostMain(
         BottomBarScreen.Home,
         BottomBarScreen.History,
         BottomBarScreen.Groups
-    )
-
-    val historyVM: MainViewModel = viewModel(
-        factory = MainViewModelFactory(client, prefs)
     )
 
 
@@ -589,7 +582,6 @@ fun NavHostMain(
                         prefs,
                         snackBarHostState,
                         navControllerBottomNav,
-                        historyVM,
                         navControllerMain,
                         topPadding = innerPadding.calculateTopPadding(),
                         viewModel = viewModel,
@@ -599,7 +591,6 @@ fun NavHostMain(
                     1 -> IntegratedHistoryScreen(
                         onNavigate,
                         prefs,
-                        historyVM,
                         snackBarHostState,
                         navControllerMain,
                         historyViewModel = historyViewModel
@@ -760,7 +751,6 @@ fun navigateTo(
 fun IntegratedHistoryScreen(
     onNavigate: (rootName: String) -> Unit,
     prefs: DataStore<Preferences>,
-    newsViewModel: MainViewModel,
     snackBarHostState: androidx.compose.material3.SnackbarHostState,
     navControllerMain: NavHostController,
     modifier: Modifier = Modifier,
@@ -770,7 +760,6 @@ fun IntegratedHistoryScreen(
     HistoryScreen(
         historyViewModel = historyViewModel,
         prefs = prefs,
-        newsViewModel = newsViewModel,
         snackBarHostState = snackBarHostState,
         navControllerMain = navControllerMain,
     )
