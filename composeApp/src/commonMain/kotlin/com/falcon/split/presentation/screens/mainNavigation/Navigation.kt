@@ -143,17 +143,10 @@ fun NavHostMain(
     historyViewModel: HistoryViewModel,
     darkTheme: MutableState<Boolean>
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        pageCount = { 3 }
-    )
     var selectedItemIndex by rememberSaveable {
         mutableStateOf(0)
     }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(pagerState.currentPage) {
-        selectedItemIndex = pagerState.currentPage
-    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val openDrawer = remember { mutableStateOf(false) }
@@ -176,6 +169,7 @@ fun NavHostMain(
     val screens = listOf(
         BottomBarScreen.Home,
         BottomBarScreen.History,
+        BottomBarScreen.Requests,
         BottomBarScreen.Groups
     )
 
@@ -187,6 +181,17 @@ fun NavHostMain(
     val colors = LocalSplitColors.current
 
     val emailUtils = rememberEmailUtils()
+
+    val switchToTab = remember {
+        { tabIndex: Int ->
+            selectedItemIndex = tabIndex
+            // Save the new index
+            navControllerMain.currentBackStackEntry?.savedStateHandle?.set(
+                "SELECTED_TAB_INDEX",
+                tabIndex
+            )
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -527,7 +532,7 @@ fun NavHostMain(
 
                         Spacer(modifier = Modifier.width(lDimens.dp10))
 
-                        if (pagerState.currentPage == 0) {
+                        if (selectedItemIndex == 0) {
                             // For Home screen, show greeting with colored firstName
                             val (greeting, firstName) = getGreetingParts(userModel?.username ?: "User")
 
@@ -549,7 +554,7 @@ fun NavHostMain(
                         } else {
                             // For other screens, show title
                             Text(
-                                text = getTitle(pagerState.currentPage),
+                                text = getTitle(selectedItemIndex),
                                 color = colors.textPrimary,
                                 style = getSplitTypography().headlineLarge
                             )
@@ -572,10 +577,11 @@ fun NavHostMain(
                                 unSelectedIcon = item.unSelectedIcon,
                                 label = item.title,
                                 onClick = {
+                                    navControllerMain.currentBackStackEntry?.savedStateHandle?.set(
+                                        "SELECTED_TAB_INDEX",
+                                        item.index
+                                    )
                                     selectedItemIndex = item.index
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(item.index)
-                                    }
                                 },
                                 selected = mutableStateOf(selectedItemIndex == item.index),
                                 hasUpdate = item.hasUpdate,
@@ -586,8 +592,38 @@ fun NavHostMain(
                 }
             }
         ) { innerPadding ->
-            HorizontalPager(
-                state = pagerState,
+
+            DisposableEffect(navControllerMain) {
+                val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                    navControllerMain.currentBackStackEntry?.savedStateHandle?.set(
+                        "SELECTED_TAB_INDEX",
+                        selectedItemIndex
+                    )
+                }
+
+                navControllerMain.addOnDestinationChangedListener(listener)
+
+                onDispose {
+                    navControllerMain.removeOnDestinationChangedListener(listener)
+                }
+            }
+
+            LaunchedEffect(navControllerMain.currentDestination) {
+                val currentRoute = navControllerMain.currentDestination?.route
+                if (currentRoute == null || currentRoute.contains("nav_host_main")) {
+                    navControllerMain.previousBackStackEntry?.savedStateHandle?.get<Int>("SELECTED_TAB_INDEX")?.let { savedIndex ->
+                        selectedItemIndex = savedIndex
+                    }
+                }
+            }
+
+            LaunchedEffect(navControllerMain.currentBackStackEntry) {
+                navControllerMain.currentBackStackEntry?.savedStateHandle?.get<Int>("SELECTED_TAB_INDEX")?.let { savedIndex ->
+                    selectedItemIndex = savedIndex
+                }
+            }
+
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(
@@ -596,8 +632,8 @@ fun NavHostMain(
                         bottom = innerPadding.calculateBottomPadding(),
                         top = innerPadding.calculateTopPadding() - lDimens.dp3
                     )
-            ) { page ->
-                when (page) {
+            ) {
+                when (selectedItemIndex) {
                     0 -> HomeScreen(
                         onNavigate,
                         prefs,
@@ -608,7 +644,7 @@ fun NavHostMain(
                         topPadding = innerPadding.calculateTopPadding(),
                         viewModel = viewModel,
                         historyViewModel,
-                        pagerState
+                        onSwitchToTab = {switchToTab(it)}
                     )
                     1 -> IntegratedHistoryScreen(
                         onNavigate,
@@ -618,7 +654,11 @@ fun NavHostMain(
                         navControllerMain,
                         historyViewModel = historyViewModel
                     )
-                    2 -> GroupsScreen(
+                    2 -> RequestsScreen( // New Requests screen
+                        navControllerMain,
+                        viewModel
+                    )
+                    3 -> GroupsScreen(
                         onCreateGroupClick = { navControllerMain.navigate("create_group") },
                         onGroupClick = { group -> navControllerMain.navigate("group_details/${group.id}") },
                         navControllerMain,
@@ -750,7 +790,8 @@ fun getTitle(currentPage: Int): String {
     return when (currentPage) {
         0 -> "Home"
         1 -> "History"
-        2 -> "Groups"
+        2 -> "Requests"
+        3 -> "Groups"
         else -> ""
     }
 }
@@ -821,86 +862,23 @@ sealed class BottomBarScreen(
         badgeCount = mutableStateOf(0)
     )
 
-    data object Groups : BottomBarScreen(
+    data object Requests : BottomBarScreen(
         index = 2,
+        route = "REQUESTS",
+        title = "Requests",
+        unSelectedIcon = Res.drawable.group_icon_outlined,
+        selectedIcon = Res.drawable.group_icon_filled,
+        badgeCount = mutableStateOf(0)
+    )
+
+    data object Groups : BottomBarScreen(
+        index = 3,
         route = "PROFILE",
         title = "Groups",
         unSelectedIcon = Res.drawable.group_icon_outlined,
         selectedIcon = Res.drawable.group_icon_filled,
         hasUpdate = mutableStateOf(false)
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(
-    title: String,
-    canNavigateBack: Boolean,
-    navigateUp: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colors = LocalSplitColors.current
-
-    TopAppBar(
-        title = { Text(title, color = colors.textPrimary) },
-        colors = TopAppBarDefaults.mediumTopAppBarColors(
-            containerColor = colors.backgroundSecondary
-        ),
-        modifier = modifier,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = navigateUp) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "back_button",
-                        tint = colors.textPrimary
-                    )
-                }
-            }
-        }
-    )
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavHostController,
-) {
-    val homeItem = BottomBarScreen.Home
-    val reelsItem = BottomBarScreen.History
-    val profileItem = BottomBarScreen.Groups
-
-    val screens = listOf(
-        homeItem,
-        reelsItem,
-        profileItem
-    )
-    var selectedItemIndex by rememberSaveable {
-        mutableStateOf(1)
-    }
-    AppBottomNavigationBar(
-        show = true,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            screens.forEach { item->
-                AppBottomNavigationBarItem(
-                    selectedIcon = item.selectedIcon,
-                    unSelectedIcon = item.unSelectedIcon,
-                    label = item.title,
-                    onClick = {
-                        selectedItemIndex = item.index
-                        navigateBottomBar(navController, item.route)
-                    },
-                    selected = mutableStateOf(selectedItemIndex == item.index),
-                    hasUpdate = item.hasUpdate,
-                    badgeCount = item.badgeCount
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -1026,28 +1004,3 @@ fun getGreetingParts(name: String): Pair<String, String> {
 
     return Pair(greeting, firstName)
 }
-
-
-private fun navigateBottomBar(navController: NavController, destination: String) {
-    navController.navigate(destination) {
-        navController.graph.startDestinationRoute?.let { route ->
-            popUpTo(BottomBarScreen.Home.route) {
-                saveState = true
-            }
-        }
-        launchSingleTop = true
-        restoreState = true
-    }
-}
-
-private val NavController.shouldShowBottomBar
-    get() = when (this.currentBackStackEntry?.destination?.route) {
-        BottomBarScreen.Home.route,
-        BottomBarScreen.History.route,
-        BottomBarScreen.Groups.route,
-            -> true
-
-        else -> false
-    }
-
-val items = listOf("feed", "news", "timeline")
