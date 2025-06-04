@@ -222,7 +222,7 @@ fun App(
     LaunchedEffect(Unit) {
         GoogleAuthProvider.create(
             credentials = GoogleAuthCredentials(
-                serverId = "280065041634-08vjbkjqvjmpl24nuplrl47dicvl92v3.apps.googleusercontent.com"
+                serverId = "753903537833-4gasfl6tv9ruc52arlaj8cm3mdr5b7iv.apps.googleusercontent.com"
             )
         )
         authReady = true
