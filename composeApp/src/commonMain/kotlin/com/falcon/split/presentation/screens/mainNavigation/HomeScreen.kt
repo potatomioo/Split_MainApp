@@ -1,7 +1,6 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
 
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -25,15 +24,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,14 +41,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -73,16 +66,13 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
 import com.falcon.split.MainViewModel
-import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupType
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
-import com.falcon.split.presentation.expense.ExpenseState
 import com.falcon.split.presentation.group.GroupState
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.history.HistoryState
-import com.falcon.split.presentation.screens.mainNavigation.AnimationComponents.UpwardFlipHeaderImage
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryItemCard
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
 import com.falcon.split.presentation.theme.CurrencyDisplay
@@ -92,7 +82,6 @@ import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -101,9 +90,7 @@ import org.jetbrains.compose.resources.painterResource
 import split.composeapp.generated.resources.ExclusiveFeature
 import split.composeapp.generated.resources.HomePic
 import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.Split
 import split.composeapp.generated.resources.SplitGold
-import split.composeapp.generated.resources.group_icon_outlined
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
@@ -128,7 +115,7 @@ fun HomeScreen(
     val pendingSettlements by viewModel.pendingSettlements.collectAsState()
 
     // User data
-    val currentUserId = viewModel.currentUserId
+    val currentUserId by viewModel.currentUserId.collectAsState()
 
     //ProcessingSettlement
     val processingSettlementIds by viewModel.processingSettlementId.collectAsState()
@@ -974,7 +961,7 @@ fun PremiumCard(
 
 
 @Composable
-fun GroupCreationItem(group: Group, currentUserId : String) {
+fun GroupCreationItem(group: Group, currentUserId: String?) {
     val colors = LocalSplitColors.current
     val creationTime = formatExpenseDateTime(group.createdAt ?: 0L)
     val isCreatedByCurrentUser = group.createdBy == currentUserId
@@ -1047,7 +1034,7 @@ fun GroupCreationItem(group: Group, currentUserId : String) {
 }
 
 @Composable
-fun SettlementActivityItem(settlement: Settlement, currentUserId: String) {
+fun SettlementActivityItem(settlement: Settlement, currentUserId: String?) {
     val colors = LocalSplitColors.current
     val isIncoming = settlement.toUserId == currentUserId
 

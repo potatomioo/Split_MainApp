@@ -4,10 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.falcon.split.data.repository.ExpenseRepository
-import com.falcon.split.data.repository.GroupRepository
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementState
+import com.falcon.split.data.repository.ExpenseRepository
+import com.falcon.split.data.repository.GroupRepository
+import com.falcon.split.getUserId
 import com.falcon.split.presentation.expense.ExpenseState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +34,8 @@ class GroupViewModel(
     private val _settlements = MutableStateFlow<List<Settlement>>(emptyList())
     val settlements = _settlements.asStateFlow()
 
-    val currentUserId = "384394834938489"// getCurrentUserId(prefs) // TODO: FIX THIS
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    val currentUserId = _currentUserId.asStateFlow()
 
     private val _pendingSettlements = MutableStateFlow<List<Settlement>>(emptyList())
     val pendingSettlements = _pendingSettlements.asStateFlow()
@@ -49,7 +51,21 @@ class GroupViewModel(
 
 
     init {
+        loadCurrentUserId()
         loadGroups()
+    }
+
+    private fun loadCurrentUserId() {
+        viewModelScope.launch {
+            try {
+                val userId = getUserId(prefs)
+                _currentUserId.value = userId
+            } catch (e: Exception) {
+                println("Error loading user ID: ${e.message}")
+                // Fallback to hardcoded ID for development
+                _currentUserId.value = "384394834938489"
+            }
+        }
     }
 
     private fun addProcessingSettlement(settlementId: String) {
@@ -149,20 +165,23 @@ class GroupViewModel(
             _settlementState.value = SettlementState.Loading
 
             try {
-                expenseRepository.settleBalance(
-                    groupId = groupId,
-                    fromUserId = currentUserId,
-                    toUserId = toUserId,
-                    amount = amount
-                ).onSuccess {
-                    _settlementState.value = SettlementState.Success
+                currentUserId.value?.let { userId ->
+                    expenseRepository.settleBalance(
+                        groupId = groupId,
+                        fromUserId = userId,
+                        toUserId = toUserId,
+                        amount = amount
+                    ).onSuccess {
+                        _settlementState.value = SettlementState.Success
 
-                    // Reload data immediately after settlement is created
-                    loadGroupDetails(groupId)  // Reload full group data
-                    loadSettlementHistory(groupId)
-                    loadPendingSettlements()
-                }.onFailure { error ->
-                    _settlementState.value = SettlementState.Error(error.message ?: "Failed to settle")
+                        // Reload data immediately after settlement is created
+                        loadGroupDetails(groupId)  // Reload full group data
+                        loadSettlementHistory(groupId)
+                        loadPendingSettlements()
+                    }.onFailure { error ->
+                        _settlementState.value =
+                            SettlementState.Error(error.message ?: "Failed to settle")
+                    }
                 }
             } catch (e: Exception) {
                 _settlementState.value = SettlementState.Error(e.message ?: "Unknown error")
@@ -173,10 +192,12 @@ class GroupViewModel(
     fun loadPendingSettlements() {
         viewModelScope.launch {
             try {
-                expenseRepository.getPendingSettlementsForUser(currentUserId)
-                    .collect { settlements ->
-                        _pendingSettlements.value = settlements
-                    }
+                currentUserId.value?.let { userId ->
+                    expenseRepository.getPendingSettlementsForUser(userId)
+                        .collect { settlements ->
+                            _pendingSettlements.value = settlements
+                        }
+                }
             } catch (e: Exception) {
                 // Handle error
             }

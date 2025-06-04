@@ -58,8 +58,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupType
@@ -94,6 +92,7 @@ fun GroupsScreen(
 ) {
     val colors = LocalSplitColors.current
     val groupsState by viewModel.groupState.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
     val lazyState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -150,7 +149,8 @@ fun GroupsScreen(
                     val groups = (groupsState as GroupState.Success).groups
 
                     // Apply filters and search
-                    val filteredGroups = remember(groups, searchQuery, selectedFilter) {
+                    val filteredGroups =
+                        remember(groups, searchQuery, selectedFilter, currentUserId) {
                         var result = groups
 
                         // Apply search filter if query is not empty
@@ -173,7 +173,8 @@ fun GroupsScreen(
                         result = when (selectedSortOption) {
                             GroupSortOption.NEWEST -> result.sortedByDescending { it.createdAt }
                             GroupSortOption.BALANCE -> result.sortedByDescending {
-                                it.members.find { member -> member.userId == viewModel.currentUserId }?.balance ?: 0.0
+                                it.members.find { member -> member.userId == currentUserId }?.balance
+                                    ?: 0.0
                             }
                             GroupSortOption.ACTIVITY -> result // TODO: Add lastActivity timestamp to Group model
                         }
@@ -201,7 +202,8 @@ fun GroupsScreen(
                         onFilterChange = { selectedFilter = it },
                         onSortOptionChange = { selectedSortOption = it },
                         onToggleFilterOptions = { showFilterOptions = !showFilterOptions },
-                        onGroupClick = onGroupClick
+                        onGroupClick = onGroupClick,
+                        currentUserId = currentUserId ?: ""
                     )
                 }
 
@@ -354,7 +356,8 @@ fun GroupsContent(
     onFilterChange: (GroupFilter) -> Unit,
     onSortOptionChange: (GroupSortOption) -> Unit,
     onToggleFilterOptions: () -> Unit,
-    onGroupClick: (Group) -> Unit
+    onGroupClick: (Group) -> Unit,
+    currentUserId: String
 ) {
     val colors = LocalSplitColors.current
 
@@ -480,7 +483,7 @@ fun GroupsContent(
             ) { group ->
                 EnhancedGroupCard(
                     group = group,
-                    currentUserId = "user1",
+                    currentUserId = currentUserId,
                     onClick = { onGroupClick(group) },
                     modifier = Modifier
                         .fillMaxWidth()

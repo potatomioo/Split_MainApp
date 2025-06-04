@@ -81,7 +81,7 @@ fun SettleUpScreen(
     // ViewModel state
     val groupState by viewModel.groupState.collectAsState()
     val settlementState by viewModel.settlementState.collectAsState()
-    val currentUserId = viewModel.currentUserId ?: ""
+    val currentUserId = viewModel.currentUserId.value ?: ""
 
     // Screen state
     var selectedGroup by remember { mutableStateOf<Group?>(null) }

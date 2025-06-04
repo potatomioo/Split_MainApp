@@ -147,6 +147,7 @@ fun GroupDetailsScreen(
     val settlements by viewModel.settlements.collectAsState()
     val pendingSettlements by viewModel.pendingSettlements.collectAsState()
     val processingSettlementIds by viewModel.processingSettlementId.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -155,7 +156,7 @@ fun GroupDetailsScreen(
     val currentTab = GroupDetailsTab.values()[pagerState.currentPage]
 
     // Count pending settlements for badge
-    val pendingSettlementsCount = pendingSettlements.count { it.toUserId == viewModel.currentUserId }
+    val pendingSettlementsCount = pendingSettlements.count { it.toUserId == currentUserId }
 
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -333,7 +334,7 @@ fun GroupDetailsScreen(
 
                                 1 -> BalancesTab(
                                     group = group,
-                                    currentUserId = viewModel.currentUserId ?: "",
+                                    currentUserId = currentUserId ?: "",
                                     nameResolver = nameResolver,
                                     onSettleUp = { toUserId, amount ->
                                         viewModel.settleBalance(group.id, toUserId, amount)
@@ -343,7 +344,7 @@ fun GroupDetailsScreen(
 
                                 2 -> RequestsTab(
                                     pendingSettlements = pendingSettlements,
-                                    currentUserId = viewModel.currentUserId ?: "",
+                                    currentUserId = currentUserId ?: "",
                                     nameResolver = nameResolver,
                                     onApprove = { settlementId ->
                                         viewModel.approveSettlement(settlementId)
