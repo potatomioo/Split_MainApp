@@ -117,7 +117,7 @@ fun HomeScreen(
     topPadding : Dp,
     viewModel: GroupViewModel,
     historyViewModel: HistoryViewModel,
-    pagerState: PagerState
+    onSwitchToTab: (Int) -> Unit
     ) {
     val colors = LocalSplitColors.current
     val scope = rememberCoroutineScope()
@@ -346,7 +346,7 @@ fun HomeScreen(
                     actionText = "See All",
                     onActionClick = {
                         scope.launch {
-                            pagerState.animateScrollToPage(2)
+                            onSwitchToTab(3)
                         }
                     }
                 )
@@ -414,7 +414,7 @@ fun HomeScreen(
                     actionText = "View All",
                     onActionClick = {
                         scope.launch {
-                            pagerState.animateScrollToPage(1)
+                            onSwitchToTab(1)
                         }
                     }
                 )
@@ -484,68 +484,68 @@ fun HomeScreen(
             }
 
             // Pending Settlements section
-            item {
-                SectionHeader(
-                    title = "Pending Settlements",
-                    actionText = null,
-                    onActionClick = null
-                )
-
-                val incomingRequests = pendingSettlements.filter { it.toUserId == currentUserId }
-                val outgoingRequests = pendingSettlements.filter { it.fromUserId == currentUserId }
-
-                if (incomingRequests.isEmpty() && outgoingRequests.isEmpty()) {
-                    EmptyStateMessage(
-                        message = "No pending settlements",
-                        submessage = "You don't have any payment requests to approve or pending"
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier.padding(horizontal = lDimens.dp16),
-                        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
-                    ) {
-                        // Show incoming requests that need approval
-                        if (incomingRequests.isNotEmpty()) {
-                            Text(
-                                "Requests For You",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = colors.textPrimary,
-                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
-                            )
-
-                            incomingRequests.forEach { settlement ->
-                                PendingSettlementItem(
-                                    settlement = settlement,
-                                    isIncoming = true,
-                                    onApprove = { viewModel.approveSettlement(settlement.id) },
-                                    onDecline = { viewModel.declineSettlement(settlement.id) },
-                                    processingSettlements = processingSettlementIds
-                                )
-                            }
-                        }
-
-                        // Show outgoing requests that are pending approval
-                        if (outgoingRequests.isNotEmpty()) {
-                            Text(
-                                "Your Pending Requests",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = colors.textPrimary,
-                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
-                            )
-
-                            outgoingRequests.forEach { settlement ->
-                                PendingSettlementItem(
-                                    settlement = settlement,
-                                    isIncoming = false,
-                                    onApprove = null,
-                                    onDecline = null,
-                                    processingSettlements = processingSettlementIds
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+//            item {
+//                SectionHeader(
+//                    title = "Pending Settlements",
+//                    actionText = null,
+//                    onActionClick = null
+//                )
+//
+//                val incomingRequests = pendingSettlements.filter { it.toUserId == currentUserId }
+//                val outgoingRequests = pendingSettlements.filter { it.fromUserId == currentUserId }
+//
+//                if (incomingRequests.isEmpty() && outgoingRequests.isEmpty()) {
+//                    EmptyStateMessage(
+//                        message = "No pending settlements",
+//                        submessage = "You don't have any payment requests to approve or pending"
+//                    )
+//                } else {
+//                    Column(
+//                        modifier = Modifier.padding(horizontal = lDimens.dp16),
+//                        verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
+//                    ) {
+//                        // Show incoming requests that need approval
+//                        if (incomingRequests.isNotEmpty()) {
+//                            Text(
+//                                "Requests For You",
+//                                style = MaterialTheme.typography.titleMedium,
+//                                color = colors.textPrimary,
+//                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
+//                            )
+//
+//                            incomingRequests.forEach { settlement ->
+//                                PendingSettlementItem(
+//                                    settlement = settlement,
+//                                    isIncoming = true,
+//                                    onApprove = { viewModel.approveSettlement(settlement.id) },
+//                                    onDecline = { viewModel.declineSettlement(settlement.id) },
+//                                    processingSettlements = processingSettlementIds
+//                                )
+//                            }
+//                        }
+//
+//                        // Show outgoing requests that are pending approval
+//                        if (outgoingRequests.isNotEmpty()) {
+//                            Text(
+//                                "Your Pending Requests",
+//                                style = MaterialTheme.typography.titleMedium,
+//                                color = colors.textPrimary,
+//                                modifier = Modifier.padding(top = lDimens.dp8, bottom = lDimens.dp4)
+//                            )
+//
+//                            outgoingRequests.forEach { settlement ->
+//                                PendingSettlementItem(
+//                                    settlement = settlement,
+//                                    isIncoming = false,
+//                                    onApprove = null,
+//                                    onDecline = null,
+//                                    processingSettlements = processingSettlementIds
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 
             // Bottom spacer for FAB
             item {
