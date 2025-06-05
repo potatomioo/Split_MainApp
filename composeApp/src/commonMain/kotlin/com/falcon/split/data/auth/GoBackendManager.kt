@@ -7,6 +7,7 @@ import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.clearToken
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.KtorApiClient
+import com.falcon.split.data.network.models.UserState
 import com.falcon.split.data.repository.ExpenseRepository
 import com.falcon.split.data.repository.GoBackendExpenseRepository
 import com.falcon.split.data.repository.GoBackendGroupRepository
@@ -21,8 +22,17 @@ import com.falcon.split.getUserPhone
 import com.falcon.split.isLoggedIn
 import com.falcon.split.saveToken
 import com.falcon.split.saveUserInfo
+import com.falcon.split.utils.NetworkError
+import com.falcon.split.utils.Result
+import com.falcon.split.utils.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class GoBackendManager(private val dataStore: DataStore<Preferences>) {
+
+    private val _userDetails = MutableStateFlow<UserState>(UserState.Loading)
+    val userDetails: StateFlow<UserState> = _userDetails
 
     private val ktorApiClient = KtorApiClient { getToken(dataStore) }
 
@@ -37,11 +47,44 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
         GoBackendUserProfileManager(userRepository, dataStore)
 
     // Authentication methods
-    suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleFirebaseBased> {
+    suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleFirebaseBased, NetworkError> {
         return try {
+            _userDetails.value = UserState.Loading
             val result = userRepository.authenticateWithGoogle(googleToken)
-            if (result.isSuccess) {
+            delay(2700) // TODO: Remove this delay later
+            
+            // Convert Kotlin Result to custom Result
+            val customResult = if (result.isSuccess) {
                 val user = result.getOrNull()!!
+                Result.Success(user)
+            } else {
+                Result.Error(NetworkError.UNKNOWN)
+            }
+
+            _userDetails.value = when (customResult) {
+                is Result.Success -> {
+                    println("DEBUG_TAG" + "User ID: " + customResult.data.uid)
+                    // Convert to network model for UserState  
+                    val networkUser =
+                        com.falcon.split.data.network.models.UserModelGoogleCloudBased(
+                            userId = customResult.data.uid,
+                            userName = customResult.data.displayName,
+                            name = customResult.data.displayName,
+                            email = customResult.data.email,
+                            profileImageUrl = customResult.data.photoUrl,
+                            token = customResult.data.token,
+                            upiId = null
+                        )
+                    UserState.Success(networkUser)
+                }
+                is Result.Error -> {
+                    println("DEBUG_TAG" + "error ID: " + customResult.error.name)
+                    UserState.Error(customResult.error)
+                }
+            }
+
+            // Use map extension function to transform the result
+            customResult.map { user ->
                 // Save authentication data
                 saveToken(user.token, dataStore)
                 saveUserInfo(
@@ -53,19 +96,16 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
                 )
 
                 // Return user model in expected format
-                val userModel = UserModelGoogleFirebaseBased(
+                UserModelGoogleFirebaseBased(
                     userId = user.uid,
                     username = user.displayName,
                     email = user.email,
                     phoneNumber = user.phoneNumber,
                     profilePictureUrl = user.photoUrl
                 )
-                Result.success(userModel)
-            } else {
-                Result.failure(result.exceptionOrNull() ?: Exception("Authentication failed"))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.Error(NetworkError.UNKNOWN)
         }
     }
 

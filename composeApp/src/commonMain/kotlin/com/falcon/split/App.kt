@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +64,7 @@ import com.arkivanov.essenty.backhandler.BackHandler
 import com.falcon.split.contact.ContactManager
 import com.falcon.split.data.auth.GoBackendManager
 import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.models.UserState
 import com.falcon.split.presentation.expense.CreateExpenseViewModel
 import com.falcon.split.presentation.group.CreateGroupViewModel
 import com.falcon.split.presentation.group.GroupViewModel
@@ -451,10 +453,10 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
             GoogleButtonUiContainer(
                 onGoogleSignInResult = { googleUser ->
                     scope.launch {
+                        requestSendForGetUserData.value = true
                         goBackendManager.authenticateWithGoogle(googleUser?.idToken.toString())
                         println("Google Token:")
                         println(googleUser?.idToken)
-                        requestSendForGetUserData.value = true
                     }
                 }
             ) {
@@ -469,38 +471,38 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
             )
         }
     }
-//    if (requestSendForGetUserData.value) { // TODO: HANDLE THIS SHIT
-//        val userState by newsViewModel.userDetails.collectAsState()
-//        when (userState) {
-//            is UserState.Error -> {
-//                val error = (userState as UserState.Error).error
-//                println("ERROR_TAG" + error.name)
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .background(Color.White)
-//                ) {
-//                    Text(
-//                        text = "Error loading user: ${error.name}",
-//                        modifier = Modifier.padding(lDimens.dp16)
-//                    )
-//                }
-//            }
-//
-//            is UserState.Loading -> {
-//                SignInProgressPopup()
-//            }
-//
-//            is UserState.Success -> {
-//                // Saving the User Details and navigate further
-//                val user = (userState as UserState.Success).user
-//                scope.launch {
-//                    saveUser(prefs, user)
-//                    navControllerMain.navigate(Routes.APP_CONTENT.name)
-//                }
-//            }
-//        }
-//    }
+    if (requestSendForGetUserData.value) {
+        val userState by goBackendManager.userDetails.collectAsState()
+        when (userState) {
+            is UserState.Error -> {
+                val error = (userState as UserState.Error).error
+                println("ERROR_TAG" + error.name)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                ) {
+                    Text(
+                        text = "Error loading user: ${error.name}",
+                        modifier = Modifier.padding(lDimens.dp16)
+                    )
+                }
+            }
+
+            is UserState.Loading -> {
+                SignInProgressPopup()
+            }
+
+            is UserState.Success -> {
+                // Saving the User Details and navigate further
+                val user = (userState as UserState.Success).user
+                scope.launch {
+                    saveUser(prefs, user)
+                    navControllerMain.navigate(Routes.APP_CONTENT.name)
+                }
+            }
+        }
+    }
 }
 @Composable
 fun OptionMenuPopup(
