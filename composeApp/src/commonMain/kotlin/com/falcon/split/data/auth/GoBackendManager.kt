@@ -3,10 +3,10 @@ package com.falcon.split.data.auth
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.HistoryRepository
-import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.clearToken
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.KtorApiClient
+import com.falcon.split.data.network.models.UserModelGoogleCloudBased
 import com.falcon.split.data.network.models.UserState
 import com.falcon.split.data.repository.ExpenseRepository
 import com.falcon.split.data.repository.GoBackendExpenseRepository
@@ -47,7 +47,7 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
         GoBackendUserProfileManager(userRepository, dataStore)
 
     // Authentication methods
-    suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleFirebaseBased, NetworkError> {
+    suspend fun authenticateWithGoogle(googleToken: String): Result<UserModelGoogleCloudBased, NetworkError> {
         return try {
             _userDetails.value = UserState.Loading
             val result = userRepository.authenticateWithGoogle(googleToken)
@@ -63,15 +63,14 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
 
             _userDetails.value = when (customResult) {
                 is Result.Success -> {
-                    println("DEBUG_TAG" + "User ID: " + customResult.data.uid)
+                    println("DEBUG_TAG" + "User ID: " + customResult.data.userId)
                     // Convert to network model for UserState  
                     val networkUser =
                         com.falcon.split.data.network.models.UserModelGoogleCloudBased(
-                            userId = customResult.data.uid,
-                            userName = customResult.data.displayName,
-                            name = customResult.data.displayName,
+                            userId = customResult.data.userId,
+                            userName = customResult.data.userName,
                             email = customResult.data.email,
-                            profileImageUrl = customResult.data.photoUrl,
+                            profileImageUrl = customResult.data.profileImageUrl,
                             token = customResult.data.token,
                             upiId = null
                         )
@@ -88,20 +87,21 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
                 // Save authentication data
                 saveToken(user.token, dataStore)
                 saveUserInfo(
-                    userId = user.uid,
+                    userId = user.userId,
                     email = user.email,
-                    name = user.displayName,
-                    phone = user.phoneNumber,
+                    name = user.userName,
+                    phone = user.phoneNumber?: "",
                     dataStore = dataStore
                 )
 
                 // Return user model in expected format
-                UserModelGoogleFirebaseBased(
-                    userId = user.uid,
-                    username = user.displayName,
+                UserModelGoogleCloudBased(
+                    userId = user.userId,
+                    userName = user.userName,
                     email = user.email,
                     phoneNumber = user.phoneNumber,
-                    profilePictureUrl = user.photoUrl
+                    profileImageUrl = user.profileImageUrl,
+                    token = user.token
                 )
             }
         } catch (e: Exception) {
@@ -113,14 +113,15 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
         return isLoggedIn(dataStore)
     }
 
-    suspend fun getCurrentUser(): UserModelGoogleFirebaseBased? {
+    suspend fun getCurrentUser(): UserModelGoogleCloudBased? {
         return if (isLoggedIn(dataStore)) {
-            UserModelGoogleFirebaseBased(
-                userId = getUserId(dataStore),
-                username = getUserName(dataStore),
-                email = getUserEmail(dataStore),
+            UserModelGoogleCloudBased(
+                userId = getUserId(dataStore) ?: "",
+                userName = getUserName(dataStore) ?: "",
+                email = getUserEmail(dataStore) ?: "",
                 phoneNumber = getUserPhone(dataStore),
-                profilePictureUrl = null // Not stored currently
+                profileImageUrl = null, // Not stored currently,
+                token = getToken(dataStore) ?: ""
             )
         } else {
             null

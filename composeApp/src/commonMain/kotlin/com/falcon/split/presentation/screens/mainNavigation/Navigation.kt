@@ -1,108 +1,97 @@
 package com.falcon.split.presentation.screens.mainNavigation
 
+//import com.falcon.split.presentation.theme.getAppTypography
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.falcon.split.presentation.theme.LocalSplitColors
-//import com.falcon.split.presentation.theme.getAppTypography
-import com.falcon.split.data.network.ApiClient
-import org.jetbrains.compose.resources.DrawableResource
-import org.jetbrains.compose.resources.painterResource
-import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.group_icon_filled
-import split.composeapp.generated.resources.group_icon_outlined
-import split.composeapp.generated.resources.history_icon_filled
-import split.composeapp.generated.resources.history_icon_outlined
-import split.composeapp.generated.resources.home_icon_filled
-import split.composeapp.generated.resources.home_icon_outlined
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import com.arkivanov.essenty.backhandler.BackCallback
 import com.falcon.split.AppBackHandler
-import com.falcon.split.UserModelGoogleFirebaseBased
+import com.falcon.split.data.network.ApiClient
+import com.falcon.split.data.network.models.UserModelGoogleCloudBased
 import com.falcon.split.getFirebaseUserAsUserModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
+import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitColors
 import com.falcon.split.presentation.theme.getSplitTypography
 import com.falcon.split.presentation.theme.lDimens
@@ -112,7 +101,16 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import split.composeapp.generated.resources.Res
 import split.composeapp.generated.resources.Split
+import split.composeapp.generated.resources.group_icon_filled
+import split.composeapp.generated.resources.group_icon_outlined
+import split.composeapp.generated.resources.history_icon_filled
+import split.composeapp.generated.resources.history_icon_outlined
+import split.composeapp.generated.resources.home_icon_filled
+import split.composeapp.generated.resources.home_icon_outlined
 
 @Composable
 fun NavHostMain(
@@ -142,7 +140,7 @@ fun NavHostMain(
     val openDrawer = remember { mutableStateOf(false) }
 
     // Get user model from prefs or viewModel
-    var userModel by remember { mutableStateOf<UserModelGoogleFirebaseBased?>(null) }
+    var userModel by remember { mutableStateOf<UserModelGoogleCloudBased?>(null) }
 
     // Load user data
     LaunchedEffect(Unit) {
@@ -198,9 +196,9 @@ fun NavHostMain(
                                 .background(colors.backgroundSecondary),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (userModel?.profilePictureUrl != null) {
+                            if (userModel?.profileImageUrl != null) {
                                 AsyncImage(
-                                    model = userModel?.profilePictureUrl,
+                                    model = userModel?.profileImageUrl,
                                     contentDescription = "Profile picture",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
@@ -219,7 +217,7 @@ fun NavHostMain(
 
                         // User name
                         Text(
-                            text = userModel?.username ?: "User",
+                            text = userModel?.userId ?: "UserId",
                             style = MaterialTheme.typography.headlineMedium,
                             color = colors.textPrimary,
                             fontWeight = FontWeight.Bold
@@ -463,9 +461,9 @@ fun NavHostMain(
                                 .background(colors.primary.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (userModel?.profilePictureUrl != null) {
+                            if (userModel?.profileImageUrl != null) {
                                 AsyncImage(
-                                    model = userModel!!.profilePictureUrl,
+                                    model = userModel!!.profileImageUrl,
                                     contentDescription = "Profile",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
@@ -508,7 +506,7 @@ fun NavHostMain(
 
                         if (pagerState.currentPage == 0) {
                             // For Home screen, show greeting with colored firstName
-                            val (greeting, firstName) = getGreetingParts(userModel?.username ?: "User")
+                            val (greeting, firstName) = getGreetingParts(userModel?.userId ?: "User")
 
                             // Row to place the greeting and name next to each other
                             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -3,8 +3,6 @@ package com.falcon.split.presentation.screens.mainNavigation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,8 +60,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.falcon.split.ClipboardManager
-import com.falcon.split.UserModelGoogleFirebaseBased
 import com.falcon.split.data.ProfileManager.UserProfileManager
+import com.falcon.split.data.network.models.UserModelGoogleCloudBased
 import com.falcon.split.getFirebaseUserAsUserModel
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
@@ -71,9 +69,6 @@ import com.falcon.split.presentation.theme.lDimens
 import com.falcon.split.saveFirebaseUser
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
-import split.composeapp.generated.resources.Res
-import split.composeapp.generated.resources.picture_preview
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
 @Composable
@@ -89,7 +84,7 @@ fun ProfileScreen(
     val scrollState = rememberScrollState()
 
     // State for user data
-    var userModel by remember { mutableStateOf<UserModelGoogleFirebaseBased?>(null) }
+    var userModel by remember { mutableStateOf<UserModelGoogleCloudBased?>(null) }
 
     // State for edit UPI dialog
     var showUpiDialog by remember { mutableStateOf(false) }
@@ -146,9 +141,9 @@ fun ProfileScreen(
                     .background(colors.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (userModel?.profilePictureUrl != null) {
+                if (userModel?.profileImageUrl != null) {
                     AsyncImage(
-                        model = userModel?.profilePictureUrl,
+                        model = userModel?.profileImageUrl,
                         contentDescription = "Profile picture",
                         modifier = Modifier.fillMaxSize()
                             .border(
@@ -169,7 +164,7 @@ fun ProfileScreen(
 
             // User Name
             Text(
-                text = userModel?.username ?: "User",
+                text = userModel?.userName ?: "User",
                 style = MaterialTheme.typography.headlineLarge,
                 color = colors.textPrimary,
                 fontWeight = FontWeight.Bold,
@@ -195,9 +190,9 @@ fun ProfileScreen(
                     ProfileInfoItem(
                         icon = Icons.Default.Person,
                         label = "Name",
-                        value = userModel?.username ?: "",
+                        value = userModel?.userName ?: "",
                         onCopy = {
-                            ClipboardManager.copyToClipboard(userModel?.username ?: "")
+                            ClipboardManager.copyToClipboard(userModel?.userName ?: "")
                             scope.launch {
                                 snackbarHostState.showSnackbar("User Name copied to clipboard")
                             }

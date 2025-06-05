@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 data class UserModelGoogleCloudBased(
     val userId: String,
     val userName: String,
-    val name: String,
     val email: String,
-    val profileImageUrl: String,
+    val phoneNumber: String? = null,
+    val profileImageUrl: String? = null,
     val token: String,
     val upiId: String? = null
 )

@@ -2,6 +2,7 @@ package com.falcon.split.data.repository
 
 import com.falcon.split.data.network.KtorApiClient
 import kotlinx.serialization.Serializable
+import com.falcon.split.data.network.models.UserModelGoogleCloudBased
 
 @Serializable
 data class GoogleAuthRequest(
@@ -20,16 +21,6 @@ data class UserResponse(
     val name: String,
     val phoneNumber: String,
     val profilePictureUrl: String = ""
-)
-
-@Serializable
-data class UserModelGoogleCloudBased(
-    val token: String,
-    val uid: String,
-    val email: String,
-    val displayName: String,
-    val phoneNumber: String,
-    val photoUrl: String
 )
 
 class GoBackendUserRepository(private val ktorApiClient: KtorApiClient) {
