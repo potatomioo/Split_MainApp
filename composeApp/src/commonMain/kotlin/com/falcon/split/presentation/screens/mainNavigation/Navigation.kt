@@ -87,7 +87,7 @@ import com.arkivanov.essenty.backhandler.BackCallback
 import com.falcon.split.AppBackHandler
 import com.falcon.split.data.network.ApiClient
 import com.falcon.split.data.network.models.UserModelGoogleCloudBased
-import com.falcon.split.getFirebaseUserAsUserModel
+import com.falcon.split.getUserAsUserModel
 import com.falcon.split.presentation.group.GroupViewModel
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryScreen
 import com.falcon.split.presentation.screens.mainNavigation.history.HistoryViewModel
@@ -144,7 +144,7 @@ fun NavHostMain(
 
     // Load user data
     LaunchedEffect(Unit) {
-        userModel = getFirebaseUserAsUserModel(prefs)
+        userModel = getUserAsUserModel(prefs)
     }
 
     LaunchedEffect(drawerState.currentValue) {

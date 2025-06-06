@@ -105,21 +105,6 @@ suspend fun toggleDarkTheme(prefs: DataStore<Preferences>) {
     }
 }
 
-suspend fun saveFirebaseUser(prefs: DataStore<Preferences>, userModel: UserModelGoogleCloudBased) { // Firebase Based
-    val userJson = Json.encodeToString(userModel) // Serialize UserModel to JSON string
-    prefs.edit { prefs ->
-        val userKey = stringPreferencesKey("user_model_firebase")
-        prefs[userKey] = userJson
-    }
-}
-
-suspend fun getFirebaseUserAsUserModel(prefs: DataStore<Preferences>): UserModelGoogleCloudBased? { // Firebase Based
-    val userKey = stringPreferencesKey("user_model_firebase")
-    val prefs = prefs.data.first() // Get preferences synchronously using `first`
-    val userJson = prefs[userKey] ?: return null
-    return Json.decodeFromString(userJson) // Deserialize JSON string back to UserModel
-}
-
 suspend fun saveUser(prefs: DataStore<Preferences>, userModel: UserModelGoogleCloudBased) { // Cloud Based
     val userJson = Json.encodeToString(userModel) // Serialize UserModel to JSON string
     prefs.edit { prefs ->

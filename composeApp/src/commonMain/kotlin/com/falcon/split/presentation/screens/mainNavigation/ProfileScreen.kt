@@ -62,11 +62,11 @@ import coil3.compose.AsyncImage
 import com.falcon.split.ClipboardManager
 import com.falcon.split.data.ProfileManager.UserProfileManager
 import com.falcon.split.data.network.models.UserModelGoogleCloudBased
-import com.falcon.split.getFirebaseUserAsUserModel
+import com.falcon.split.getUserAsUserModel
 import com.falcon.split.presentation.theme.LocalSplitColors
 import com.falcon.split.presentation.theme.SplitCard
 import com.falcon.split.presentation.theme.lDimens
-import com.falcon.split.saveFirebaseUser
+import com.falcon.split.saveUser
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 
@@ -95,7 +95,7 @@ fun ProfileScreen(
 
     // Load user data
     LaunchedEffect(Unit) {
-        userModel = getFirebaseUserAsUserModel(prefs)
+        userModel = getUserAsUserModel(prefs)
         upiId = userModel?.upiId ?: ""
     }
 
@@ -294,7 +294,7 @@ fun ProfileScreen(
                                         userModel = userModel?.copy(upiId = upiId)
 
                                         // Also update the local state in prefs to ensure persistence
-                                        saveFirebaseUser(prefs, userModel!!)
+                                        saveUser(prefs, userModel!!)
                                         println("DEBUG: Updated local user model and prefs")
 
                                         showUpiDialog = false

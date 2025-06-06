@@ -66,7 +66,7 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
                     println("DEBUG_TAG" + "User ID: " + customResult.data.userId)
                     // Convert to network model for UserState  
                     val networkUser =
-                        com.falcon.split.data.network.models.UserModelGoogleCloudBased(
+                        UserModelGoogleCloudBased(
                             userId = customResult.data.userId,
                             userName = customResult.data.userName,
                             email = customResult.data.email,

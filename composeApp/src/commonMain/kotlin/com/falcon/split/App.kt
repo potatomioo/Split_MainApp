@@ -244,7 +244,7 @@ fun App(
         }
     ) {
         val startDestination = runBlocking {
-            if (getFirebaseUserAsUserModel(prefs) != null) Routes.APP_CONTENT.name else Routes.WELCOME_PAGE.name
+            if (getUserAsUserModel(prefs) != null) Routes.APP_CONTENT.name else Routes.WELCOME_PAGE.name
         }
         NavHost(navController = navControllerMain, startDestination = startDestination) {
             composable(
