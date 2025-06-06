@@ -132,8 +132,6 @@ fun App(
     prefs: DataStore<Preferences>,
     contactManager: ContactManager? = null,
     onSignOut: (() -> Unit)? = null,
-    AndroidProfileScreenComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
-    AndroidSignInComposable: @Composable() ((navController: NavHostController) -> Unit)? = null,
     groupRepository: GroupRepository? = null,
     expenseRepository: ExpenseRepository? = null,
     historyRepository: HistoryRepository? = null,
@@ -250,10 +248,7 @@ fun App(
             SnackbarHost(hostState = snackBarHostState)
         }
     ) {
-        var startDestination = runBlocking {
-            if (getFirebaseUserAsUserModel(prefs) != null) Routes.APP_CONTENT.name else Routes.WELCOME_PAGE.name
-        }
-        NavHost(navController = navControllerMain, startDestination = startDestination) {
+        NavHost(navController = navControllerMain, startDestination = Routes.APP_CONTENT.name) {
             composable(
                 route = "${Routes.PAYMENT_SCREEN.name}/{userId}/{amount}/{groupId}",
                 arguments = listOf(
@@ -275,13 +270,6 @@ fun App(
                     viewModel = groupViewModelForPayment,
                     onNavigateBack = { navControllerMain.popBackStack() }
                 )
-            }
-            composable(Routes.WELCOME_PAGE.name) {
-                WelcomePage(navControllerMain)
-            }
-            composable(Routes.SIGN_IN.name) {
-                AndroidSignInComposable?.invoke(navControllerMain) // Firebase Based Google Sign-In Android Specific Only
-//                GoogleCloudBasedGoogleSignInForKMM(prefs, navControllerMain, authReady, newsViewModel, scope) // Google Cloud Based Google Sign In For KMM, Works In KMM but need to setup separate server for JWT Token Conversion As Google Auth Id Provided By It is Temporary.
             }
             composable(Routes.APP_CONTENT.name) {
                 val openUserOptionsMenu = remember { mutableStateOf(false) } // In Future Replace It With Bottom - Sheet
@@ -365,11 +353,7 @@ fun App(
                     prefs,
                     userProfileManager = userProfileManager
                 ) {
-                    scope.launch {
-                        deleteUser(prefs)
-                        onSignOut?.invoke()
-                        navControllerMain.navigate(Routes.WELCOME_PAGE.name)
-                    }
+                    onSignOut?.invoke()
                 }
             }
             composable(Routes.SETTINGS.name){
@@ -593,34 +577,6 @@ fun OptionMenuPopup(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun LineWithText() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 64.dp, end = 64.dp)
-    ) {
-        Divider(
-            modifier = Modifier
-                .height(1.dp)
-                .weight(1f),
-            color = Color.LightGray
-        )
-        Text(
-            text = "OR",
-            color = Color.LightGray,
-            modifier = Modifier.padding(horizontal = lDimens.dp8)
-        )
-        Divider(
-            modifier = Modifier
-                .height(1.dp)
-                .weight(1f),
-            color = Color.LightGray
-        )
     }
 }
 

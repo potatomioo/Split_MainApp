@@ -25,8 +25,6 @@ import kotlinx.serialization.SerializationException
 class ApiClient(
     private val httpClient: HttpClient
 ) {
-    private val baseUrl = "https://news-app-95sc.onrender.com" // TODO: CHANGE THIS URL
-//    private val baseUrl = "https://mock-api-project.vercel.app" // TODO: CHANGE THIS URL
 
     // Generic function to handle all API requests
     private suspend inline fun <reified T> makeApiCall(
@@ -109,39 +107,5 @@ class ApiClient(
         val url = "https://mock-api-project.vercel.app/api/auth/getUserFromGoogleToken"
         val params = mapOf("googleToken" to googleToken)
         return makeApiCall(url = url, method = HttpMethod.Get, params = params)
-    }
-
-    suspend fun getUserTransactionHistory(googleToken: String): Result<List<TransactionHistory>, NetworkError> {
-        val url = "https://mock-api-project.vercel.app/api/auth/getUserTransactionHistory"
-        val params = mapOf("googleToken" to googleToken)
-        return makeApiCall(url = url, method = HttpMethod.Get, params = params)
-    }
-
-    suspend fun createExpense(
-        userJwtToken: String,
-        expense: Expense,
-    ): Result<Boolean, NetworkError> {
-        val url = "https://mock-api-project.vercel.app/api/auth/createExpense"
-        val params = mapOf("googleToken" to userJwtToken)
-        return makeApiCall(url = url, body = expense, method = HttpMethod.Get, params = params)
-    }
-
-    suspend fun getUserGroups(
-        userJwtToken: String,
-    ): Result<List<Group>, NetworkError> {
-        val url = "https://mock-api-project.vercel.app/api/auth/getUserGroups"
-        val params = mapOf("googleToken" to userJwtToken)
-        return makeApiCall(url = url, method = HttpMethod.Get, params = params)
-    }
-
-    suspend fun createGroup(
-        userJwtToken: String,
-        listOfMembers: List<Contact>,
-        groupName: String
-    ): Result<Boolean, NetworkError> {
-        val url = "https://mock-api-project.vercel.app/api/auth/createGroup"
-        val createdBy: String = userJwtToken
-        val params = mapOf("googleToken" to userJwtToken)
-        return makeApiCall(url = url, method = HttpMethod.Get, body = listOfMembers, params = params)
     }
 }

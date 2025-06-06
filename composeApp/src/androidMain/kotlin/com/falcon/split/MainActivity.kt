@@ -49,6 +49,8 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.falcon.split.AndroidUserManager.AndroidUserProfileManager
 import com.falcon.split.AndroidUserManager.FirebaseUserManager
+import com.falcon.split.Auth.AuthManager
+import com.falcon.split.SpecificScreens.AuthenticatedApp
 import com.falcon.split.SpecificScreens.PhoneNumberBottomSheet
 import com.falcon.split.contact.AndroidContactManager
 import com.falcon.split.data.FirestoreManager
@@ -91,6 +93,14 @@ class MainActivity : ComponentActivity() {
 
     val firestoreManager = FirestoreManager()
     val userProfileManager = AndroidUserProfileManager(firestoreManager = firestoreManager)
+
+    private val authManager by lazy {
+        AuthManager(
+            prefs = createDataStore(context = applicationContext),
+            googleAuthUiClient = googleAuthUiClient,
+            firestoreManager = firestoreManager
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -145,21 +155,19 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             ) {
-                App(
-                    client = remember {
-                        ApiClient(createHttpClient(OkHttp.create()))
-                    },
+                AuthenticatedApp(
+                    authManager = authManager,
+                    client = remember { ApiClient(createHttpClient(OkHttp.create())) },
                     prefs = prefs,
-                    onSignOut = onSignOutFunction,
                     contactManager = contactManager,
-                    AndroidSignInComposable = remember {
-                        @Composable { navController ->
-                            CallGoogleSignInAndroid(navController, requestSendForGetUserData, prefs)
-                        }
-                    },
-                    AndroidProfileScreenComposable = remember {
-                        @Composable { navController ->
-                            CallProfileScreenInAndroid(navController)
+                    onSignOut = {
+                        scope.launch {
+                            authManager.signOut()
+                            Toast.makeText(
+                                applicationContext,
+                                "Signed out",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     },
                     groupRepository = groupRepository,
@@ -417,82 +425,3 @@ fun SignInScreen(
         Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
     }
 }
-
-@Composable
-fun PhoneNumberScreen() {
-    var showPhoneInput by remember { mutableStateOf(false) }
-    Box(
-        contentAlignment = Alignment.Center
-    ){
-        Button(
-            onClick = {
-                showPhoneInput = true
-            }
-        ) {
-            Text("True")
-        }
-    }
-    // Bottom sheet overlay
-    PhoneNumberBottomSheet(
-        isVisible = showPhoneInput,
-        onDismiss = { showPhoneInput = false },
-        onPhoneNumberSubmit = { phoneNumber ->
-            // Handle the phone number
-            showPhoneInput = false
-        }
-    )
-}
-//Contact Handling
-//class MainActivity : ComponentActivity() {
-//    private lateinit var contactManager: AndroidContactManager
-//
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        contactManager = AndroidContactManager(this)
-//
-//        setContent {
-//            // Your app content
-//            YourScreen(contactManager)
-//        }
-//    }
-//
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array< String>,
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        contactManager.handlePermissionResult(requestCode, grantResults)
-//    }
-//
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//        contactManager.handleActivityResult(requestCode, resultCode, data)
-//    }
-//}
-//
-//@Composable
-//fun YourScreen(contactManager: ContactManager) {
-//    var showContactPicker by remember { mutableStateOf(false) }
-//    var selectedContact by remember { mutableStateOf<ContactInfo?>(null) }
-//
-//    Column {
-//        Button(onClick = { showContactPicker = true }) {
-//            Text("Select Contact")
-//        }
-//
-//        selectedContact?.let { contact ->
-//            Text("Selected: ${contact.name}")
-//            Text("Number: ${contact.phoneNumber}")
-//        }
-//
-//        if (showContactPicker) {
-//            ContactPicker(
-//                contactManager = contactManager
-//            ) { contact ->
-//                selectedContact = contact
-//                showContactPicker = false
-//            }
-//        }
-//    }
-//}

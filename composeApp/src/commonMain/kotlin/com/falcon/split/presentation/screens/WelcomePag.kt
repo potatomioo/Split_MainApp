@@ -59,7 +59,7 @@ import split.composeapp.generated.resources.nunito_bold_1
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun WelcomePage(navController: NavHostController) {
+fun WelcomePage(onGetStarted: () -> Unit) {
     val scope = rememberCoroutineScope()
     val colors = LocalSplitColors.current
     val scrollState = rememberScrollState()
@@ -173,9 +173,7 @@ fun WelcomePage(navController: NavHostController) {
             SplitPrimaryButton(
                 text = "Get Started",
                 onClick = {
-                    scope.launch {
-                        navController.navigate(Routes.SIGN_IN.name)
-                    }
+                    onGetStarted()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
