@@ -476,7 +476,7 @@ private fun GoogleCloudBasedGoogleSignInForKMM(
         when (userState) {
             is UserState.Error -> {
                 val error = (userState as UserState.Error).error
-                println("ERROR_TAG" + error.name) //todo yaaha ftt rrha
+                println("ERROR_TAG" + error.name)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
