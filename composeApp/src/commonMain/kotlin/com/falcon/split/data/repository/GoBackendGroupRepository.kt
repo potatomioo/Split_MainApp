@@ -24,14 +24,14 @@ data class AddMembersRequest(
 
 @Serializable
 data class GroupResponse(
-    @SerialName("id") val id: Int,
-    @SerialName("name") val name: String,
-    @SerialName("createdBy") val createdBy: String,
-    @SerialName("groupType") val groupType: String,
-    @SerialName("totalAmount") val totalAmount: Double,
-    @SerialName("createdAt") val createdAt: Long,
+    @SerialName("id") val id: Int? = null,
+    @SerialName("name") val name: String = "",
+    @SerialName("createdBy") val createdBy: String = "",
+    @SerialName("groupType") val groupType: String = GroupType.OTHER.name,
+    @SerialName("totalAmount") val totalAmount: Double = 0.0,
+    @SerialName("createdAt") val createdAt: Long = 0L,
     @SerialName("updatedAt") val updatedAt: Long? = null,
-    @SerialName("members") val members: List<GroupMemberResponse>,
+    @SerialName("members") val members: List<GroupMemberResponse> = emptyList(),
     @SerialName("expenses") val expenses: List<String> = emptyList()
 )
 
