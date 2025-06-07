@@ -182,6 +182,15 @@ android {
     sourceSets["main"].res.srcDirs("src/androidMain/res")
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("split-key.keystore")
+            storePassword = "12345678"
+            keyAlias = "mykey"
+            keyPassword = "12345678"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.falcon.split"
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -197,6 +206,9 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+        }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
