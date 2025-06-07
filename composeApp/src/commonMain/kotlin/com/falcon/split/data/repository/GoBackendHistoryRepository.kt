@@ -6,32 +6,33 @@ import com.falcon.split.presentation.history.HistoryActionType
 import com.falcon.split.presentation.history.HistoryItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class HistoryItemResponse(
-    val id: String,
-    val timestamp: Long,
-    val actionType: String,
-    val actionByUserId: String,
-    val actionByUserName: String? = null,
-    val groupId: String? = null,
-    val groupName: String? = null,
-    val groupType: String? = null,
-    val expenseId: String? = null,
-    val expenseAmount: Double? = null,
-    val expenseType: String? = null,
-    val settlementId: String? = null,
-    val settlementAmount: Double? = null,
-    val targetUserId: String? = null,
-    val targetUserName: String? = null,
-    val description: String,
-    val read: Boolean
+    @SerialName("id") val id: String,
+    @SerialName("timestamp") val timestamp: Long,
+    @SerialName("actionType") val actionType: String,
+    @SerialName("actionByUserId") val actionByUserId: String,
+    @SerialName("actionByUserName") val actionByUserName: String? = null,
+    @SerialName("groupId") val groupId: String? = null,
+    @SerialName("groupName") val groupName: String? = null,
+    @SerialName("groupType") val groupType: String? = null,
+    @SerialName("expenseId") val expenseId: String? = null,
+    @SerialName("expenseAmount") val expenseAmount: Double? = null,
+    @SerialName("expenseType") val expenseType: String? = null,
+    @SerialName("settlementId") val settlementId: String? = null,
+    @SerialName("settlementAmount") val settlementAmount: Double? = null,
+    @SerialName("targetUserId") val targetUserId: String? = null,
+    @SerialName("targetUserName") val targetUserName: String? = null,
+    @SerialName("description") val description: String,
+    @SerialName("read") val read: Boolean
 )
 
 @Serializable
 data class HasMoreResponse(
-    val hasMore: Boolean
+    @SerialName("hasMore") val hasMore: Boolean
 )
 
 class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : HistoryRepository {

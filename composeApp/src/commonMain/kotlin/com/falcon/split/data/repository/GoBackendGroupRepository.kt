@@ -7,40 +7,41 @@ import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.GroupType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateGroupRequest(
-    val name: String,
-    val members: List<String>, // Phone numbers
-    val groupType: String = GroupType.OTHER.name
+    @SerialName("name") val name: String,
+    @SerialName("members") val members: List<String>, // Phone numbers
+    @SerialName("groupType") val groupType: String = GroupType.OTHER.name
 )
 
 @Serializable
 data class AddMembersRequest(
-    val members: List<String> // Phone numbers
+    @SerialName("members") val members: List<String> // Phone numbers
 )
 
 @Serializable
 data class GroupResponse(
-    val id: Int,
-    val name: String,
-    val createdBy: String,
-    val groupType: String,
-    val totalAmount: Double,
-    val createdAt: Long,
-    val updatedAt: Long? = null,
-    val members: List<GroupMemberResponse>,
-    val expenses: List<String> = emptyList()
+    @SerialName("id") val id: Int,
+    @SerialName("name") val name: String,
+    @SerialName("createdBy") val createdBy: String,
+    @SerialName("groupType") val groupType: String,
+    @SerialName("totalAmount") val totalAmount: Double,
+    @SerialName("createdAt") val createdAt: Long,
+    @SerialName("updatedAt") val updatedAt: Long? = null,
+    @SerialName("members") val members: List<GroupMemberResponse>,
+    @SerialName("expenses") val expenses: List<String> = emptyList()
 )
 
 @Serializable
 data class GroupMemberResponse(
-    val userId: String? = null,
-    val phoneNumber: String,
-    val name: String? = null,
-    val balance: Double,
-    val individualBalances: Map<String, Double> = emptyMap()
+    @SerialName("userId") val userId: String? = null,
+    @SerialName("phoneNumber") val phoneNumber: String,
+    @SerialName("name") val name: String? = null,
+    @SerialName("balance") val balance: Double,
+    @SerialName("individualBalances") val individualBalances: Map<String, Double> = emptyMap()
 )
 
 class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : GroupRepository {

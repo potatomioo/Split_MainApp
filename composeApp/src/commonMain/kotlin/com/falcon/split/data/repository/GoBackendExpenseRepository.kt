@@ -2,60 +2,61 @@ package com.falcon.split.data.repository
 
 import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.network.models_app.Expense
-import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.ExpenseSplit
+import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AddExpenseRequest(
-    val groupId: String,
-    val description: String,
-    val amount: Double,
-    val expenseType: String
+    @SerialName("groupId") val groupId: String,
+    @SerialName("description") val description: String,
+    @SerialName("amount") val amount: Double,
+    @SerialName("expenseType") val expenseType: String
 )
 
 @Serializable
 data class SettleBalanceRequest(
-    val groupId: String,
-    val toUserId: String,
-    val amount: Double
+    @SerialName("groupId") val groupId: String,
+    @SerialName("toUserId") val toUserId: String,
+    @SerialName("amount") val amount: Double
 )
 
 @Serializable
 data class ExpenseResponse(
-    val expenseId: String,
-    val groupId: String,
-    val description: String,
-    val amount: Double,
-    val expenseType: String,
-    val paidByUserId: String,
-    val paidByUserName: String,
-    val timestamp: Long,
-    val splits: List<SplitResponse>
+    @SerialName("expenseId") val expenseId: String,
+    @SerialName("groupId") val groupId: String,
+    @SerialName("description") val description: String,
+    @SerialName("amount") val amount: Double,
+    @SerialName("expenseType") val expenseType: String,
+    @SerialName("paidByUserId") val paidByUserId: String,
+    @SerialName("paidByUserName") val paidByUserName: String,
+    @SerialName("timestamp") val timestamp: Long,
+    @SerialName("splits") val splits: List<SplitResponse>
 )
 
 @Serializable
 data class SplitResponse(
-    val userId: String? = null,
-    val userName: String? = null,
-    val amount: Double
+    @SerialName("userId") val userId: String? = null,
+    @SerialName("userName") val userName: String? = null,
+    @SerialName("amount") val amount: Double
 )
 
 @Serializable
 data class SettlementResponse(
-    val id: String,
-    val groupId: String,
-    val fromUserId: String,
-    val fromUserName: String,
-    val toUserId: String,
-    val toUserName: String,
-    val amount: Double,
-    val status: String,
-    val timestamp: Long
+    @SerialName("id") val id: String,
+    @SerialName("groupId") val groupId: String,
+    @SerialName("fromUserId") val fromUserId: String,
+    @SerialName("fromUserName") val fromUserName: String,
+    @SerialName("toUserId") val toUserId: String,
+    @SerialName("toUserName") val toUserName: String,
+    @SerialName("amount") val amount: Double,
+    @SerialName("status") val status: String,
+    @SerialName("timestamp") val timestamp: Long
 )
 
 class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : ExpenseRepository {
