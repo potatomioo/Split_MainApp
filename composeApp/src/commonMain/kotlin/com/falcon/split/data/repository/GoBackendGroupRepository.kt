@@ -1,10 +1,13 @@
 package com.falcon.split.data.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.contact.Contact
 import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.network.models_app.Group
 import com.falcon.split.data.network.models_app.GroupMember
 import com.falcon.split.data.network.models_app.GroupType
+import com.falcon.split.getToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
@@ -44,7 +47,10 @@ data class GroupMemberResponse(
     @SerialName("individualBalances") val individualBalances: Map<String, Double> = emptyMap()
 )
 
-class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : GroupRepository {
+class GoBackendGroupRepository(
+    private val ktorApiClient: KtorApiClient,
+    private val dataStore: DataStore<Preferences>
+) : GroupRepository {
 
     override suspend fun createGroup(
         name: String,
@@ -63,7 +69,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
                 groupType = groupType.name
             )
 
-            val response: GroupResponse = ktorApiClient.post("api/groups", request)
+            val token = getToken(dataStore)
+            val response: GroupResponse = ktorApiClient.post("api/groups", token, request)
             val group = mapResponseToGroup(response)
             Result.success(group)
         } catch (e: Exception) {
@@ -79,7 +86,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
 
     override suspend fun getCurrentUserGroups(): Flow<List<Group>> = flow {
         try {
-            val response: List<GroupResponse> = ktorApiClient.get("api/groups/user")
+            val token = getToken(dataStore)
+            val response: List<GroupResponse> = ktorApiClient.get("api/groups/user", token)
             val groups = response.map { mapResponseToGroup(it) }
             emit(groups)
         } catch (e: Exception) {
@@ -94,7 +102,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
         return try {
             val normalizedNumbers = memberPhoneNumbers.map { extractLast10Digits(it) }
             val request = AddMembersRequest(normalizedNumbers)
-            ktorApiClient.patch<GroupResponse>("api/groups/$groupId/members", request)
+            val token = getToken(dataStore)
+            ktorApiClient.patch<GroupResponse>("api/groups/$groupId/members", token, request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -103,7 +112,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
 
     override suspend fun getGroupDetails(groupId: String): Flow<Group> = flow {
         try {
-            val response: GroupResponse = ktorApiClient.get("api/groups/$groupId")
+            val token = getToken(dataStore)
+            val response: GroupResponse = ktorApiClient.get("api/groups/$groupId", token)
             val group = mapResponseToGroup(response)
             emit(group)
         } catch (e: Exception) {
@@ -113,7 +123,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
 
     override suspend fun getPhoneNumberFromId(userId: String): String? {
         return try {
-            val response: Map<String, String> = ktorApiClient.get("api/user/$userId/phone")
+            val token = getToken(dataStore)
+            val response: Map<String, String> = ktorApiClient.get("api/user/$userId/phone", token)
             response["phoneNumber"]
         } catch (e: Exception) {
             null
@@ -122,7 +133,8 @@ class GoBackendGroupRepository(private val ktorApiClient: KtorApiClient) : Group
 
     override suspend fun deleteGroup(groupId: String): Result<Unit> {
         return try {
-            ktorApiClient.delete<Unit>("api/groups/$groupId")
+            val token = getToken(dataStore)
+            ktorApiClient.delete<Unit>("api/groups/$groupId", token)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

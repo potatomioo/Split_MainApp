@@ -1,11 +1,14 @@
 package com.falcon.split.data.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.data.network.KtorApiClient
 import com.falcon.split.data.network.models_app.Expense
 import com.falcon.split.data.network.models_app.ExpenseSplit
 import com.falcon.split.data.network.models_app.ExpenseType
 import com.falcon.split.data.network.models_app.Settlement
 import com.falcon.split.data.network.models_app.SettlementStatus
+import com.falcon.split.getToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
@@ -59,7 +62,10 @@ data class SettlementResponse(
     @SerialName("timestamp") val timestamp: Long
 )
 
-class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : ExpenseRepository {
+class GoBackendExpenseRepository(
+    private val ktorApiClient: KtorApiClient,
+    private val dataStore: DataStore<Preferences>
+) : ExpenseRepository {
 
     override suspend fun addExpense(
         groupId: String,
@@ -74,7 +80,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
                 amount = amount,
                 expenseType = expenseType.name
             )
-            ktorApiClient.post<ExpenseResponse>("api/expenses", request)
+            val token = getToken(dataStore)
+            ktorApiClient.post<ExpenseResponse>("api/expenses", token, request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -83,7 +90,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
 
     override suspend fun getExpensesByGroup(groupId: String): Flow<List<Expense>> = flow {
         try {
-            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/group/$groupId")
+            val token = getToken(dataStore)
+            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/group/$groupId", token)
             val expenses = response.map { mapResponseToExpense(it) }
             emit(expenses)
         } catch (e: Exception) {
@@ -93,7 +101,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
 
     override suspend fun getExpensesByUser(userId: String): Flow<List<Expense>> = flow {
         try {
-            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/user")
+            val token = getToken(dataStore)
+            val response: List<ExpenseResponse> = ktorApiClient.get("api/expenses/user", token)
             val expenses = response.map { mapResponseToExpense(it) }
             emit(expenses)
         } catch (e: Exception) {
@@ -113,7 +122,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
                 toUserId = toUserId,
                 amount = amount
             )
-            ktorApiClient.post<SettlementResponse>("api/settlements", request)
+            val token = getToken(dataStore)
+            ktorApiClient.post<SettlementResponse>("api/settlements", token, request)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -122,7 +132,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
 
     override suspend fun approveSettlement(settlementId: String): Result<Unit> {
         return try {
-            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/approve")
+            val token = getToken(dataStore)
+            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/approve", token)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -131,7 +142,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
 
     override suspend fun declineSettlement(settlementId: String): Result<Unit> {
         return try {
-            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/decline")
+            val token = getToken(dataStore)
+            ktorApiClient.patch<SettlementResponse>("api/settlements/$settlementId/decline", token)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -141,7 +153,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
     override suspend fun getPendingSettlementsForUser(userId: String): Flow<List<Settlement>> =
         flow {
             try {
-                val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/pending")
+                val token = getToken(dataStore)
+                val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/pending", token)
                 val settlements = response.map { mapResponseToSettlement(it) }
                 emit(settlements)
             } catch (e: Exception) {
@@ -151,7 +164,8 @@ class GoBackendExpenseRepository(private val ktorApiClient: KtorApiClient) : Exp
 
     override suspend fun getSettlementHistory(groupId: String): Flow<List<Settlement>> = flow {
         try {
-            val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/group/$groupId")
+            val token = getToken(dataStore)
+            val response: List<SettlementResponse> = ktorApiClient.get("api/settlements/group/$groupId", token)
             val settlements = response.map { mapResponseToSettlement(it) }
             emit(settlements)
         } catch (e: Exception) {

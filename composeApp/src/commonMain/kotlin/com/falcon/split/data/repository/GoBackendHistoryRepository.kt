@@ -1,7 +1,10 @@
 package com.falcon.split.data.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.falcon.split.HistoryRepository
 import com.falcon.split.data.network.KtorApiClient
+import com.falcon.split.getToken
 import com.falcon.split.presentation.history.HistoryActionType
 import com.falcon.split.presentation.history.HistoryItem
 import kotlinx.coroutines.flow.Flow
@@ -35,7 +38,10 @@ data class HasMoreResponse(
     @SerialName("hasMore") val hasMore: Boolean
 )
 
-class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : HistoryRepository {
+class GoBackendHistoryRepository(
+    private val ktorApiClient: KtorApiClient,
+    private val dataStore: DataStore<Preferences>
+) : HistoryRepository {
 
     override suspend fun getUserHistory(page: Int, itemsPerPage: Int): Flow<List<HistoryItem>> =
         flow {
@@ -44,7 +50,9 @@ class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : His
                     "page" to page,
                     "itemsPerPage" to itemsPerPage
                 )
-                val response: List<HistoryItemResponse> = ktorApiClient.get("api/history", parameters)
+                val token = getToken(dataStore)
+                val response: List<HistoryItemResponse> =
+                    ktorApiClient.get("api/history", token, parameters)
                 val historyItems = response.map { mapResponseToHistoryItem(it) }
                 emit(historyItems)
             } catch (e: Exception) {
@@ -58,7 +66,9 @@ class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : His
                 "page" to page,
                 "itemsPerPage" to itemsPerPage
             )
-            val response: HasMoreResponse = ktorApiClient.get("api/history/hasMore", parameters)
+            val token = getToken(dataStore)
+            val response: HasMoreResponse =
+                ktorApiClient.get("api/history/hasMore", token, parameters)
             response.hasMore
         } catch (e: Exception) {
             false
@@ -67,7 +77,8 @@ class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : His
 
     override suspend fun markHistoryItemAsRead(historyId: String): Result<Unit> {
         return try {
-            ktorApiClient.patch<Unit>("api/history/$historyId/read")
+            val token = getToken(dataStore)
+            ktorApiClient.patch<Unit>("api/history/$historyId/read", token)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -82,7 +93,8 @@ class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : His
 
     override suspend fun markAllHistoryAsRead(): Result<Unit> {
         return try {
-            ktorApiClient.patch<Unit>("api/history/markAllRead")
+            val token = getToken(dataStore)
+            ktorApiClient.patch<Unit>("api/history/markAllRead", token)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -92,8 +104,9 @@ class GoBackendHistoryRepository(private val ktorApiClient: KtorApiClient) : His
     override suspend fun getRecentHistory(limit: Int): Flow<List<HistoryItem>> = flow {
         try {
             val parameters = mapOf("limit" to limit)
+            val token = getToken(dataStore)
             val response: List<HistoryItemResponse> =
-                ktorApiClient.get("api/history/recent", parameters)
+                ktorApiClient.get("api/history/recent", token, parameters)
             val historyItems = response.map { mapResponseToHistoryItem(it) }
             emit(historyItems)
         } catch (e: Exception) {

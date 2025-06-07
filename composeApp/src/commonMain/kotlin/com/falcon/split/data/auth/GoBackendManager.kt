@@ -34,13 +34,13 @@ class GoBackendManager(private val dataStore: DataStore<Preferences>) {
     private val _userDetails = MutableStateFlow<UserState>(UserState.Loading)
     val userDetails: StateFlow<UserState> = _userDetails
 
-    private val ktorApiClient = KtorApiClient { getToken(dataStore) }
+    private val ktorApiClient = KtorApiClient()
 
     // Repository instances
-    private val userRepository = GoBackendUserRepository(ktorApiClient)
-    val groupRepository: GroupRepository = GoBackendGroupRepository(ktorApiClient)
-    val expenseRepository: ExpenseRepository = GoBackendExpenseRepository(ktorApiClient)
-    val historyRepository: HistoryRepository = GoBackendHistoryRepository(ktorApiClient)
+    private val userRepository = GoBackendUserRepository(ktorApiClient, dataStore)
+    val groupRepository: GroupRepository = GoBackendGroupRepository(ktorApiClient, dataStore)
+    val expenseRepository: ExpenseRepository = GoBackendExpenseRepository(ktorApiClient, dataStore)
+    val historyRepository: HistoryRepository = GoBackendHistoryRepository(ktorApiClient, dataStore)
 
     // Manager instances
     val userProfileManager: UserProfileManager =
