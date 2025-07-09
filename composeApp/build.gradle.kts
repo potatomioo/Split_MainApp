@@ -30,7 +30,7 @@ kotlin {
 //        }
 //        binaries.all {
 //            // Replace "YourFrameworkName" with your actual framework name
-//            freeCompilerArgs += listOf("-output-name", "com.falcon.split.Split")
+//            freeCompilerArgs += listOf("-output-name", "“com.falcon.split.Split")
 //            baseName = "com.falcon.split.Split"
 //        }
     }
@@ -179,7 +179,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.falcon.split"
+    namespace = "com.potato.split"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
@@ -187,7 +187,7 @@ android {
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
-        applicationId = "com.falcon.split"
+        applicationId = "com.potato.split"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -231,11 +231,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.falcon.split.MainKt"
+        mainClass = "com.potato.split.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.falcon.split"
+            packageName = "com.potato.split"
             packageVersion = "1.0.0"
         }
     }

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "256895007811",
+    "project_id": "split-kmm",
+    "storage_bucket": "split-kmm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256895007811:android:5efd14cc7d4aa28e30e8f6",
+        "android_client_info": {
+          "package_name": "com.potato.split"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "256895007811-hhkr06uk0k3q4sr78bj77cmql0j95918.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqVuWujldg2J0y2Gb005_jY3tyiVdmU1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "256895007811-hhkr06uk0k3q4sr78bj77cmql0j95918.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "256895007811-o0gndgnpois35d7fosc1eriskp473vla.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.potato.split.Split"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
