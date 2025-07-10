@@ -628,7 +628,6 @@ fun NavHostMain(
                     1 -> IntegratedHistoryScreen(
                         onNavigate,
                         prefs,
-                        historyVM,
                         snackBarHostState,
                         navControllerMain,
                         historyViewModel = historyViewModel
@@ -794,7 +793,6 @@ fun navigateTo(
 fun IntegratedHistoryScreen(
     onNavigate: (rootName: String) -> Unit,
     prefs: DataStore<Preferences>,
-    newsViewModel: MainViewModel,
     snackBarHostState: androidx.compose.material3.SnackbarHostState,
     navControllerMain: NavHostController,
     modifier: Modifier = Modifier,
@@ -804,7 +802,6 @@ fun IntegratedHistoryScreen(
     HistoryScreen(
         historyViewModel = historyViewModel,
         prefs = prefs,
-        newsViewModel = newsViewModel,
         snackBarHostState = snackBarHostState,
         navControllerMain = navControllerMain,
     )

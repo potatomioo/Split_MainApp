@@ -407,7 +407,6 @@ fun App(
                 HistoryScreen(
                     historyViewModel = HistoryViewModel(historyRepository!!),
                     prefs = prefs,
-                    newsViewModel = mainViewModel,
                     snackBarHostState = snackBarHostState,
                     navControllerMain = navControllerMain
                 )
