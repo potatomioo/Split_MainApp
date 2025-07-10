@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class GroupViewModel(
+class
+GroupViewModel(
     private val groupRepository: GroupRepository,
     private val expenseRepository: ExpenseRepository,
     userManager: UserManager
@@ -175,6 +176,21 @@ class GroupViewModel(
                 expenseRepository.getPendingSettlementsForUser(currentUserId?:"")
                     .collect { settlements ->
                         _pendingSettlements.value = settlements
+                    }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun loadPendingSettlementsForGroup(groupId: String) {
+        viewModelScope.launch {
+            try {
+                expenseRepository.getPendingSettlementsForUser(currentUserId ?: "")
+                    .collect { settlements ->
+                        // Filter settlements by the current group
+                        val groupFilteredSettlements = settlements.filter { it.groupId == groupId }
+                        _pendingSettlements.value = groupFilteredSettlements
                     }
             } catch (e: Exception) {
                 // Handle error
