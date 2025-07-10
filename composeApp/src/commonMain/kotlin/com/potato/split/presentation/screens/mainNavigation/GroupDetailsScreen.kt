@@ -171,7 +171,7 @@ fun GroupDetailsScreen(
         viewModel.loadGroupDetails(groupId)
         viewModel.loadGroupExpenses(groupId)
         viewModel.loadSettlementHistory(groupId)
-        viewModel.loadPendingSettlements()
+        viewModel.loadPendingSettlementsForGroup(groupId)
     }
 
     LaunchedEffect(Unit) {
