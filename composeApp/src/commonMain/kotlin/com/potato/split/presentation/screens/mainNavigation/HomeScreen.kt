@@ -80,6 +80,7 @@ import com.potato.split.presentation.theme.SplitCard
 import com.potato.split.presentation.theme.SplitColors
 import com.potato.split.presentation.theme.getSplitTypography
 import com.potato.split.presentation.theme.lDimens
+import com.potato.split.util.DateTimeUtil
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -121,8 +122,7 @@ fun HomeScreen(
 
     // Load data when screen is mounted
     LaunchedEffect(Unit) {
-        viewModel.loadGroups()  // This loads all groups the user is part of
-        viewModel.loadPendingSettlements()
+        viewModel.loadGroups()
         historyViewModel.loadRecentHistory(4)
 
         // Get expenses for all groups this user is part of
@@ -564,80 +564,94 @@ fun PendingSettlementItem(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
+                    // Title
                     Text(
-                        text = if (isIncoming) "Payment Request" else "Your Request",
+                        text = if (isIncoming) "Settlement Request" else "Your Request",
                         style = MaterialTheme.typography.titleMedium,
                         color = colors.textPrimary
                     )
 
+                    // Description
                     Text(
                         text = if (isIncoming)
-                            "${settlement.fromUserName ?: "Someone"} requested payment"
+                            "From ${settlement.fromUserName ?: "Someone"}"
                         else
-                            "Requested from ${settlement.toUserName ?: "someone"}",
+                            "To ${settlement.toUserName ?: "someone"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.textSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.padding(top = lDimens.dp2)
                     )
-                }
 
-                Spacer(modifier = Modifier.width(lDimens.dp8))
-
-                CurrencyDisplay(
-                    amount = settlement.amount,
-                    isIncome = false
-                )
-            }
-
-            if (isIncoming && onApprove != null && onDecline != null) {
-                Spacer(modifier = Modifier.height(lDimens.dp12))
-
-                if (isProcessing) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = lDimens.dp8),
-                        contentAlignment = Alignment.Center
+                    // Time information - formatted like history screen
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(lDimens.dp4),
+                        modifier = Modifier.padding(top = lDimens.dp4)
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(lDimens.dp24),
-                            color = colors.primary
+                        Text(
+                            text = DateTimeUtil.formatTime(settlement.timestamp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary
                         )
                     }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                }
+
+                // Amount display - positioned at top right
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    CurrencyDisplay(
+                        amount = settlement.amount,
+                        isIncome = isIncoming
+                    )
+                }
+            }
+
+            // Action buttons for incoming requests
+            if (isIncoming && onApprove != null && onDecline != null) {
+                Spacer(modifier = Modifier.height(lDimens.dp16))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                ) {
+                    OutlinedButton(
+                        onClick = onDecline,
+                        enabled = !isProcessing,
+                        modifier = Modifier.weight(1f),
+                        border = BorderStroke(lDimens.dp1, colors.error),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = colors.error
+                        )
                     ) {
-                        OutlinedButton(
-                            onClick = onDecline,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = colors.error
-                            ),
-                            border = BorderStroke(lDimens.dp1, colors.error),
-                            modifier = Modifier.padding(end = lDimens.dp8),
-                            enabled = !isProcessing
-                        ) {
-                            Text("Decline",
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(lDimens.dp16),
+                                color = colors.error
+                            )
+                        } else {
+                            Text("Decline")
+                        }
+                    }
+
+                    Button(
+                        onClick = onApprove,
+                        enabled = !isProcessing,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.success
+                        )
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(lDimens.dp16),
                                 color = colors.textPrimary
                             )
-                        }
-
-                        Button(
-                            onClick = onApprove,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colors.success,
-                                contentColor = Color.White
-                            ),
-                            enabled = !isProcessing
-                        ) {
+                        } else {
                             Text("Approve")
                         }
                     }

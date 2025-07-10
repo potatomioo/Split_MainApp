@@ -43,6 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -108,6 +109,10 @@ fun GroupsScreen(
     var selectedSortOption by remember { mutableStateOf(GroupSortOption.NEWEST) }
     var showFilterOptions by remember { mutableStateOf(false) }
     var showSortOptions by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit){
+        viewModel.loadGroups()
+    }
 
     Scaffold(
         containerColor = colors.backgroundPrimary,

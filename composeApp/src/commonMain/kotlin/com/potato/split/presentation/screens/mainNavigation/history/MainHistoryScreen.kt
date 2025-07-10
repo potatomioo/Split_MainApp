@@ -39,6 +39,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -86,7 +87,6 @@ import split.composeapp.generated.resources.Settlement
 fun HistoryScreen(
     historyViewModel: HistoryViewModel,
     prefs: DataStore<Preferences>,
-    newsViewModel: MainViewModel,
     snackBarHostState: SnackbarHostState,
     navControllerMain: NavHostController
 ) {
@@ -116,6 +116,10 @@ fun HistoryScreen(
     // Group history items by date
     val groupedHistoryItems = remember(historyItems) {
         groupHistoryItemsByDate(historyItems)
+    }
+
+    LaunchedEffect(Unit, historyState){
+        historyViewModel.loadInitialHistory()
     }
 
     Box(
