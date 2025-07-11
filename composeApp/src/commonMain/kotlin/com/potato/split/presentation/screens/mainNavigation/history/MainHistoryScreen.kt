@@ -615,11 +615,6 @@ private fun groupHistoryItemsByDate(items: List<HistoryItem>): Map<String, List<
     return result
 }
 
-// Format timestamp to human-readable time
-private fun formatTime(timestamp: Long): String {
-    return DateTimeUtil.formatTime(timestamp)
-}
-
 
 private fun getHistoryItemIcon(historyItem: HistoryItem): DrawableResource {
     return when (historyItem.actionType) {
@@ -652,33 +647,3 @@ private fun getHistoryItemIcon(historyItem: HistoryItem): DrawableResource {
         }
     }
 }
-
-// Get icon color for history item based on action type
-private fun getHistoryItemIconColor(actionType: HistoryActionType, colors: SplitColors): Color {
-    return when (actionType) {
-        HistoryActionType.GROUP_CREATED,
-        HistoryActionType.MEMBER_ADDED -> colors.primary
-
-        HistoryActionType.GROUP_DELETED -> colors.error
-
-        HistoryActionType.EXPENSE_ADDED -> colors.info
-
-        HistoryActionType.SETTLEMENT_REQUESTED -> colors.warning
-
-        HistoryActionType.SETTLEMENT_APPROVED -> colors.success
-
-        HistoryActionType.SETTLEMENT_DECLINED -> colors.error
-    }
-}
-
-
-@Composable
-fun getSettlementIcon(status: SettlementStatus): Painter {
-    return when (status) {
-        SettlementStatus.PENDING -> painterResource(Res.drawable.Settlement)
-        SettlementStatus.APPROVED -> painterResource(Res.drawable.ApproveSettlement)
-        SettlementStatus.DECLINED -> painterResource(Res.drawable.DeclineSettlement)
-    }
-}
-
-//For time setup, converting milliseconds in timestamp and back to milliseconds while reading data.

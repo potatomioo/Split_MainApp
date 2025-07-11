@@ -1,10 +1,14 @@
 package com.potato.split.presentation.screens.mainNavigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -16,13 +20,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
+import com.potato.split.data.network.models_app.Settlement
 import com.potato.split.presentation.group.GroupViewModel
+import com.potato.split.presentation.history.HistoryItem
 import com.potato.split.presentation.theme.LocalSplitColors
 import com.potato.split.presentation.theme.lDimens
+import com.potato.split.util.DateTimeUtil
 import kotlinx.coroutines.launch
+
+
+
 @Composable
 fun RequestsScreen(
     navController: NavController,
@@ -45,6 +56,7 @@ fun RequestsScreen(
     LaunchedEffect(Unit){
         viewModel.loadPendingSettlements()
     }
+
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(
             selectedTabIndex = pagerState.currentPage,
@@ -84,63 +96,90 @@ fun RequestsScreen(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = lDimens.dp16, end = lDimens.dp16, top = lDimens.dp16),
-                verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
-            ) {
-//                item {
-//                    // This section header will appear at the top of each pager page
-//                    SectionHeader(
-//                        title = if (page == 0) "Incoming Requests" else "Outgoing Requests",
-//                        actionText = null,
-//                        onActionClick = null
-//                    )
-//                }
+            val requests = if (page == 0) incomingRequests else outgoingRequests
 
-                if (page == 0) { // "Requests to You" pager
-                    if (incomingRequests.isEmpty()) {
+            if (requests.isEmpty()) {
+                // Show empty state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(lDimens.dp16),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyStateMessage(
+                        message = if (page == 0) "No incoming payment requests" else "No pending requests from you",
+                        submessage = if (page == 0) "You don't have any payment requests to approve." else "You haven't sent any payment requests that are pending approval."
+                    )
+                }
+            } else {
+                // Group requests by time period (same as HistoryScreen)
+                val groupedRequests = groupRequestsByDate(requests)
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = lDimens.dp16),
+                    verticalArrangement = Arrangement.spacedBy(lDimens.dp8)
+                ) {
+                    groupedRequests.forEach { (dateHeader, requestsForDate) ->
+                        // Date header (same style as HistoryScreen)
                         item {
-                            EmptyStateMessage(
-                                message = "No incoming payment requests",
-                                submessage = "You don't have any payment requests to approve."
+                            Text(
+                                text = dateHeader,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = colors.textSecondary,
+                                modifier = Modifier.padding(vertical = lDimens.dp8)
                             )
                         }
-                    } else {
-                        items(incomingRequests.size) { index ->
-                            val settlement = incomingRequests[index]
+
+                        // Requests for this date (using existing PendingSettlementItem)
+                        items(requestsForDate) { settlement ->
                             PendingSettlementItem(
                                 settlement = settlement,
-                                isIncoming = true,
-                                onApprove = { viewModel.approveSettlement(settlement.id) },
-                                onDecline = { viewModel.declineSettlement(settlement.id) },
+                                isIncoming = page == 0,
+                                onApprove = if (page == 0) {
+                                    { viewModel.approveSettlement(settlement.id) }
+                                } else null,
+                                onDecline = if (page == 0) {
+                                    { viewModel.declineSettlement(settlement.id) }
+                                } else null,
                                 processingSettlements = processingSettlementIds
                             )
                         }
                     }
-                } else { // "Requests from You" pager
-                    if (outgoingRequests.isEmpty()) {
-                        item {
-                            EmptyStateMessage(
-                                message = "No pending requests from you",
-                                submessage = "You haven't sent any payment requests that are pending approval."
-                            )
-                        }
-                    } else {
-                        items(outgoingRequests.size) { index ->
-                            val settlement = outgoingRequests[index]
-                            PendingSettlementItem(
-                                settlement = settlement,
-                                isIncoming = false,
-                                onApprove = null, // No action for outgoing requests here
-                                onDecline = null, // No action for outgoing requests here
-                                processingSettlements = processingSettlementIds
-                            )
-                        }
+
+                    // Bottom spacer
+                    item {
+                        Spacer(modifier = Modifier.height(lDimens.dp80))
                     }
                 }
             }
         }
     }
+}
+
+private fun groupRequestsByDate(requests: List<Settlement>): Map<String, List<Settlement>> {
+    val grouped = requests.groupBy { settlement ->
+        DateTimeUtil.formatRelativeDate(settlement.timestamp)
+    }
+
+    // Define the order we want (same as HistoryScreen)
+    val order = listOf("Today", "Yesterday", "This Week", "This Month", "Earlier")
+
+    // Create a new linked map with the desired order
+    val result = linkedMapOf<String, List<Settlement>>()
+
+    // Add entries in the specific order (if they exist)
+    order.forEach { key ->
+        grouped[key]?.let { result[key] = it }
+    }
+
+    // Add any remaining entries that don't fit the standard categories
+    grouped.forEach { (key, value) ->
+        if (!result.containsKey(key)) {
+            result[key] = value
+        }
+    }
+
+    return result
 }
